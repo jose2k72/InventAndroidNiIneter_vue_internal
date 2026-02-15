@@ -448,9 +448,7 @@ class FormActivity : AppCompatActivity() {
         @JavascriptInterface
         fun loadPhotoAsBase64(filename: String): String {
             return try {
-                val root = Environment.getExternalStorageDirectory()
-                val dirApp = File(root.absolutePath + File.separator + "CADIC.ACERAS")
-                val photoFile = File(dirApp, filename)
+                val photoFile = File(AppConfig.getStorageDirectory(), filename)
                 
                 if (photoFile.exists()) {
                     val base64 = convertImageToBase64(photoFile)
@@ -477,7 +475,7 @@ class FormActivity : AppCompatActivity() {
     }
     
     private fun checkStoragePermission() {
-        // Android 11+ (API 30+): Necesita MANAGE_EXTERNAL_STORAGE para escribir en CADIC.ACERAS
+        // Android 11+ (API 30+): Necesita MANAGE_EXTERNAL_STORAGE para escribir en el directorio de almacenamiento
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
             if (Environment.isExternalStorageManager()) {
                 // Tenemos permiso, continuar
@@ -528,9 +526,7 @@ class FormActivity : AppCompatActivity() {
 
     private fun deletePhotoFileInternal(filename: String): Boolean {
         return try {
-            val root = Environment.getExternalStorageDirectory()
-            val dirApp = File(root.absolutePath + File.separator + "CADIC.ACERAS")
-            val photoFile = File(dirApp, filename)
+            val photoFile = File(AppConfig.getStorageDirectory(), filename)
             
             if (photoFile.exists()) {
                 val deleted = photoFile.delete()
@@ -562,14 +558,11 @@ class FormActivity : AppCompatActivity() {
                 "${timeStamp}.jpg"
             }
             
-            // Directorio CADIC.ACERAS (donde está map.db)
-            val root = Environment.getExternalStorageDirectory()
-            val dirApp = File(root.absolutePath + File.separator + "CADIC.ACERAS")
+            // Directorio de almacenamiento (donde está map.db)
+            val dirApp = AppConfig.getStorageDirectory()
             
             // Crear directorio si no existe
-            if (!dirApp.exists()) {
-                dirApp.mkdirs()
-            }
+            AppConfig.ensureStorageDirectoryExists()
             
             File(dirApp, currentPhotoName).also {
                 currentPhotoPath = it.absolutePath

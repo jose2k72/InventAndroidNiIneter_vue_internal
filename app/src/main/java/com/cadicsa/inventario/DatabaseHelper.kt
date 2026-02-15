@@ -22,14 +22,13 @@ import org.locationtech.jts.geom.MultiPolygon
  */
 class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     context,
-    getExternalSdCardPath() + File.separator + "CADIC.ACERAS" + File.separator + DATABASE_NAME,
+    AppConfig.getDatabasePath(),
     null,
     DATABASE_VERSION
 ) {
     private val mContext: Context = context
 
     companion object {
-        private const val DATABASE_NAME = "Map.db"
         private const val DATABASE_VERSION = 1
         private const val TAG = "DatabaseHelper"
 
@@ -52,31 +51,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         }
         
         fun getDatabasePath(): String {
-            return getExternalSdCardPath() + File.separator + "CADIC.ACERAS" + File.separator + DATABASE_NAME
-        }
-
-        fun getExternalSdCardPath(): String {
-            return try {
-                val sdCardPossiblePaths = listOf("external_sd", "ext_sd", "external", "extSdCard")
-
-                for (sdPath in sdCardPossiblePaths) {
-                    val file = File("/mnt/", sdPath)
-                    if (file.isDirectory && file.canWrite()) {
-                        val timeStamp = SimpleDateFormat("ddMMyyyy_HHmmss", Locale.US).format(Date())
-                        val testWritable = File(file.absolutePath, "test_$timeStamp")
-
-                        if (testWritable.mkdirs()) {
-                            testWritable.delete()
-                            return file.absolutePath
-                        }
-                    }
-                }
-
-                Environment.getExternalStorageDirectory().absolutePath
-            } catch (e: Exception) {
-                // Si falla, usar el directorio por defecto
-                "/storage/emulated/0"
-            }
+            return AppConfig.getDatabasePath()
         }
         
         /**

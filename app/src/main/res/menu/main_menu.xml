@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     
+    
+    <!-- Funcionalidad de rutas deshabilitada para esta variante -->
+    <!-- Esta funcionalidad estaba activa en la aplicación origen: com.cadicsa.inventario.goico.aceras -->
+    <!-- Descomentar si se necesita en futuras variantes -->
+    <!--
     <item
         android:id="@+id/menu_toggle_rutas_locales"
         android:title="Mostrar Rutas Cantonales"
@@ -15,6 +20,7 @@
         android:checkable="true"
         android:checked="false"
         app:showAsAction="never" />
+    -->
     
     <item
         android:id="@+id/menu_about"

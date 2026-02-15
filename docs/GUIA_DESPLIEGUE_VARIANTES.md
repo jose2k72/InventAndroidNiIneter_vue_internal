@@ -2,15 +2,29 @@
 
 Este proyecto está diseñado para funcionar como una **base de código común** para múltiples aplicaciones de inventario (distintas municipalidades o proyectos), manteniendo una lógica compartida pero desplegándose como aplicaciones independientes en el mismo dispositivo.
 
-## 1. Concepto de Base Común
+## 1. Conceptos Fundamentales de Identidad
 
-- **Namespace de Código**: `com.cadicsa.inventario`
-  - Todas las clases Java/Kotlin y recursos mantienen este paquete.
-  - No es necesario refactorizar el código fuente para crear una nueva variante.
+Para crear variantes independientes que coexistan en el mismo dispositivo, es vital distinguir entre estos tres elementos:
 
-- **Identificador de Aplicación**: `applicationId` (en `build.gradle.kts`)
-  - Es el identificador único para el sistema Android y Google Play.
-  - Define la identidad de instalación.
+### A. `applicationId` (El "DNI" de la App)
+*   **¿Qué es?**: El identificador **único e irrepetible** de la aplicación en el ecosistema Android (y Google Play).
+*   **Ubicación**: Archivo `app/build.gradle.kts`, bloque `defaultConfig`.
+*   **Comportamiento**:
+    *   Si instalas una app con el **mismo** `applicationId`, Android la considerará una **actualización** de la existente y sobrescribirá los datos.
+    *   Si cambias el `applicationId` (ej: `com.cadicsa.tibas` vs `com.cadicsa.goico`), Android la tratará como una **aplicación completamente nueva y separada**.
+*   **Acción Requerida**: **DEBE CAMBIARSE OBLIGATORIAMENTE** para cada nueva variante.
+
+### B. `namespace` (Estructura Interna del Código)
+*   **¿Qué es?**: El paquete base de Java/Kotlin utilizado internamente para compilar el código y generar la clase `R.java` (recursos).
+*   **Ubicación**: Archivo `app/build.gradle.kts`, bloque `android`.
+*   **Comportamiento**: Desacopla la estructura del código del ID de la aplicación.
+*   **Acción Requerida**: **NO CAMBIAR**. Se mantiene fijo (`com.cadicsa.inventario`) para que no tengas que refactorizar los `package` ni los `import` en tus cientos de archivos de código fuente. Permite reutilizar el 100% del código.
+
+### C. `app_name` (Nombre Visible al Usuario)
+*   **¿Qué es?**: El nombre que aparece debajo del icono en el menú del dispositivo y en la barra de título.
+*   **Ubicación**: Archivo `app/src/main/res/values/strings.xml`.
+*   **Comportamiento**: Es puramente cosmético pero vital para que el usuario distinga entre "Inventario Goico" e "Inventario Tibás".
+*   **Acción Requerida**: **DEBE CAMBIARSE** para evitar confusión en el usuario.
 
 ## 2. Cómo Crear una Nueva Variante
 
@@ -26,7 +40,7 @@ android {
     // ...
     defaultConfig {
         // CAMBIAR ESTO para la nueva variante:
-        applicationId = "com.cadicsa.inventario.nuevo.proyecto" 
+        applicationId = "com.cadicsa.inventario.nuevo.proyecto"
         
         // ...
     }
@@ -43,22 +57,41 @@ Si la nueva variante requiere:
   ```
 - **Mapas**: Si el proyecto usa una API Key diferente, edite `google_maps_key` en `strings.xml`.
 
-### Paso 3: Base de Datos Inicial
+### Paso 3: Configuración de Almacenamiento
 
-Cada variante debe tener su propia carpeta de datos en el dispositivo si van a coexistir.
-Actualmente, la ruta de base de datos está hardcodeada en `DatabaseHelper.kt` como `CADIC.ACERAS`.
+⚠️ **Configuración Centralizada Implementada**
 
-> **Recomendación**: Para despliegues futuros, considere mover el nombre de la carpeta a una variable de configuración en `buildConfigField` dentro del `build.gradle.kts` para que cada variante use su propia carpeta de datos:
+El proyecto utiliza una **configuración centralizada** para el directorio de almacenamiento a través de la clase `AppConfig.kt`. Todos los accesos a:
+- Base de datos SQLite
+- Fotos capturadas
+- Cualquier archivo de la aplicación
 
-**En `build.gradle.kts` (Mejora sugerida):**
+...pasan por esta clase única, lo que facilita la creación de variantes.
+
+**Ubicaciones en el código:**
+1.  **Configuración**: `app/build.gradle.kts` → `buildConfigField("String", "STORAGE_DIR_NAME", "...")`
+2.  **Implementación**: `AppConfig.kt` → Lee `BuildConfig.STORAGE_DIR_NAME`
+3.  **Uso**: `DatabaseHelper.kt`, `FormActivity.kt`, `MainActivity.kt` → Usan `AppConfig.getStorageDirectory()`
+
+**Para crear una variante con datos aislados:**
+
+Simplemente cambie el valor en `app/build.gradle.kts`:
+
 ```kotlin
-buildConfigField("String", "DB_FOLDER_NAME", "\"CADIC.NUEVO_PROYECTO\"")
+defaultConfig {
+    applicationId = "com.cadicsa.inventario.nuevo.proyecto"
+    
+    // CAMBIAR ESTE VALOR para aislar datos de esta variante
+    buildConfigField("String", "STORAGE_DIR_NAME", "\"CADIC.NUEVO_PROYECTO\"")
+}
 ```
 
-**En `DatabaseHelper.kt`:**
-```kotlin
-getExternalSdCardPath() + File.separator + BuildConfig.DB_FOLDER_NAME + ...
-```
+**Resultado:**
+- App original: `/sdcard/CADIC.ACERAS/Map.db` + fotos
+- App nueva: `/sdcard/CADIC.NUEVO_PROYECTO/Map.db` + fotos
+
+**Compartir datos entre variantes:**
+Si desea que dos variantes compartan la misma base de datos y fotos (ej: para testing), use el **mismo** `STORAGE_DIR_NAME` en ambas.
 
 ## 3. Comandos de Instalación
 

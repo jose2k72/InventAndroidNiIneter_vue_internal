@@ -195,11 +195,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun createAppFolder() {
         try {
-            val root = Environment.getExternalStorageDirectory()
-            val dirApp = File(root.absolutePath + File.separator + "CADIC.ACERAS")
-            if (!dirApp.exists()) {
-                dirApp.mkdirs()
-            }
+            AppConfig.ensureStorageDirectoryExists()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -693,6 +689,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
         return when (item.itemId) {
+            // Funcionalidad de rutas deshabilitada para esta variante
+            // Esta funcionalidad estaba activa en la aplicación origen: com.cadicsa.inventario.goico.aceras
+            // Descomentar si se necesita en futuras variantes
+            /*
             R.id.menu_toggle_rutas_locales -> {
                 showRutasLocales = !showRutasLocales
                 item.isChecked = showRutasLocales
@@ -705,6 +705,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 refreshRouteLayer()
                 true
             }
+            */
             R.id.menu_about -> {
                 showAboutDialog(30)  // 30 segundos cuando se llama desde el menú
                 true
@@ -735,7 +736,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val copyright = dialogView.findViewById<android.widget.TextView>(R.id.aboutCopyright)
         
         appInfo.text = "Aplicación de captura de datos de campo\n${getString(R.string.app_name)} v$versionName"
-        copyright.text = "Copyright © $compileYear CADICSA"
+        copyright.text = "Copyright © $compileYear CADIC Consultores, S.A."
         
         // Crear y mostrar diálogo sin botones
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)

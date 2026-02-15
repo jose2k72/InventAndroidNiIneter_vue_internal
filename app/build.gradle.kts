@@ -25,13 +25,17 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.cadicsa.inventario.goico.aceras"
+        applicationId = "com.cadicsa.inventario.ni.ineter"
         minSdk = 24
         targetSdk = 30  // CAMBIADO de 34 a 30 para evitar restricciones de Android 14
         versionCode = getAutoVersionCode()  // Generado automáticamente: yyMMddHHmm
         versionName = getAutoVersion()      // Generado automáticamente: yyyy.MM.dd.HHmm
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Configuración centralizada del directorio de almacenamiento
+        // CAMBIAR ESTE VALOR para cada variante de la aplicación
+        buildConfigField("String", "STORAGE_DIR_NAME", "\"CADIC.NI.INETER\"")
     }
 
 
@@ -62,6 +66,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true  // Necesario para acceder a BuildConfig.STORAGE_DIR_NAME
     }
 }
 

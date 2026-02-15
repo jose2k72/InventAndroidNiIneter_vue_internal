@@ -10,7 +10,7 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:src="@drawable/logo_cadic_transparent"
+        android:src="@drawable/logo_cadic"
         android:contentDescription="Logo CADIC"
         android:scaleType="fitCenter"
         android:adjustViewBounds="true"
@@ -32,7 +32,7 @@
         android:id="@+id/aboutCopyright"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Copyright © CADICSA"
+        android:text="Copyright © CADIC Consultores, S.A."
         android:textSize="12sp"
         android:textColor="@android:color/darker_gray"
         android:gravity="center" />
