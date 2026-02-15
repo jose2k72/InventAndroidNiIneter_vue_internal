@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    
+    <item
+        android:id="@+id/menu_toggle_rutas_locales"
+        android:title="Mostrar Rutas Cantonales"
+        android:checkable="true"
+        android:checked="false"
+        app:showAsAction="never" />
+    
+    <item
+        android:id="@+id/menu_toggle_rutas_nacionales"
+        android:title="Mostrar Rutas Nacionales"
+        android:checkable="true"
+        android:checked="false"
+        app:showAsAction="never" />
+    
+    <item
+        android:id="@+id/menu_about"
+        android:title="Acerca de"
+        android:icon="@android:drawable/ic_menu_info_details"
+        app:showAsAction="never" />
+    
+    <item
+        android:id="@+id/menu_exit"
+        android:title="Salir"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        app:showAsAction="never" />
+    
+</menu>

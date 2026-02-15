@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+</head>
+
+<body>
+    <h1>PRUEBA HTML SIMPLE</h1>
+    <p>Si ves esto, el WebView funciona</p>
+    <button onclick="testJS()">Click me</button>
+
+    <script>
+        console.log('✅ JavaScript ejecutándose');
+
+        function testJS() {
+            alert('JavaScript funciona!');
+            console.log('✅ Botón clickeado');
+        }
+
+        // Notificar a Android
+        if (typeof Android !== 'undefined') {
+            Android.showAlert('HTML Test cargado correctamente');
+        }
+    </script>
+</body>
+
+</html>

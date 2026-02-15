@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <!-- Logo -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/logo_cadic_transparent"
+        android:contentDescription="Logo CADIC"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Texto de la aplicación -->
+    <TextView
+        android:id="@+id/aboutAppInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Aplicación de captura de datos de campo"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Copyright -->
+    <TextView
+        android:id="@+id/aboutCopyright"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Copyright © CADICSA"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:gravity="center" />
+
+</LinearLayout>

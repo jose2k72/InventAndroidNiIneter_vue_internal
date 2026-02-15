@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Almacenamiento externo para CADIC.ACERAS -->
+    <external-path
+        name="external_storage"
+        path="." />
+    
+    <!-- Almacenamiento interno de la app (legacy) -->
+    <external-files-path
+        name="aceras_images"
+        path="Pictures" />
+    
+    <cache-path
+        name="cache"
+        path="." />
+</paths>

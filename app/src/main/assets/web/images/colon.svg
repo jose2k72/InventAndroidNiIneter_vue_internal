@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <!-- Background -->
+  <rect width="128" height="128" fill="#FFF7ED" rx="8"/>
+  
+  <!-- Documento/factura base -->
+  <rect x="28" y="20" width="72" height="92" rx="4" fill="#FFFFFF" stroke="#1F2933" stroke-width="3"/>
+  
+  <!-- Líneas del documento -->
+  <line x1="38" y1="36" x2="90" y2="36" stroke="#CBD5E1" stroke-width="2"/>
+  <line x1="38" y1="46" x2="75" y2="46" stroke="#CBD5E1" stroke-width="2"/>
+  <line x1="38" y1="56" x2="85" y2="56" stroke="#CBD5E1" stroke-width="2"/>
+  
+  <!-- Tabla de presupuesto -->
+  <rect x="38" y="66" width="52" height="30" rx="2" fill="#F8FAFC" stroke="#E5E7EB" stroke-width="1.5"/>
+  <line x1="38" y1="76" x2="90" y2="76" stroke="#CBD5E1" stroke-width="1"/>
+  <line x1="38" y1="86" x2="90" y2="86" stroke="#CBD5E1" stroke-width="1"/>
+  <line x1="65" y1="66" x2="65" y2="96" stroke="#CBD5E1" stroke-width="1"/>
+  
+  <!-- Símbolo de colón destacado -->
+  <g transform="translate(64, 30)">
+    <!-- Círculo exterior dorado -->
+    <circle cx="0" cy="42" r="22" fill="#FB923C" stroke="#EA580C" stroke-width="3"/>
+    
+    <!-- Círculo interior más claro -->
+    <circle cx="0" cy="42" r="18" fill="#FDBA74" stroke="#FB923C" stroke-width="2"/>
+    
+    <!-- Símbolo ₡ -->
+    <text x="0" y="50" text-anchor="middle" font-size="28" fill="#FFFFFF" font-weight="bold" font-family="Arial, sans-serif">₡</text>
+  </g>
+  
+  <!-- Calculadora pequeña decorativa -->
+  <g transform="translate(82, 85)">
+    <rect x="0" y="0" width="16" height="20" rx="2" fill="#2F5D8C" stroke="#1F2933" stroke-width="1.5"/>
+    <rect x="2" y="2" width="12" height="5" rx="1" fill="#5FB3A2"/>
+    <!-- Botones pequeños -->
+    <rect x="2" y="9" width="4" height="3" rx="0.5" fill="#E5E7EB"/>
+    <rect x="7" y="9" width="4" height="3" rx="0.5" fill="#E5E7EB"/>
+    <rect x="2" y="13" width="4" height="3" rx="0.5" fill="#E5E7EB"/>
+    <rect x="7" y="13" width="4" height="3" rx="0.5" fill="#E5E7EB"/>
+    <rect x="2" y="17" width="9" height="2" rx="0.5" fill="#5FB3A2"/>
+  </g>
+  
+  <!-- Monedas decorativas -->
+  <circle cx="42" cy="100" r="5" fill="#FB923C" stroke="#EA580C" stroke-width="1.5"/>
+  <circle cx="52" cy="104" r="4" fill="#FDBA74" stroke="#FB923C" stroke-width="1.5"/>
+  <circle cx="48" cy="94" r="3.5" fill="#FED7AA" stroke="#FDBA74" stroke-width="1"/>
+</svg>

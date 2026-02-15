@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"java.configuration.detectJdksAtStart": false,
+		"java.configuration.updateBuildConfiguration": "automatic"
+	}
+}

@@ -1,0 +1,29 @@
+# Android Studio / Gradle
+.gradle/
+build/
+app/build/
+.idea/
+*.iml
+local.properties
+
+# Archivos de compilación y temporales
+.DS_Store
+Thumbs.db
+*.log
+captures/
+.externalNativeBuild
+.cxx
+*.apk
+*.ap_
+*.aab
+
+# VS Code
+.vscode/
+.history/
+
+# Archivos generados por antigravity u otros asistentes (opcional, pero recomendado si son temporales)
+# *.lock
+
+# Excepciones (archivos que SI queremos mantener aunque parezcan de build)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties

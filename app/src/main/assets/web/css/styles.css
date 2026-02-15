@@ -1,0 +1,495 @@
+/* ==========================================
+   INVENTARIO ACERAS - Estilos Vue.js
+   ========================================== */
+
+:root {
+    --primary: #1976D2;
+    --primary-dark: #1565C0;
+    --primary-light: #42A5F5;
+    --accent: #FF9800;
+    --success: #4CAF50;
+    --warning: #FFC107;
+    --error: #F44336;
+    --white: #FFFFFF;
+    --gray-light: #F5F5F5;
+    --gray: #9E9E9E;
+    --gray-dark: #616161;
+    --text: #212121;
+    --border: #E0E0E0;
+    --shadow: rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--gray-light);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.container {
+    padding: 16px;
+    max-width: 100%;
+}
+
+/* ==========================================
+   NAVBAR
+   ========================================== */
+.navbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    /* flex: 1;  <-- ELIMINADO para que no ocupe todo el ancho */
+    min-width: 120px; /* Un poco más ancho para que se vea bien */
+    margin-left: 5px; /* Ligera separación extra del borde izquierdo */
+}
+
+.nav-btn:hover, .nav-btn:active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--white);
+}
+
+.nav-btn img {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+    object-fit: contain;
+}
+
+.nav-btn span {
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* ==========================================
+   TIPOGRAFÍA
+   ========================================== */
+h2 {
+    color: var(--primary-dark);
+    margin-bottom: 16px;
+    font-size: 1.25rem;
+}
+
+h3 {
+    color: var(--primary);
+    margin: 20px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary-light);
+    font-size: 1.1rem;
+}
+
+h4 {
+    color: var(--gray-dark);
+    margin: 16px 0 8px;
+    font-size: 1rem;
+}
+
+/* ==========================================
+   FORMULARIOS
+   ========================================== */
+.form-group {
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--gray-dark);
+    font-size: 13px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--white);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+input[readonly],
+.input-readonly {
+    background: var(--gray-light);
+    color: var(--gray-dark);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ==========================================
+   INFO ROWS
+   ========================================== */
+.info-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.info-row label {
+    margin-bottom: 4px;
+}
+
+.coords {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--primary-dark);
+}
+
+/* ==========================================
+   TABLA
+   ========================================== */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+    background: var(--primary);
+    color: var(--white);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.data-table tbody tr {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+    background: var(--gray-light);
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--gray);
+    padding: 40px 20px;
+    background: var(--white);
+    border-radius: 8px;
+}
+
+/* ==========================================
+   BOTONES
+   ========================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-success {
+    background: var(--success);
+    color: var(--white);
+}
+
+.btn-success:hover {
+    background: #43A047;
+}
+
+.btn-secondary {
+    background: var(--gray);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-dark);
+}
+
+.btn-danger {
+    background: var(--error);
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    background: #E53935;
+}
+
+.btn-camera {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: var(--white);
+    font-size: 16px;
+    margin: 20px 0;
+}
+
+.btn-camera:hover {
+    background: #F57C00;
+}
+
+/* Grupo de botones */
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+
+/* ==========================================
+   SECCIONES
+   ========================================== */
+.section {
+    background: var(--white);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* ==========================================
+   GRID COORDENADAS
+   ========================================== */
+.coords-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ==========================================
+   RESULTADOS / TOTALES
+   ========================================== */
+.result-box {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    margin: 16px 0;
+}
+
+.result-box .label {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-bottom: 4px;
+}
+
+.result-box .value {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--gray-light);
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.total-row .label {
+    font-weight: 600;
+    color: var(--gray-dark);
+}
+
+.total-row .value {
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+/* ==========================================
+   FOTOS
+   ========================================== */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.photo-item {
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.photo-thumbnail {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-info {
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.photo-name {
+    font-size: 11px;
+    color: var(--gray-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    font-family: 'Courier New', monospace;
+}
+
+.btn-delete {
+    padding: 6px 10px;
+    background: var(--error);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-delete:hover {
+    background: #E53935;
+}
+
+/* ==========================================
+   TABLA COSTOS
+   ========================================== */
+.cost-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 12px 0;
+}
+
+.cost-table th,
+.cost-table td {
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.cost-table th {
+    background: var(--primary-light);
+    color: var(--white);
+    font-size: 11px;
+}
+
+.cost-table input {
+    width: 100%;
+    padding: 6px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.cost-table input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.cost-table .description {
+    font-size: 11px;
+    max-width: 120px;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
+    
+    .nav-btn img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .cost-table {
+        font-size: 10px;
+    }
+    
+    .cost-table input {
+        padding: 4px;
+        font-size: 10px;
+    }
+}

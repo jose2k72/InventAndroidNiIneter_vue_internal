@@ -1,0 +1,1 @@
+start "" "%~dp0app\build\outputs\apk\debug"

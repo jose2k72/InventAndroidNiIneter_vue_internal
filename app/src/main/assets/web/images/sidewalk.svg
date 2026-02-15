@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <!-- Background -->
+  <rect width="128" height="128" fill="#F8FAFC" rx="8"/>
+  
+  <!-- Acera (sidewalk) base -->
+  <rect x="20" y="80" width="88" height="28" rx="3" fill="#94A3B8" stroke="#475569" stroke-width="2"/>
+  
+  <!-- Acera texture lines -->
+  <line x1="30" y1="84" x2="30" y2="104" stroke="#64748B" stroke-width="1.5"/>
+  <line x1="45" y1="84" x2="45" y2="104" stroke="#64748B" stroke-width="1.5"/>
+  <line x1="60" y1="84" x2="60" y2="104" stroke="#64748B" stroke-width="1.5"/>
+  <line x1="75" y1="84" x2="75" y2="104" stroke="#64748B" stroke-width="1.5"/>
+  <line x1="90" y1="84" x2="90" y2="104" stroke="#64748B" stroke-width="1.5"/>
+  <line x1="105" y1="84" x2="105" y2="104" stroke="#64748B" stroke-width="1.5"/>
+  
+  <!-- Cordón (curb) -->
+  <rect x="20" y="74" width="88" height="6" rx="1" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1.5"/>
+  
+  <!-- Persona caminando (pedestrian) -->
+  <!-- Cabeza -->
+  <circle cx="48" cy="42" r="8" fill="#2F5D8C" stroke="#1F2933" stroke-width="2"/>
+  
+  <!-- Cuerpo -->
+  <ellipse cx="48" cy="58" rx="10" ry="14" fill="#2F5D8C" stroke="#1F2933" stroke-width="2"/>
+  
+  <!-- Brazo izquierdo -->
+  <path d="M40 52 Q35 55 38 62" stroke="#2F5D8C" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Brazo derecho -->
+  <path d="M56 52 Q61 55 58 62" stroke="#2F5D8C" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Pierna izquierda -->
+  <path d="M44 70 L40 84" stroke="#2F5D8C" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Pierna derecha -->
+  <path d="M52 70 L56 84" stroke="#2F5D8C" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Árbol pequeño decorativo -->
+  <!-- Tronco -->
+  <rect x="90" y="54" width="6" height="20" rx="1" fill="#6B4423" stroke="#4A2F1A" stroke-width="1.5"/>
+  
+  <!-- Copa del árbol -->
+  <circle cx="93" cy="48" r="10" fill="#5FB3A2" stroke="#2F5D8C" stroke-width="2"/>
+  <circle cx="87" cy="52" r="6" fill="#5FB3A2" stroke="#2F5D8C" stroke-width="1.5"/>
+  <circle cx="99" cy="52" r="6" fill="#5FB3A2" stroke="#2F5D8C" stroke-width="1.5"/>
+  
+  <!-- Líneas de referencia -->
+  <line x1="20" y1="74" x2="108" y2="74" stroke="#1F2933" stroke-width="2" stroke-dasharray="4 4" opacity="0.3"/>
+  
+  <!-- Regla de medición decorativa -->
+  <g opacity="0.7">
+    <line x1="24" y1="68" x2="104" y2="68" stroke="#1F2933" stroke-width="1.5"/>
+    <line x1="24" y1="65" x2="24" y2="71" stroke="#1F2933" stroke-width="1.5"/>
+    <line x1="104" y1="65" x2="104" y2="71" stroke="#1F2933" stroke-width="1.5"/>
+  </g>
+</svg>
