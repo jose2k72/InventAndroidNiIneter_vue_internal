@@ -1,0 +1,298 @@
+[
+    {
+        "id": 1,
+        "name": "ABUELO(A)"
+    },
+    {
+        "id": 2,
+        "name": "ADMINISTRADOR(A)"
+    },
+    {
+        "id": 3,
+        "name": "AHIJADO(A)"
+    },
+    {
+        "id": 4,
+        "name": "AMIGO(A)"
+    },
+    {
+        "id": 5,
+        "name": "APODERADO(A)"
+    },
+    {
+        "id": 6,
+        "name": "CANCILLER DE LA DIOCESIS"
+    },
+    {
+        "id": 7,
+        "name": "COLABORADOR(A)"
+    },
+    {
+        "id": 8,
+        "name": "COMPANERO(A)"
+    },
+    {
+        "id": 9,
+        "name": "CONSUEGRO(A)"
+    },
+    {
+        "id": 10,
+        "name": "CONYUGUE"
+    },
+    {
+        "id": 11,
+        "name": "COORDINADOR(A) PASTORAL"
+    },
+    {
+        "id": 12,
+        "name": "CO-POSEEDOR(RA)"
+    },
+    {
+        "id": 13,
+        "name": "CO-PROPIETARIO(A)"
+    },
+    {
+        "id": 14,
+        "name": "CUIDADOR(A)"
+    },
+    {
+        "id": 15,
+        "name": "CUNADO(A)"
+    },
+    {
+        "id": 16,
+        "name": "DELEGADO(A) DE LA PALABRA DIOS"
+    },
+    {
+        "id": 17,
+        "name": "DIRECTOR(A) DE LA CEDE"
+    },
+    {
+        "id": 18,
+        "name": "DOCENTE"
+    },
+    {
+        "id": 19,
+        "name": "DONANTE"
+    },
+    {
+        "id": 20,
+        "name": "EL(ELLA) / MISMO(MISMA)"
+    },
+    {
+        "id": 21,
+        "name": "EMPLEADO(A)"
+    },
+    {
+        "id": 22,
+        "name": "ENCARGADO(A) DE CATASTRO MUNICIPAL"
+    },
+    {
+        "id": 23,
+        "name": "ESPOSO(A)"
+    },
+    {
+        "id": 24,
+        "name": "EX-COMUNERO"
+    },
+    {
+        "id": 25,
+        "name": "EX-POSEEDOR"
+    },
+    {
+        "id": 26,
+        "name": "EX-PROPIETARIO"
+    },
+    {
+        "id": 27,
+        "name": "EX-SUEGRO(A)"
+    },
+    {
+        "id": 28,
+        "name": "EX-USUFUCTUARIO(A)"
+    },
+    {
+        "id": 29,
+        "name": "FAMILIAR"
+    },
+    {
+        "id": 30,
+        "name": "FELIGRECES"
+    },
+    {
+        "id": 31,
+        "name": "FISCAL"
+    },
+    {
+        "id": 32,
+        "name": "GERENTE"
+    },
+    {
+        "id": 33,
+        "name": "HERMANO(A)"
+    },
+    {
+        "id": 34,
+        "name": "HERMANO(A) DE CRIANZA"
+    },
+    {
+        "id": 35,
+        "name": "HIJASTRO(A)"
+    },
+    {
+        "id": 36,
+        "name": "HIJO(A) DE CRIANZA"
+    },
+    {
+        "id": 37,
+        "name": "INQUILINO(A)"
+    },
+    {
+        "id": 38,
+        "name": "MADRASTRA"
+    },
+    {
+        "id": 39,
+        "name": "MADRE"
+    },
+    {
+        "id": 40,
+        "name": "MADRINA"
+    },
+    {
+        "id": 41,
+        "name": "MANDADOR"
+    },
+    {
+        "id": 42,
+        "name": "MIEMBRO DE LA JUNTA DIRECTIVA"
+    },
+    {
+        "id": 43,
+        "name": "MIEMBRO DE LA MISION"
+    },
+    {
+        "id": 44,
+        "name": "NIETO(A)"
+    },
+    {
+        "id": 45,
+        "name": "NINGUNA"
+    },
+    {
+        "id": 46,
+        "name": "NUERA"
+    },
+    {
+        "id": 47,
+        "name": "PADRASTO"
+    },
+    {
+        "id": 48,
+        "name": "PADRE"
+    },
+    {
+        "id": 49,
+        "name": "PADRINO"
+    },
+    {
+        "id": 50,
+        "name": "PASTOR (A)"
+    },
+    {
+        "id": 51,
+        "name": "PRESIDENTE(A) COOPERATIVA"
+    },
+    {
+        "id": 52,
+        "name": "PRESIDENTE(A) JUNTA DIRECTIVA"
+    },
+    {
+        "id": 53,
+        "name": "PRESIDENTE ADMINISTRATIVO"
+    },
+    {
+        "id": 55,
+        "name": "PRESIDENTE DE LA COMUNIDAD INDIGENA"
+    },
+    {
+        "id": 56,
+        "name": "PRIMO(A)"
+    },
+    {
+        "id": 57,
+        "name": "PROCURADOR"
+    },
+    {
+        "id": 58,
+        "name": "REPRESENTANTE LEGAL"
+    },
+    {
+        "id": 59,
+        "name": "RESPONSABLE DE CATASTRO"
+    },
+    {
+        "id": 60,
+        "name": "SECRETARIO(A)"
+    },
+    {
+        "id": 61,
+        "name": "SOBRINO(A)"
+    },
+    {
+        "id": 62,
+        "name": "SOCIO(A)"
+    },
+    {
+        "id": 63,
+        "name": "SUB-DIRECTOR(A)"
+    },
+    {
+        "id": 64,
+        "name": "SUEGRO(A)"
+    },
+    {
+        "id": 65,
+        "name": "TECNICO DE CATASTRO"
+    },
+    {
+        "id": 66,
+        "name": "TESORERO(A)"
+    },
+    {
+        "id": 67,
+        "name": "TIO(A)"
+    },
+    {
+        "id": 68,
+        "name": "TIO(A) POLITICO(A)"
+    },
+    {
+        "id": 69,
+        "name": "TRABAJADOR(A)"
+    },
+    {
+        "id": 70,
+        "name": "USUFRUCTUARIO(A)"
+    },
+    {
+        "id": 71,
+        "name": "VECINO(A)"
+    },
+    {
+        "id": 72,
+        "name": "VICE-GERENTE"
+    },
+    {
+        "id": 73,
+        "name": "VICE-PRESIDENTE"
+    },
+    {
+        "id": 74,
+        "name": "VOCAL"
+    },
+    {
+        "id": 75,
+        "name": "YERNO"
+    }
+]

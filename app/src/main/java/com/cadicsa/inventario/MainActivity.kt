@@ -263,6 +263,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             isZoomControlsEnabled = true
             isCompassEnabled = true
             isMyLocationButtonEnabled = false // Usamos nuestro FAB
+            isMapToolbarEnabled = false       // Desactivar botones de Google Maps (Navegación/Maps)
         }
 
         // Mover a posición inicial
@@ -273,8 +274,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             openFormActivity(latLng.latitude, latLng.longitude)
         }
 
-        // Click en marcador - Removido: ahora se maneja mejor desde el index
-        // Los marcadores son solo visuales para indicar dónde hay datos
+        // Click en marcador: Abrir formulario igual que el click en mapa
+        mMap.setOnMarkerClickListener { marker ->
+            android.util.Log.d("MainActivity", "📍 Marcador tocado en: ${marker.position.latitude}, ${marker.position.longitude}")
+            openFormActivity(marker.position.latitude, marker.position.longitude)
+            true // Indicar que manejamos el evento para que NO se abra el "globo" de info
+        }
 
         // Habilitar ubicación si ya tenemos permisos
         enableMyLocation()
@@ -378,6 +383,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 return
             }
             
+            /*
             // Buscar rutas adyacentes al predio
             val rutasAdyacentes = if (geometry.wkt.isNotEmpty()) {
                 dbHelper.getAdjacentRoutes(geometry.wkt)
@@ -404,6 +410,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     })
                 }
             }.toString()
+            */
 
             // NO crear marcador aquí - solo se crea cuando se guarda el dato
             // El marcador se agregará en loadCapturedPoints() al volver con onResume()
@@ -418,7 +425,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 putExtra(FormActivity.EXTRA_ID_OBJECT, geometry.id)
                 putExtra(FormActivity.EXTRA_ID_LAYER, geometry.idLayer)
                 putExtra(FormActivity.EXTRA_ID_PREDIO, geometry.idPredio)
-                putExtra(FormActivity.EXTRA_RUTAS_ADYACENTES, rutasJson)
+                // putExtra(FormActivity.EXTRA_RUTAS_ADYACENTES, rutasJson)
             }
             startActivity(intent)
             
@@ -496,8 +503,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 val marker = mMap.addMarker(
                     MarkerOptions()
                         .position(position)
-                        .title("$count registro(s)")
-                        .snippet("Click para ver/editar")
                         .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
                         .zIndex(4000f) // Por encima de tiles (3000) y Google Maps (0)
                 )

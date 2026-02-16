@@ -107,6 +107,38 @@
             transition: all 0.2s ease;
         }
 
+        /* Tabla de Coordenadas */
+        .coords-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+        }
+
+        .coords-table th {
+            background: #f1f3f5;
+            text-align: left;
+            padding: 4px 8px;
+            font-size: 10px;
+            color: #616161;
+            border-bottom: 1px solid #e0e0e0;
+            text-transform: uppercase;
+        }
+
+        .coords-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #f8f9fa;
+            color: #1565C0;
+        }
+
+        .coords-table strong {
+            color: #616161;
+            margin-right: 4px;
+        }
+
         .confirm-btn-cancel {
             background: #e9ecef;
             color: #495057;
@@ -255,6 +287,15 @@
             font-style: italic;
             font-size: 0.9em;
         }
+
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .clickable-row:hover {
+            background-color: #e3f2fd;
+        }
     </style>
 </head>
 
@@ -263,14 +304,31 @@
         <!-- Vista Lista -->
         <div v-if="operation === 'List'" class="container">
             <nav class="navbar">
-                <button class="nav-btn" @click="startCreate('Acera')">
+                <button class="nav-btn" @click="startCreate('EncuestaCatastral')">
+                    <img src="images/survey.svg" alt="Encuesta">
+                    <span>ENCUESTA</span>
+                </button>
+                <button class="nav-btn" @click="startCreate('PropietarioNatural')">
+                    <img src="images/person.svg" alt="Propietario">
+                    <span>PROPIETARIO NATURAL</span>
+                </button>
+                <button class="nav-btn" @click="startCreate('PropietarioJuridica')">
+                    <img src="images/building.svg" alt="Propietario">
+                    <span>PROPIETARIO JURÍDICO</span>
+                </button>
+                <button class="nav-btn" @click="startCreate('Entrevistado')">
+                    <img src="images/interview.svg" alt="Entrevistado">
+                    <span>ENTREVISTADO</span>
+                </button>
+
+                <!-- <button class="nav-btn" @click="startCreate('Acera')">
                     <img src="images/sidewalk.svg" alt="Acera">
                     <span>NUEVA ACERA</span>
-                </button>
-                <!--<button class="nav-btn" @click="resetForm('Costo')">
+                </button> -->
+                <!-- <button class="nav-btn" @click="resetForm('Costo')">
                     <img src="images/colon.svg" alt="Costo">
                     <span>COSTO</span>
-                </button>-->
+                </button> -->
             </nav>
 
             <h2>Inventarios</h2>
@@ -281,10 +339,26 @@
             </div>
 
             <div class="info-row">
-                <label>Coordenadas CRTM05:</label>
-                <span class="coords">E: {{ localProj.east.toFixed(2) }} | N: {{ localProj.north.toFixed(2) }}</span>
+                <label>Ubicación Geográfica:</label>
+                <table class="coords-table">
+                    <tr>
+                        <th colspan="2">EPSG:32616 (UTM 16N)</th>
+                    </tr>
+                    <tr>
+                        <td style="width: 50%;"><strong>X:</strong>{{ localProj.x.toFixed(2) }}</td>
+                        <td style="width: 50%;"><strong>Y:</strong>{{ localProj.y.toFixed(2) }}</td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">EPSG:4326 (WGS84)</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Lat:</strong>{{ latLng.lat.toFixed(6) }}</td>
+                        <td><strong>Lng:</strong>{{ latLng.lng.toFixed(6) }}</td>
+                    </tr>
+                </table>
             </div>
 
+            <!--
             <div class="info-row">
                 <label>Rutas Adyacentes:</label>
                 <ul class="rutas-list" v-if="rutasAdyacentes && rutasAdyacentes.length > 0">
@@ -295,30 +369,24 @@
                 </ul>
                 <span v-else class="no-rutas">Ninguna detectada</span>
             </div>
+            -->
 
             <h3>Registros dentro del predio</h3>
-            <table class="data-table" v-if="listData.length > 0">
+            <table class="data-table" v-if="sortedListData.length > 0">
                 <thead>
                     <tr>
-                        <th>ID</th>
-
-                        <th>CAMINO</th>
                         <th>TIPO</th>
+                        <th>INFORMACIÓN</th>
                         <th>ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(item, index) in listData" :key="item.Id" @click="updateData(index)">
-                        <td>{{ item.Id }}</td>
-
-                        <td>{{ item.Data?.CodigoCamino || '-' }}</td>
-                        <td>{{ item.Data?.Type }}</td>
+                    <tr v-for="(item, index) in sortedListData" :key="item.Id" @click="editItem(item)"
+                        class="clickable-row">
+                        <td style="font-weight: bold; color: #1565C0;">{{ getDisplayName(item.Data?.Type) }}</td>
+                        <td>{{ getDisplayInfo(item) }}</td>
                         <td>
-                            <button class="btn-copy-list" @click.stop="startCopy(item)" title="Copiar registro">
-                                📋
-                            </button>
-                            <button class="btn-delete-list" @click.stop="deleteItem(item.Id, index)"
-                                title="Eliminar registro">
+                            <button class="btn-delete-list" @click.stop="deleteItem(item.Id)" title="Eliminar registro">
                                 🗑️
                             </button>
                         </td>
@@ -327,33 +395,7 @@
             </table>
             <p v-else class="empty-message">No hay datos dentro del predio.</p>
 
-            <div style="margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 10px;">
-                <h3>Registros en predios adyacentes</h3>
-                <table class="data-table" v-if="listDataAdyacentes && listDataAdyacentes.length > 0">
-                    <thead>
-                        <tr>
-                            <th>PREDIO/CAMINO</th>
-                            <th>TIPO</th>
-                            <th>ACCIONES</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(item, index) in listDataAdyacentes" :key="'ady-'+item.Id">
-                            <td>
-                                <strong>[{{ item.DireccionRelativa || '-' }}]</strong>
-                                [{{ item.LocalizacionPredio || item.IdObject }}]/[{{ item.Data?.CodigoCamino || '-' }}]
-                            </td>
-                            <td>{{ item.Data?.Type }}</td>
-                            <td>
-                                <button class="btn-copy-list" @click.stop="startCopy(item)" title="Copiar registro">
-                                    📋
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p v-else class="empty-message">No hay datos en predios adyacentes.</p>
-            </div>
+
         </div>
 
         <!-- Vista Edición -->
@@ -367,6 +409,17 @@
             <form-costo v-if="formType === 'Costo'" :data="formData" :localizacion="localizacion" :lat-lng="latLng"
                 :local-proj="localProj" :fotos="fotos" @save="sendData" @cancel="volver"
                 @camera="openCamera"></form-costo>
+
+            <!-- Formularios INETER -->
+            <form-encuesta-catastral v-if="formType === 'EncuestaCatastral'" :data="formData"
+                :localizacion="localizacion" :fotos="fotos" @save="sendData" @cancel="volver"
+                @camera="openCamera"></form-encuesta-catastral>
+            <form-propietario-natural v-if="formType === 'PropietarioNatural'" :data="formData" @save="sendData"
+                @cancel="volver" @camera="openCamera"></form-propietario-natural>
+            <form-propietario-juridica v-if="formType === 'PropietarioJuridica'" :data="formData" @save="sendData"
+                @cancel="volver" @camera="openCamera"></form-propietario-juridica>
+            <form-entrevistado v-if="formType === 'Entrevistado'" :data="formData" @save="sendData" @cancel="volver"
+                @camera="openCamera"></form-entrevistado>
         </div>
     </div>
 
@@ -390,8 +443,13 @@
     <script src="js/app.js"></script>
 
     <!-- Componentes Vue (se registran en la app ya creada) -->
+    <script src="js/components/CatalogoSelector.js"></script>
     <script src="js/components/FormAcera.js"></script>
     <script src="js/components/FormCosto.js"></script>
+    <script src="js/components/FormEncuestaCatastral.js"></script>
+    <script src="js/components/FormPropietarioNatural.js"></script>
+    <script src="js/components/FormPropietarioJuridica.js"></script>
+    <script src="js/components/FormEntrevistado.js"></script>
 
     <!-- Montar la app después de cargar componentes -->
     <script>

@@ -103,13 +103,11 @@ class FormActivity : AppCompatActivity() {
         const val EXTRA_ID_PREDIO = "id_predio"
         const val EXTRA_EXISTING_ID = "existing_id"
         const val EXTRA_EXISTING_DATA = "existing_data"
-        const val EXTRA_RUTAS_ADYACENTES = "rutas_adyacentes"
     }
 
     private var idObject: Int = 0
     private var idLayer: Int = 0
     private var idPredio: Int = 0
-    private var rutasAdyacentes: String = "[]"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,8 +131,6 @@ class FormActivity : AppCompatActivity() {
         idObject = intent.getIntExtra(EXTRA_ID_OBJECT, 0)
         idLayer = intent.getIntExtra(EXTRA_ID_LAYER, 0)
         idPredio = intent.getIntExtra(EXTRA_ID_PREDIO, 0)
-        rutasAdyacentes = intent.getStringExtra(EXTRA_RUTAS_ADYACENTES) ?: "[]"
-        android.util.Log.e("FormActivity", "🛣️ Rutas recibidas del Intent: $rutasAdyacentes")
         
         // Detectar si es edición de registro existente
         val existingId = intent.getIntExtra(EXTRA_EXISTING_ID, -1)
@@ -325,6 +321,7 @@ class FormActivity : AppCompatActivity() {
             }
         }
         
+        /*
         @JavascriptInterface
         fun getDataAdyacentes(): String {
             return try {
@@ -333,11 +330,14 @@ class FormActivity : AppCompatActivity() {
                 "[]"
             }
         }
+        */
         
+        /*
         @JavascriptInterface
         fun getRutasAdyacentes(): String {
             return rutasAdyacentes
         }
+        */
 
         @JavascriptInterface
         fun sendData(id: Int, jsonData: String): Int {
@@ -460,6 +460,20 @@ class FormActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 android.util.Log.e("FormActivity", "❌ Error cargando foto: ${e.message}")
+                ""
+            }
+        }
+
+        @JavascriptInterface
+        fun loadCatalogJson(filename: String): String {
+            return try {
+                val assetPath = "web/data/$filename"
+                android.util.Log.d("FormActivity", "📂 Leyendo catálogo: $assetPath")
+                
+                // Leer archivo desde assets
+                assets.open(assetPath).bufferedReader().use { it.readText() }
+            } catch (e: Exception) {
+                android.util.Log.e("FormActivity", "❌ Error leyendo catálogo $filename: ${e.message}")
                 ""
             }
         }

@@ -22,12 +22,12 @@ const FormAcera = {
                 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label>CRTM05 Este</label>
-                        <input type="number" :value="formData.LocalProj_East" readonly class="input-readonly">
+                        <label>UTM WGS84 X</label>
+                        <input type="number" :value="formData.LocalProj_X" readonly class="input-readonly">
                     </div>
                     <div class="form-group">
-                        <label>CRTM05 Norte</label>
-                        <input type="number" :value="formData.LocalProj_North" readonly class="input-readonly">
+                        <label>UTM WGS84 Y</label>
+                        <input type="number" :value="formData.LocalProj_Y" readonly class="input-readonly">
                     </div>
                 </div>
                 
@@ -383,7 +383,7 @@ const FormAcera = {
         data: { type: Object, required: true },
         localizacion: { type: String, default: '' },
         latLng: { type: Object, default: () => ({ lat: 0, lng: 0 }) },
-        localProj: { type: Object, default: () => ({ east: 0, north: 0 }) },
+        localProj: { type: Object, default: () => ({ x: 0, y: 0 }) },
         fotos: { type: Array, default: () => [] }
     },
 
@@ -393,8 +393,8 @@ const FormAcera = {
         const formData = Vue.reactive({
             ...props.data,
             Localizacion: props.localizacion,
-            LocalProj_East: props.localProj.east,
-            LocalProj_North: props.localProj.north,
+            LocalProj_X: props.localProj.x,
+            LocalProj_Y: props.localProj.y,
             LatLng_Lat: props.latLng.lat,
             LatLng_Lng: props.latLng.lng
         });

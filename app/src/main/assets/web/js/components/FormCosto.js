@@ -20,12 +20,12 @@ const FormCosto = {
                 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label>CRTM05 Este</label>
-                        <input type="number" :value="localProj.east" readonly class="input-readonly">
+                        <label>UTM WGS84 X</label>
+                        <input type="number" :value="localProj.x" readonly class="input-readonly">
                     </div>
                     <div class="form-group">
-                        <label>CRTM05 Norte</label>
-                        <input type="number" :value="localProj.north" readonly class="input-readonly">
+                        <label>UTM WGS84 Y</label>
+                        <input type="number" :value="localProj.y" readonly class="input-readonly">
                     </div>
                 </div>
             </div>
@@ -184,7 +184,7 @@ const FormCosto = {
         data: { type: Object, required: true },
         localizacion: { type: String, default: '' },
         latLng: { type: Object, default: () => ({ lat: 0, lng: 0 }) },
-        localProj: { type: Object, default: () => ({ east: 0, north: 0 }) },
+        localProj: { type: Object, default: () => ({ x: 0, y: 0 }) },
         fotos: { type: Array, default: () => [] }
     },
 

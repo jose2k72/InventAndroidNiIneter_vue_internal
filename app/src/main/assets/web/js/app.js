@@ -3,11 +3,11 @@
  * Aplicación principal con Composition API
  */
 
-// Definir la proyección CRTM05 (igual que app legacy)
+// Definir la proyección UTM Zona 16 Norte (EPSG:32616)
 if (typeof proj4 !== 'undefined' && proj4.defs) {
-    if (!proj4.defs['EPSG:8908']) {
-        proj4.defs("EPSG:8908", "+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs");
-        console.log('✅ Proyección CRTM05 definida');
+    if (!proj4.defs['EPSG:32616']) {
+        proj4.defs("EPSG:32616", "+proj=utm +zone=16 +datum=WGS84 +units=m +no_defs");
+        console.log('✅ Proyección UTM 16N definida');
     }
 } else {
     console.error('❌ proj4 no disponible o no tiene método defs');
@@ -30,8 +30,8 @@ const app = createApp({
         });
 
         const localProj = reactive({
-            east: 0,
-            north: 0
+            x: 0,
+            y: 0
         });
 
         const localizacion = ref('');
@@ -41,8 +41,7 @@ const app = createApp({
 
         // Lista de datos guardados
         const listData = ref([]);
-        // Lista de datos en predios adyacentes
-        const listDataAdyacentes = ref([]);
+
 
         // Datos del formulario actual
         const formData = ref({});
@@ -71,11 +70,11 @@ const app = createApp({
                     latLng.lat = Math.round(Android.getLat() * 1000000) / 1000000;
                     latLng.lng = Math.round(Android.getLng() * 1000000) / 1000000;
 
-                    // Reproyectar a CRTM05
+                    // Reproyectar a UTM 16N
                     if (typeof proj4 !== 'undefined') {
-                        const projected = proj4("EPSG:4326", "EPSG:8908", [latLng.lng, latLng.lat]);
-                        localProj.east = Math.round(projected[0] * 100) / 100;
-                        localProj.north = Math.round(projected[1] * 100) / 100;
+                        const projected = proj4("EPSG:4326", "EPSG:32616", [latLng.lng, latLng.lat]);
+                        localProj.x = Math.round(projected[0] * 100) / 100;
+                        localProj.y = Math.round(projected[1] * 100) / 100;
                     }
 
                     localizacion.value = Android.getLocalizacion();
@@ -87,22 +86,6 @@ const app = createApp({
                     const jsonData = Android.getData();
                     listData.value = JSON.parse(jsonData);
 
-
-                    // Cargar datos adyacentes
-                    if (Android.getDataAdyacentes) {
-                        const jsonAdy = Android.getDataAdyacentes();
-                        if (jsonAdy && jsonAdy !== '[]') {
-                            listDataAdyacentes.value = JSON.parse(jsonAdy);
-                            console.log('🏘️ Datos adyacentes cargados:', listDataAdyacentes.value.length);
-                        }
-                    }
-
-                    // Cargar rutas adyacentes
-                    const rutasJson = Android.getRutasAdyacentes();
-                    if (rutasJson && rutasJson !== '[]') {
-                        rutasAdyacentes.value = JSON.parse(rutasJson);
-                        console.log('🛣️ Rutas adyacentes cargadas:', rutasAdyacentes.value);
-                    }
                 } catch (error) {
                     console.error('Error inicializando datos Android:', error);
                 }
@@ -110,8 +93,8 @@ const app = createApp({
                 // Modo desarrollo (navegador)
                 latLng.lat = 9.9458;
                 latLng.lng = -84.0628;
-                localProj.east = 495000;
-                localProj.north = 1099000;
+                localProj.x = 500000;
+                localProj.y = 1300000;
                 localizacion.value = 'Desarrollo - Sin conexión Android';
                 encuestador.value = 'Developer';
                 fechaActual.value = new Date().toLocaleDateString('es-CR');
@@ -279,6 +262,73 @@ const app = createApp({
             CodigoCamino: null
         });
 
+        const createEncuestaCatastralModel = () => ({
+            Type: 'EncuestaCatastral',
+            Departamento: '', CodigoDepartamento: '',
+            Municipio: '', CodigoMunicipio: '',
+            Sector: '', NombreFinca: '',
+            ParcelaCatastrada: '', ParcelaSegregada: '',
+            TipoEncuesta: null, Comarca: '', Barrio: '', Manzana: '', NumeroLote: '',
+            TipoUso: null, Descripcion: '', AreaEstimada: null, UnidadMedidaAreaEstimada: null,
+            // Servidumbre Agua
+            ServidumbreAgua: false, ServidumbreAguaEscritura: false, ServidumbreAguaJudicial: false, ServidumbreAguaAcuerdo: false, ServidumbreAguaOtro: false,
+            // Servidumbre Pase
+            ServidumbrePase: false, ServidumbrePaseEscritura: false, ServidumbrePaseJudicial: false, ServidumbrePaseAcuerdo: false, ServidumbrePaseOtro: false,
+            // Servidumbre Otro
+            ServidumbreOtro: false, ServidumbreOtroEscritura: false, ServidumbreOtroJudicial: false, ServidumbreOtroAcuerdo: false, ServidumbreOtroOtro: false,
+            DerechoParcela: null, NoPersonasSimilarDerecho: 0, PresentaDocumentos: false,
+            DocumentoCatalog: 0, AutorNotario: '', FechaDocumento: null,
+            AreaTitulada: null, UnidadMedidaAreaTitulada: null,
+            EsAFavorDe: false, AFavorDe: '', RelacionConPoseedor: 0,
+            TieneDatosRegistrales: false, FechaAdquisicion: null, FechaRegistro: null,
+            NoFinca: '', Tomo: '', Folio: '', Asiento: ''
+        });
+
+        const createPropietarioNaturalModel = () => ({
+            Type: 'PropietarioNatural',
+            // Person fields
+            FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
+            Gender: null, // null para forzar selección
+            Age: null, // null para forzar entrada
+            CivilState: null, // null para forzar selección
+            ProfessionCatalog: 0,
+            ResidenceDireccion: '',
+            ResidenceDepartamento: '',
+            ResidenceComarca: '',
+            ResidenceBarrio: ''
+        });
+
+        const createPropietarioJuridicaModel = () => ({
+            Type: 'PropietarioJuridica',
+            RazonSocial: '',
+            RegistradaEn: '',
+            FechaRegistro: null,
+            TipoPersonaJuridica: null, // null para forzar selección
+            NroSocios: 0,
+            NroSocias: 0,
+            Colectivo: '',
+            Denominacion: '',
+            NroMiembros: 0
+        });
+
+        const createEntrevistadoModel = () => ({
+            Type: 'Entrevistado',
+            // Person fields
+            FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
+            Gender: null, // null para forzar selección
+            Age: null, // null para forzar entrada
+            CivilState: null, // null para forzar selección
+            ProfessionCatalog: 0,
+            ResidenceDireccion: '',
+            ResidenceDepartamento: '',
+            ResidenceComarca: '',
+            ResidenceBarrio: '',
+
+            // Entrevistado fields
+            RelacionConParcela: null, // null para forzar selección
+            RelacionInformantePropietarioCatalog: 0
+        });
+
         // Crear líneas de pago
         const createPayLines = (items) => {
             return items.map((item, index) => ({
@@ -315,10 +365,26 @@ const app = createApp({
                     formData.value = createAceraModel();
                 } else if (type === 'Costo') {
                     formData.value = createCostoModel();
+                } else if (type === 'EncuestaCatastral') {
+                    formData.value = createEncuestaCatastralModel();
+                } else if (type === 'PropietarioNatural') {
+                    formData.value = createPropietarioNaturalModel();
+                } else if (type === 'PropietarioJuridica') {
+                    formData.value = createPropietarioJuridicaModel();
+                } else if (type === 'Entrevistado') {
+                    formData.value = createEntrevistadoModel();
                 }
             }
 
             operation.value = 'Edit';
+        };
+
+        // Editar item desde la lista (busca el índice real)
+        const editItem = (item) => {
+            const index = listData.value.findIndex(i => i.Id === item.Id);
+            if (index !== -1) {
+                updateData(index);
+            }
         };
 
         // Cargar datos existentes para edición
@@ -448,7 +514,47 @@ const app = createApp({
         };
 
         // Eliminar registro con modal visual
-        const deleteItem = (id, index) => {
+        const deleteItem = (id) => {
+            const itemToDelete = listData.value.find(item => item.Id === id);
+            if (!itemToDelete) return;
+
+            const type = itemToDelete.Data?.Type;
+            const hasEncuesta = listData.value.some(item => item.Data?.Type === 'EncuestaCatastral');
+
+            // 1. Validar si se puede borrar
+            if (hasEncuesta) {
+                if (type === 'Entrevistado') {
+                    showConfirmModal({
+                        icon: '⚠️',
+                        title: 'Acción impedida',
+                        message: 'No puede eliminar al Entrevistado porque existe una Encuesta Catastral vinculada. Debe eliminar la Encuesta primero.',
+                        confirmText: 'Entendido',
+                        cancelText: '',
+                        onConfirm: () => { }
+                    });
+                    return;
+                }
+
+                if (type === 'PropietarioNatural' || type === 'PropietarioJuridica') {
+                    const propietarios = listData.value.filter(item =>
+                        item.Data?.Type === 'PropietarioNatural' || item.Data?.Type === 'PropietarioJuridica'
+                    );
+
+                    if (propietarios.length <= 1) {
+                        showConfirmModal({
+                            icon: '⚠️',
+                            title: 'Acción impedida',
+                            message: 'No puede eliminar al único Propietario porque existe una Encuesta Catastral vinculada. Debe eliminar la Encuesta primero.',
+                            confirmText: 'Entendido',
+                            cancelText: '',
+                            onConfirm: () => { }
+                        });
+                        return;
+                    }
+                }
+            }
+
+            // 2. Proceder con la confirmación de borrado
             showConfirmModal({
                 icon: '🗑️',
                 title: '¿Eliminar registro?',
@@ -456,12 +562,21 @@ const app = createApp({
                 confirmText: 'Sí, eliminar',
                 cancelText: 'Cancelar',
                 onConfirm: () => {
+                    // 1. Llamar a Android primero
                     if (typeof Android !== 'undefined') {
                         Android.deleteData(id);
-                        listData.value.splice(index, 1);
                     } else {
                         console.log('Borrado simulado (modo desarrollo) ID:', id);
-                        listData.value.splice(index, 1);
+                    }
+
+                    // 2. Buscar el índice REAL en listData usando el ID
+                    const realIndex = listData.value.findIndex(item => item.Id === id);
+
+                    if (realIndex !== -1) {
+                        console.log(`🗑️ Eliminando de Vue: ID ${id} en índice real ${realIndex}`);
+                        listData.value.splice(realIndex, 1);
+                    } else {
+                        console.warn(`⚠️ No se encontró el ID ${id} en listData para actualizar la UI`);
                     }
                 }
             });
@@ -516,55 +631,149 @@ const app = createApp({
             });
         };
 
-        // Iniciar creación de registro con validación de rutas
+        // Iniciar creación de registro (Validando exclusividad de propietarios)
         const startCreate = (type) => {
             console.log('🏁 Iniciando creación:', type);
 
-            // Si el mouse no viene de startCopy, limpiar cualquier copia pendiente
-            if (!pendingCopyData.value) {
-                pendingCopyData.value = null;
-            }
+            // 1. Validaciones de Exclusividad de Propietarios
+            const hasNatural = listData.value.some(item => item.Data?.Type === 'PropietarioNatural');
+            const hasJuridico = listData.value.some(item => item.Data?.Type === 'PropietarioJuridica');
 
-            // Verificar rutas adyacentes
-            if (!rutasAdyacentes.value || rutasAdyacentes.value.length === 0) {
+            if (type === 'PropietarioNatural' && hasJuridico) {
                 showConfirmModal({
-                    icon: '⚠️',
-                    title: 'No hay rutas cercanas',
-                    message: 'No se detectaron rutas adyacentes a este predio. No es posible asociar el registro a un camino.',
-                    confirmText: 'Aceptar',
-                    cancelText: 'Cancelar', // Hack: showConfirmModal espera 2 botones, si cancelText es vacío podría romper estilo
-                    onConfirm: () => {
-                        // Opcional: Permitir continuar sin ruta si el usuario insiste (descomentar para habilitar)
-                        // resetForm(type);
-                        // operation.value = 'Create';
-                    }
+                    icon: '🚫',
+                    title: 'Acción no permitida',
+                    message: 'Ya existe un Propietario Jurídico registrado. No se pueden mezclar tipos de propietarios en el mismo predio.',
+                    confirmText: 'Entendido',
+                    cancelText: '',
+                    onConfirm: () => { }
                 });
                 return;
             }
 
-            const procederCreacion = (codigoCamino) => {
-                resetForm(type);
-                if (formData.value) {
-                    formData.value.CodigoCamino = codigoCamino;
-                    console.log('✅ Asignado CodigoCamino:', codigoCamino);
+            if (type === 'PropietarioJuridica') {
+                if (hasJuridico) {
+                    showConfirmModal({
+                        icon: '🚫',
+                        title: 'Límite alcanzado',
+                        message: 'Solo se puede registrar un (1) Propietario Jurídico por predio.',
+                        confirmText: 'Entendido',
+                        cancelText: '',
+                        onConfirm: () => { }
+                    });
+                    return;
                 }
-                operation.value = 'Create';
+                if (hasNatural) {
+                    showConfirmModal({
+                        icon: '🚫',
+                        title: 'Acción no permitida',
+                        message: 'Existen Propietarios Naturales registrados. No se puede agregar un propietario jurídico a este predio.',
+                        confirmText: 'Entendido',
+                        cancelText: '',
+                        onConfirm: () => { }
+                    });
+                    return;
+                }
+            }
+
+            // 2. Validación de Entrevistado Único
+            const hasEntrevistado = listData.value.some(item => item.Data?.Type === 'Entrevistado');
+            if (type === 'Entrevistado' && hasEntrevistado) {
+                showConfirmModal({
+                    icon: '🚫',
+                    title: 'Límite alcanzado',
+                    message: 'Solo se puede registrar un (1) Entrevistado por predio.',
+                    confirmText: 'Entendido',
+                    cancelText: '',
+                    onConfirm: () => { }
+                });
+                return;
+            }
+
+            // 3. Validación de Encuesta Catastral
+            if (type === 'EncuestaCatastral') {
+                const hasEncuesta = listData.value.some(item => item.Data?.Type === 'EncuestaCatastral');
+                if (hasEncuesta) {
+                    showConfirmModal({
+                        icon: '🚫',
+                        title: 'Límite alcanzado',
+                        message: 'Solo se puede registrar una (1) Encuesta Catastral por predio.',
+                        confirmText: 'Entendido',
+                        cancelText: '',
+                        onConfirm: () => { }
+                    });
+                    return;
+                }
+
+                if ((!hasNatural && !hasJuridico) || !hasEntrevistado) {
+                    showConfirmModal({
+                        icon: '⚠️',
+                        title: 'Faltan datos',
+                        message: 'Debe registrar primero un Propietario (Natural o Jurídico) y un Entrevistado antes de realizar la encuesta.',
+                        confirmText: 'Entendido',
+                        cancelText: '',
+                        onConfirm: () => { }
+                    });
+                    return;
+                }
+            }
+
+            // 4. Lógica de Copia (si aplica)
+            if (!pendingCopyData.value) {
+                pendingCopyData.value = null;
+            }
+
+            // 5. Proceder con el reset y cambio de vista
+            resetForm(type);
+            operation.value = 'Create';
+        };
+
+        // Ordenar y formatear lista para la tabla
+        const sortedListData = Vue.computed(() => {
+            const orderWeights = {
+                'EncuestaCatastral': 1,
+                'PropietarioNatural': 2,
+                'PropietarioJuridica': 2,
+                'Entrevistado': 3
             };
 
-            if (rutasAdyacentes.value.length === 1) {
-                // Caso 1 ruta: Selección automática
-                const ruta = rutasAdyacentes.value[0];
-                procederCreacion(ruta.localizacion);
+            return [...listData.value].sort((a, b) => {
+                const weightA = orderWeights[a.Data?.Type] || 99;
+                const weightB = orderWeights[b.Data?.Type] || 99;
+                return weightA - weightB;
+            });
+        });
 
-                // Mostrar toast/notificación discreta
-                console.log('✅ Ruta única detectada, asignada automáticamente:', ruta.localizacion);
+        const getDisplayName = (type) => {
+            const names = {
+                'EncuestaCatastral': 'ENCUESTA',
+                'PropietarioNatural': 'PROP. NAT.',
+                'PropietarioJuridica': 'PROP. JUR.',
+                'Entrevistado': 'ENTREVIST.'
+            };
+            return names[type] || type;
+        };
 
-            } else {
-                // Caso >1 rutas: Modal de selección
-                window.openRouteModal(rutasAdyacentes.value, (rutaSeleccionada) => {
-                    procederCreacion(rutaSeleccionada.localizacion);
-                });
+        const getDisplayInfo = (item) => {
+            const data = item.Data;
+            if (!data) return '-';
+
+            if (data.Type === 'EncuestaCatastral') {
+                return localizacion.value || '-';
             }
+
+            if (data.Type === 'PropietarioJuridica') {
+                return data.RazonSocial || '-';
+            }
+
+            if (data.Type === 'PropietarioNatural' || data.Type === 'Entrevistado') {
+                const first = data.FirstName || '';
+                const second = data.SecondName ? data.SecondName.charAt(0).toUpperCase() + '.' : '';
+                const last = data.FirstSurName || '';
+                return `${first} ${second} ${last}`.trim();
+            }
+
+            return data.CodigoCamino || '-';
         };
 
         return {
@@ -576,7 +785,9 @@ const app = createApp({
             localizacion,
             rutasAdyacentes,
             listData,
-            listDataAdyacentes,
+            sortedListData,
+            getDisplayName,
+            getDisplayInfo,
             formData,
             fotos,
             encuestador,
@@ -587,6 +798,7 @@ const app = createApp({
             sendData,
             deleteItem,
             updateData,
+            editItem,
             openCamera,
             resetForm,
             startCreate,
@@ -594,6 +806,9 @@ const app = createApp({
         };
     }
 });
+
+// Hacer app accesible globalmente para los componentes
+window.app = app;
 
 // NOTA: La app se monta desde index.html después de cargar todos los componentes
 // NO montar aquí para evitar que se monte antes de registrar los componentes
@@ -627,15 +842,13 @@ window.addPhoto = function (filename, base64Data) {
         const nombres = vueAppContext.fotos.value.map(f => f.name).join(',');
         vueAppContext.formData.value.Imagenes = nombres;
 
-        console.log('✅ Foto agregada (nueva):', filename);
+        console.log('✅ Foto agregado (nueva):', filename);
         console.log('✅ Total fotos visibles:', vueAppContext.fotos.value.length);
         console.log('✅ Total fotos nuevas:', vueAppContext.fotosNuevas.value.length);
     } catch (error) {
         console.error('❌ Error agregando foto:', error);
     }
 };
-
-
 
 // Función global para eliminar foto (lógica transaccional)
 window.deletePhoto = function (filename) {
@@ -810,6 +1023,9 @@ function showConfirmModal(options) {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-modal-overlay';
 
+    // Conditionally create cancel button
+    const cancelButtonBg = cancelText ? `<button class="confirm-btn confirm-btn-cancel" id="modal-cancel">${cancelText}</button>` : '';
+
     // Crear modal
     overlay.innerHTML = `
         <div class="confirm-modal">
@@ -817,7 +1033,7 @@ function showConfirmModal(options) {
             <div class="confirm-modal-title">${title}</div>
             <div class="confirm-modal-message">${message}</div>
             <div class="confirm-modal-buttons">
-                <button class="confirm-btn confirm-btn-cancel" id="modal-cancel">${cancelText}</button>
+                ${cancelButtonBg}
                 <button class="confirm-btn confirm-btn-danger" id="modal-confirm">${confirmText}</button>
             </div>
         </div>
@@ -831,10 +1047,12 @@ function showConfirmModal(options) {
         setTimeout(() => overlay.remove(), 150);
     };
 
-    overlay.querySelector('#modal-cancel').addEventListener('click', () => {
-        closeModal();
-        onCancel();
-    });
+    if (cancelText) {
+        overlay.querySelector('#modal-cancel').addEventListener('click', () => {
+            closeModal();
+            onCancel();
+        });
+    }
 
     overlay.querySelector('#modal-confirm').addEventListener('click', () => {
         closeModal();
