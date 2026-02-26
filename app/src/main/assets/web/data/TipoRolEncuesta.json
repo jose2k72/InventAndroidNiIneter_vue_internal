@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "nombre": "Encuestador"
+  },
+  {
+    "id": "2",
+    "nombre": "Supervisor"
+  },
+  {
+    "id": "3",
+    "nombre": "Tecnico Catastral"
+  },
+  {
+    "id": "4",
+    "nombre": "Control Calidad Legal"
+  }
+]

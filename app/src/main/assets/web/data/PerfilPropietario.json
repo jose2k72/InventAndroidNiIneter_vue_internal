@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1",
+    "nombre": "Desmovilizado"
+  },
+  {
+    "id": "2",
+    "nombre": "Retirado"
+  },
+  {
+    "id": "3",
+    "nombre": "Campesino Tradicional"
+  },
+  {
+    "id": "4",
+    "nombre": "Agricultor"
+  },
+  {
+    "id": "5",
+    "nombre": "Ganadero"
+  },
+  {
+    "id": "6",
+    "nombre": "Agropecuario"
+  },
+  {
+    "id": "7",
+    "nombre": "Otro"
+  }
+]

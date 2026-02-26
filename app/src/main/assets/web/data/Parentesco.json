@@ -1,0 +1,134 @@
+[
+  {
+    "id": "1",
+    "nombre": "Padre o Madre"
+  },
+  {
+    "id": "2",
+    "nombre": "Hermano"
+  },
+  {
+    "id": "3",
+    "nombre": "Tio Primer Grado"
+  },
+  {
+    "id": "4",
+    "nombre": "Tio Segundo Grado"
+  },
+  {
+    "id": "5",
+    "nombre": "Abuelo"
+  },
+  {
+    "id": "6",
+    "nombre": "Bisabuelo"
+  },
+  {
+    "id": "7",
+    "nombre": "Propietario"
+  },
+  {
+    "id": "8",
+    "nombre": "Padre"
+  },
+  {
+    "id": "9",
+    "nombre": "Madre"
+  },
+  {
+    "id": "10",
+    "nombre": "Hijo"
+  },
+  {
+    "id": "11",
+    "nombre": "Hija"
+  },
+  {
+    "id": "12",
+    "nombre": "Padrasto"
+  },
+  {
+    "id": "13",
+    "nombre": "Tia en Primer Grado"
+  },
+  {
+    "id": "14",
+    "nombre": "Tia en Segundo Grado"
+  },
+  {
+    "id": "15",
+    "nombre": "Cuñado(a)"
+  },
+  {
+    "id": "16",
+    "nombre": "Tio"
+  },
+  {
+    "id": "17",
+    "nombre": "Tia"
+  },
+  {
+    "id": "18",
+    "nombre": "Esposo"
+  },
+  {
+    "id": "19",
+    "nombre": "Esposa"
+  },
+  {
+    "id": "20",
+    "nombre": "Compañero"
+  },
+  {
+    "id": "21",
+    "nombre": "Compañera"
+  },
+  {
+    "id": "22",
+    "nombre": "Hermana"
+  },
+  {
+    "id": "23",
+    "nombre": "Nieto"
+  },
+  {
+    "id": "24",
+    "nombre": "Nieta"
+  },
+  {
+    "id": "25",
+    "nombre": "Abuela"
+  },
+  {
+    "id": "26",
+    "nombre": "Hijastra"
+  },
+  {
+    "id": "27",
+    "nombre": "Hijastro"
+  },
+  {
+    "id": "28",
+    "nombre": "Cónyuge"
+  },
+  {
+    "id": "29",
+    "nombre": "Sobrino(a)"
+  },
+  {
+    "id": "30",
+    "nombre": "Yerno"
+  },
+  {
+    "id": "31",
+    "nombre": "Nuera"
+  },
+  {
+    "id": "32",
+    "nombre": "Bisnieto"
+  },
+  {
+    "id": "33",
+    "nombre": "Bisnieta"
+  }
+]

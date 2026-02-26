@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "nombre": "Cédula de identidad",
+    "codigo": "CI"
+  },
+  {
+    "id": "2",
+    "nombre": "Cédula de Residencia",
+    "codigo": "CR"
+  },
+  {
+    "id": "3",
+    "nombre": "Pasaporte",
+    "codigo": "PP"
+  },
+  {
+    "id": "4",
+    "nombre": "Numero RUC",
+    "codigo": "RUC"
+  },
+  {
+    "id": "5",
+    "nombre": "Carnet de Notario",
+    "codigo": "CN"
+  },
+  {
+    "id": "6",
+    "nombre": "Otro",
+    "codigo": "OT"
+  }
+]

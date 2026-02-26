@@ -1,0 +1,716 @@
+[
+  {
+    "CodDepto": "05",
+    "Departamento": "Nueva Segovia",
+    "Municipios": [
+      {
+        "CodMuni": "0505",
+        "Municipio": "Jalapa"
+      },
+      {
+        "CodMuni": "0510",
+        "Municipio": "Murra"
+      },
+      {
+        "CodMuni": "0515",
+        "Municipio": "El Jícaro"
+      },
+      {
+        "CodMuni": "0520",
+        "Municipio": "San Fernando"
+      },
+      {
+        "CodMuni": "0525",
+        "Municipio": "Mozonte"
+      },
+      {
+        "CodMuni": "0530",
+        "Municipio": "Dipilto"
+      },
+      {
+        "CodMuni": "0535",
+        "Municipio": "Macuelizo"
+      },
+      {
+        "CodMuni": "0540",
+        "Municipio": "Santa María"
+      },
+      {
+        "CodMuni": "0545",
+        "Municipio": "Ocotal"
+      },
+      {
+        "CodMuni": "0550",
+        "Municipio": "Ciudad Antigua"
+      },
+      {
+        "CodMuni": "0555",
+        "Municipio": "Quilalí"
+      },
+      {
+        "CodMuni": "0560",
+        "Municipio": "Wiwili de"
+      }
+    ]
+  },
+  {
+    "CodDepto": "10",
+    "Departamento": "Jinotega",
+    "Municipios": [
+      {
+        "CodMuni": "1005",
+        "Municipio": "Wiwilí"
+      },
+      {
+        "CodMuni": "1010",
+        "Municipio": "Cuá-Bocay"
+      },
+      {
+        "CodMuni": "1012",
+        "Municipio": "San José de Bocay"
+      },
+      {
+        "CodMuni": "1015",
+        "Municipio": "Sta. María de Pantasma"
+      },
+      {
+        "CodMuni": "1020",
+        "Municipio": "San Rafael del Norte"
+      },
+      {
+        "CodMuni": "1025",
+        "Municipio": "San Sebastián de Yalí"
+      },
+      {
+        "CodMuni": "1030",
+        "Municipio": "La Concordia"
+      },
+      {
+        "CodMuni": "1035",
+        "Municipio": "Jinotega"
+      }
+    ]
+  },
+  {
+    "CodDepto": "20",
+    "Departamento": "Madriz",
+    "Municipios": [
+      {
+        "CodMuni": "2005",
+        "Municipio": "Somoto"
+      },
+      {
+        "CodMuni": "2010",
+        "Municipio": "Totogalpa"
+      },
+      {
+        "CodMuni": "2015",
+        "Municipio": "Telpaneca"
+      },
+      {
+        "CodMuni": "2020",
+        "Municipio": "San Juan de Río Coco"
+      },
+      {
+        "CodMuni": "2025",
+        "Municipio": "Palacagüina"
+      },
+      {
+        "CodMuni": "2030",
+        "Municipio": "Yalagüina"
+      },
+      {
+        "CodMuni": "2035",
+        "Municipio": "San Lucas"
+      },
+      {
+        "CodMuni": "2040",
+        "Municipio": "Las Sabanas"
+      },
+      {
+        "CodMuni": "2045",
+        "Municipio": "San José de Cusmapa"
+      }
+    ]
+  },
+  {
+    "CodDepto": "25",
+    "Departamento": "Estelí",
+    "Municipios": [
+      {
+        "CodMuni": "2505",
+        "Municipio": "Pueblo Nuevo"
+      },
+      {
+        "CodMuni": "2510",
+        "Municipio": "Condega"
+      },
+      {
+        "CodMuni": "2515",
+        "Municipio": "Estelí"
+      },
+      {
+        "CodMuni": "2520",
+        "Municipio": "San Juan de Limay"
+      },
+      {
+        "CodMuni": "2525",
+        "Municipio": "La Trinidad"
+      },
+      {
+        "CodMuni": "2530",
+        "Municipio": "San Nicolás"
+      }
+    ]
+  },
+  {
+    "CodDepto": "30",
+    "Departamento": "Chinandega",
+    "Municipios": [
+      {
+        "CodMuni": "3005",
+        "Municipio": "San Pedro del Norte"
+      },
+      {
+        "CodMuni": "3010",
+        "Municipio": "San Francisco del Norte"
+      },
+      {
+        "CodMuni": "3015",
+        "Municipio": "Cinco Pinos"
+      },
+      {
+        "CodMuni": "3020",
+        "Municipio": "Santo Tomás del Norte"
+      },
+      {
+        "CodMuni": "3025",
+        "Municipio": "El Viejo"
+      },
+      {
+        "CodMuni": "3030",
+        "Municipio": "Pto. Morazán"
+      },
+      {
+        "CodMuni": "3035",
+        "Municipio": "Somotillo"
+      },
+      {
+        "CodMuni": "3040",
+        "Municipio": "Villanueva"
+      },
+      {
+        "CodMuni": "3045",
+        "Municipio": "Chinandega"
+      },
+      {
+        "CodMuni": "3050",
+        "Municipio": "El Realejo"
+      },
+      {
+        "CodMuni": "3055",
+        "Municipio": "Corinto"
+      },
+      {
+        "CodMuni": "3060",
+        "Municipio": "Chichigalpa"
+      },
+      {
+        "CodMuni": "3065",
+        "Municipio": "Posoltega"
+      }
+    ]
+  },
+  {
+    "CodDepto": "35",
+    "Departamento": "León",
+    "Municipios": [
+      {
+        "CodMuni": "3505",
+        "Municipio": "Achuapa"
+      },
+      {
+        "CodMuni": "3510",
+        "Municipio": "El Sauce"
+      },
+      {
+        "CodMuni": "3515",
+        "Municipio": "Santa Rosa del Peñón"
+      },
+      {
+        "CodMuni": "3520",
+        "Municipio": "El Jicaral"
+      },
+      {
+        "CodMuni": "3525",
+        "Municipio": "Larreynaga"
+      },
+      {
+        "CodMuni": "3530",
+        "Municipio": "Telica"
+      },
+      {
+        "CodMuni": "3535",
+        "Municipio": "Quezalguaque"
+      },
+      {
+        "CodMuni": "3540",
+        "Municipio": "León"
+      },
+      {
+        "CodMuni": "3545",
+        "Municipio": "La Paz Centro"
+      },
+      {
+        "CodMuni": "3550",
+        "Municipio": "Nagarote"
+      }
+    ]
+  },
+  {
+    "CodDepto": "40",
+    "Departamento": "Matagalpa",
+    "Municipios": [
+      {
+        "CodMuni": "4005",
+        "Municipio": "Rancho Grande"
+      },
+      {
+        "CodMuni": "4010",
+        "Municipio": "Río Blanco"
+      },
+      {
+        "CodMuni": "4015",
+        "Municipio": "El Tuma - La Dalia"
+      },
+      {
+        "CodMuni": "4020",
+        "Municipio": "San Isidro"
+      },
+      {
+        "CodMuni": "4025",
+        "Municipio": "Sébaco"
+      },
+      {
+        "CodMuni": "4030",
+        "Municipio": "Matagalpa"
+      },
+      {
+        "CodMuni": "4035",
+        "Municipio": "San Ramón"
+      },
+      {
+        "CodMuni": "4040",
+        "Municipio": "Matiguás"
+      },
+      {
+        "CodMuni": "4045",
+        "Municipio": "Muy Muy"
+      },
+      {
+        "CodMuni": "4050",
+        "Municipio": "Esquipulas"
+      },
+      {
+        "CodMuni": "4055",
+        "Municipio": "San Dionisio"
+      },
+      {
+        "CodMuni": "4060",
+        "Municipio": "Terrabona"
+      },
+      {
+        "CodMuni": "4065",
+        "Municipio": "Ciudad Darío"
+      }
+    ]
+  },
+  {
+    "CodDepto": "50",
+    "Departamento": "Boaco",
+    "Municipios": [
+      {
+        "CodMuni": "5005",
+        "Municipio": "San José de los Remates"
+      },
+      {
+        "CodMuni": "5010",
+        "Municipio": "Boaco"
+      },
+      {
+        "CodMuni": "5015",
+        "Municipio": "Camoapa"
+      },
+      {
+        "CodMuni": "5020",
+        "Municipio": "Santa Lucía"
+      },
+      {
+        "CodMuni": "5025",
+        "Municipio": "Teustepe"
+      },
+      {
+        "CodMuni": "5030",
+        "Municipio": "San Lorenzo"
+      }
+    ]
+  },
+  {
+    "CodDepto": "55",
+    "Departamento": "Managua",
+    "Municipios": [
+      {
+        "CodMuni": "5505",
+        "Municipio": "San Francisco Libre"
+      },
+      {
+        "CodMuni": "5510",
+        "Municipio": "Tipitapa"
+      },
+      {
+        "CodMuni": "5515",
+        "Municipio": "Mateare"
+      },
+      {
+        "CodMuni": "5520",
+        "Municipio": "Villa Carlos Fonseca"
+      },
+      {
+        "CodMuni": "5522",
+        "Municipio": "Francisco Javier (C.Sandino)"
+      },
+      {
+        "CodMuni": "5525",
+        "Municipio": "Managua"
+      },
+      {
+        "CodMuni": "5530",
+        "Municipio": "Ticuantepe"
+      },
+      {
+        "CodMuni": "5532",
+        "Municipio": "El Crucero"
+      },
+      {
+        "CodMuni": "5535",
+        "Municipio": "San Rafael del Sur"
+      }
+    ]
+  },
+  {
+    "CodDepto": "60",
+    "Departamento": "Masaya",
+    "Municipios": [
+      {
+        "CodMuni": "6005",
+        "Municipio": "Nindirí"
+      },
+      {
+        "CodMuni": "6010",
+        "Municipio": "Masaya"
+      },
+      {
+        "CodMuni": "6015",
+        "Municipio": "Tisma"
+      },
+      {
+        "CodMuni": "6020",
+        "Municipio": "La Concepción"
+      },
+      {
+        "CodMuni": "6025",
+        "Municipio": "Masatepe"
+      },
+      {
+        "CodMuni": "6030",
+        "Municipio": "Nandasmo"
+      },
+      {
+        "CodMuni": "6035",
+        "Municipio": "Catarina"
+      },
+      {
+        "CodMuni": "6040",
+        "Municipio": "San Juan de Oriente"
+      },
+      {
+        "CodMuni": "6045",
+        "Municipio": "Niquinohomo"
+      }
+    ]
+  },
+  {
+    "CodDepto": "65",
+    "Departamento": "Chontales",
+    "Municipios": [
+      {
+        "CodMuni": "6505",
+        "Municipio": "Comalapa"
+      },
+      {
+        "CodMuni": "6507",
+        "Municipio": "San Francisco Cuapa"
+      },
+      {
+        "CodMuni": "6510",
+        "Municipio": "Juigalpa"
+      },
+      {
+        "CodMuni": "6515",
+        "Municipio": "La Libertad"
+      },
+      {
+        "CodMuni": "6520",
+        "Municipio": "Santo Domingo"
+      },
+      {
+        "CodMuni": "6525",
+        "Municipio": "Santo Tomás"
+      },
+      {
+        "CodMuni": "6530",
+        "Municipio": "San Pedro de Lóvago"
+      },
+      {
+        "CodMuni": "6535",
+        "Municipio": "Acoyapa"
+      },
+      {
+        "CodMuni": "6540",
+        "Municipio": "Villa Sandino"
+      },
+      {
+        "CodMuni": "6545",
+        "Municipio": "El Coral"
+      }
+    ]
+  },
+  {
+    "CodDepto": "70",
+    "Departamento": "Granada",
+    "Municipios": [
+      {
+        "CodMuni": "7005",
+        "Municipio": "Diriá"
+      },
+      {
+        "CodMuni": "7010",
+        "Municipio": "Diriomo"
+      },
+      {
+        "CodMuni": "7015",
+        "Municipio": "Granada"
+      },
+      {
+        "CodMuni": "7020",
+        "Municipio": "Nandaime"
+      }
+    ]
+  },
+  {
+    "CodDepto": "75",
+    "Departamento": "Carazo",
+    "Municipios": [
+      {
+        "CodMuni": "7505",
+        "Municipio": "San Marcos"
+      },
+      {
+        "CodMuni": "7510",
+        "Municipio": "Jinotepe"
+      },
+      {
+        "CodMuni": "7515",
+        "Municipio": "Dolores"
+      },
+      {
+        "CodMuni": "7520",
+        "Municipio": "Diriamba"
+      },
+      {
+        "CodMuni": "7525",
+        "Municipio": "El Rosario"
+      },
+      {
+        "CodMuni": "7530",
+        "Municipio": "La Paz de"
+      },
+      {
+        "CodMuni": "7535",
+        "Municipio": "Santa Teresa"
+      },
+      {
+        "CodMuni": "7540",
+        "Municipio": "La Conquista"
+      }
+    ]
+  },
+  {
+    "CodDepto": "80",
+    "Departamento": "Rivas",
+    "Municipios": [
+      {
+        "CodMuni": "8005",
+        "Municipio": "Tola"
+      },
+      {
+        "CodMuni": "8010",
+        "Municipio": "Belén"
+      },
+      {
+        "CodMuni": "8015",
+        "Municipio": "Potosí"
+      },
+      {
+        "CodMuni": "8020",
+        "Municipio": "Buenos Aires"
+      },
+      {
+        "CodMuni": "8025",
+        "Municipio": "Moyogalpa"
+      },
+      {
+        "CodMuni": "8030",
+        "Municipio": "Altagracia"
+      },
+      {
+        "CodMuni": "8035",
+        "Municipio": "San Jorge"
+      },
+      {
+        "CodMuni": "8040",
+        "Municipio": "Rivas"
+      },
+      {
+        "CodMuni": "8045",
+        "Municipio": "San Juan del Sur"
+      },
+      {
+        "CodMuni": "8050",
+        "Municipio": "Cárdenas"
+      }
+    ]
+  },
+  {
+    "CodDepto": "85",
+    "Departamento": "Río San Juan",
+    "Municipios": [
+      {
+        "CodMuni": "8505",
+        "Municipio": "Morrito"
+      },
+      {
+        "CodMuni": "8510",
+        "Municipio": "El Almendro"
+      },
+      {
+        "CodMuni": "8515",
+        "Municipio": "San Miguelito"
+      },
+      {
+        "CodMuni": "8520",
+        "Municipio": "San Carlos"
+      },
+      {
+        "CodMuni": "8525",
+        "Municipio": "El Castillo"
+      },
+      {
+        "CodMuni": "8530",
+        "Municipio": "San Juan del Norte"
+      }
+    ]
+  },
+  {
+    "CodDepto": "91",
+    "Departamento": "Atlántico Norte",
+    "Municipios": [
+      {
+        "CodMuni": "9105",
+        "Municipio": "Waspán"
+      },
+      {
+        "CodMuni": "9110",
+        "Municipio": "Puerto Cabezas"
+      },
+      {
+        "CodMuni": "9115",
+        "Municipio": "Rosita"
+      },
+      {
+        "CodMuni": "9120",
+        "Municipio": "Bonanza"
+      },
+      {
+        "CodMuni": "9125",
+        "Municipio": "Waslala"
+      },
+      {
+        "CodMuni": "9127",
+        "Municipio": "Mulukukú"
+      },
+      {
+        "CodMuni": "9130",
+        "Municipio": "Siuna"
+      },
+      {
+        "CodMuni": "9135",
+        "Municipio": "Prinzapolka"
+      }
+    ]
+  },
+  {
+    "CodDepto": "93",
+    "Departamento": "Atlántico Sur",
+    "Municipios": [
+      {
+        "CodMuni": "9305",
+        "Municipio": "Paiwas"
+      },
+      {
+        "CodMuni": "9310",
+        "Municipio": "La Cruz de Río Grande"
+      },
+      {
+        "CodMuni": "9312",
+        "Municipio": "Desembocadura de Río Grande"
+      },
+      {
+        "CodMuni": "9315",
+        "Municipio": "Laguna de Perlas"
+      },
+      {
+        "CodMuni": "9316",
+        "Municipio": "El Tortuguero"
+      },
+      {
+        "CodMuni": "9320",
+        "Municipio": "Rama"
+      },
+      {
+        "CodMuni": "9323",
+        "Municipio": "El Ayote"
+      },
+      {
+        "CodMuni": "9325",
+        "Municipio": "Muelle de los Bueyes"
+      },
+      {
+        "CodMuni": "9330",
+        "Municipio": "Kukra - Hill"
+      },
+      {
+        "CodMuni": "9335",
+        "Municipio": "Corn Island"
+      },
+      {
+        "CodMuni": "9340",
+        "Municipio": "Bluefields"
+      },
+      {
+        "CodMuni": "9345",
+        "Municipio": "Nueva Guinea"
+      }
+    ]
+  }
+]

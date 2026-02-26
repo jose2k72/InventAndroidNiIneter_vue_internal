@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "nombre": "Propietario(a)"
+  },
+  {
+    "id": "2",
+    "nombre": "Poseedor(a)"
+  },
+  {
+    "id": "3",
+    "nombre": "Representante"
+  },
+  {
+    "id": "4",
+    "nombre": "Particular"
+  },
+  {
+    "id": "5",
+    "nombre": "Otro"
+  }
+]

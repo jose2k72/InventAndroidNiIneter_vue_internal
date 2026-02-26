@@ -398,8 +398,8 @@
 
         </div>
 
-        <!-- Vista Edición -->
-        <div v-else class="container">
+        <!-- Vista Edición Formulario -->
+        <div v-else-if="operation === 'Edit' || operation === 'Create'" class="container">
             <!-- Formulario Acera -->
             <form-acera v-if="formType === 'Acera'" :data="formData" :localizacion="localizacion" :lat-lng="latLng"
                 :local-proj="localProj" :fotos="fotos" @save="sendData" @cancel="volver"
@@ -420,6 +420,13 @@
                 @cancel="volver" @camera="openCamera"></form-propietario-juridica>
             <form-entrevistado v-if="formType === 'Entrevistado'" :data="formData" @save="sendData" @cancel="volver"
                 @camera="openCamera"></form-entrevistado>
+        </div>
+
+        <!-- Vista Global Selección de Catálogo Masivo -->
+        <div v-else-if="operation === 'SelectCatalog'">
+            <catalogo-selector-grande v-if="catalogParams" :catalog-name="catalogParams.catalogName || 'Catalogo'"
+                :label="catalogParams.label || 'Seleccionar...'" :placeholder="catalogParams.placeholder || 'Buscar...'"
+                @cancel="cancelCatalog" @select="onCatalogSelect"></catalogo-selector-grande>
         </div>
     </div>
 
@@ -444,6 +451,7 @@
 
     <!-- Componentes Vue (se registran en la app ya creada) -->
     <script src="js/components/CatalogoSelector.js"></script>
+    <script src="js/components/CatalogoSelectorGrande.js"></script>
     <script src="js/components/FormAcera.js"></script>
     <script src="js/components/FormCosto.js"></script>
     <script src="js/components/FormEncuestaCatastral.js"></script>

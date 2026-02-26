@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "nombre": "SOCIEDAD ANONIMA",
+    "codigo": "1"
+  },
+  {
+    "id": "2",
+    "nombre": "SOCIEDAD COOPERATIVA",
+    "codigo": "2"
+  },
+  {
+    "id": "3",
+    "nombre": "SOCIEDAD R LIMITADA",
+    "codigo": "3"
+  },
+  {
+    "id": "4",
+    "nombre": "OTRAS",
+    "codigo": "4"
+  }
+]

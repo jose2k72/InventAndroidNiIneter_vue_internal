@@ -1,0 +1,2110 @@
+[
+  {
+    "id": "1",
+    "nombre": "Agricultor"
+  },
+  {
+    "id": "2",
+    "nombre": "Ganadero"
+  },
+  {
+    "id": "3",
+    "nombre": "Ama de Casa"
+  },
+  {
+    "id": "4",
+    "nombre": "Ingeniero Civil"
+  },
+  {
+    "id": "5",
+    "nombre": "Obrero"
+  },
+  {
+    "id": "6",
+    "nombre": "Guarda de Seguridad"
+  },
+  {
+    "id": "7",
+    "nombre": "Electricista"
+  },
+  {
+    "id": "8",
+    "nombre": "Comerciante"
+  },
+  {
+    "id": "9",
+    "nombre": "Quimico"
+  },
+  {
+    "id": "10",
+    "nombre": "Administrador"
+  },
+  {
+    "id": "11",
+    "nombre": "Tecnico"
+  },
+  {
+    "id": "12",
+    "nombre": "Albañil"
+  },
+  {
+    "id": "13",
+    "nombre": "Agrónomo"
+  },
+  {
+    "id": "14",
+    "nombre": "Estilistas"
+  },
+  {
+    "id": "15",
+    "nombre": "Costurera"
+  },
+  {
+    "id": "16",
+    "nombre": "Conductor"
+  },
+  {
+    "id": "17",
+    "nombre": "Mecànico"
+  },
+  {
+    "id": "18",
+    "nombre": "Abogado"
+  },
+  {
+    "id": "19",
+    "nombre": "Transportista"
+  },
+  {
+    "id": "20",
+    "nombre": "Compañero(a)"
+  },
+  {
+    "id": "21",
+    "nombre": "Pastor Evangelico"
+  },
+  {
+    "id": "22",
+    "nombre": "Sin profesion"
+  },
+  {
+    "id": "23",
+    "nombre": "Productor Agropecuario"
+  },
+  {
+    "id": "24",
+    "nombre": "Tecnico en fibra de vidrio"
+  },
+  {
+    "id": "25",
+    "nombre": "Farmaceutico"
+  },
+  {
+    "id": "26",
+    "nombre": "Otro"
+  },
+  {
+    "id": "27",
+    "nombre": "Comerciante/Ganadero"
+  },
+  {
+    "id": "28",
+    "nombre": "Ebanista"
+  },
+  {
+    "id": "29",
+    "nombre": "Profesor"
+  },
+  {
+    "id": "30",
+    "nombre": "Talabartero"
+  },
+  {
+    "id": "31",
+    "nombre": "Secretaria(o)"
+  },
+  {
+    "id": "32",
+    "nombre": "Tecnico Dental"
+  },
+  {
+    "id": "33",
+    "nombre": "Carpintero"
+  },
+  {
+    "id": "34",
+    "nombre": "Ingeniero Agricola"
+  },
+  {
+    "id": "35",
+    "nombre": "Ingeniero Industrial"
+  },
+  {
+    "id": "36",
+    "nombre": "Ingeniero en Sistemas"
+  },
+  {
+    "id": "37",
+    "nombre": "Ingeniero Electrico"
+  },
+  {
+    "id": "38",
+    "nombre": "Ingeniero en Computacion"
+  },
+  {
+    "id": "39",
+    "nombre": "Medico Veterinario"
+  },
+  {
+    "id": "40",
+    "nombre": "Medico General"
+  },
+  {
+    "id": "41",
+    "nombre": "Tecnico Industrial"
+  },
+  {
+    "id": "42",
+    "nombre": "Jornalero"
+  },
+  {
+    "id": "43",
+    "nombre": "Domestica"
+  },
+  {
+    "id": "44",
+    "nombre": "Oficial de Policia"
+  },
+  {
+    "id": "45",
+    "nombre": "Oficinista"
+  },
+  {
+    "id": "46",
+    "nombre": "Sacerdote"
+  },
+  {
+    "id": "47",
+    "nombre": "Recepcionista"
+  },
+  {
+    "id": "48",
+    "nombre": "Motorista"
+  },
+  {
+    "id": "49",
+    "nombre": "Abogado y Notario"
+  },
+  {
+    "id": "50",
+    "nombre": "Apicultor"
+  },
+  {
+    "id": "51",
+    "nombre": "Estudiante"
+  },
+  {
+    "id": "52",
+    "nombre": "Enfermera"
+  },
+  {
+    "id": "53",
+    "nombre": "Policia"
+  },
+  {
+    "id": "54",
+    "nombre": "Odontólogo"
+  },
+  {
+    "id": "55",
+    "nombre": "Msc. en Ciencias Sociales"
+  },
+  {
+    "id": "56",
+    "nombre": "Lic. en Administración de Empresa"
+  },
+  {
+    "id": "57",
+    "nombre": "Lic. en Ciencias Sociales"
+  },
+  {
+    "id": "58",
+    "nombre": "Lic. en Enfermeria"
+  },
+  {
+    "id": "59",
+    "nombre": "Panadero"
+  },
+  {
+    "id": "60",
+    "nombre": "Lic. en Farmacia"
+  },
+  {
+    "id": "61",
+    "nombre": "Lic. en Derecho"
+  },
+  {
+    "id": "62",
+    "nombre": "Cocinero"
+  },
+  {
+    "id": "63",
+    "nombre": "Militar"
+  },
+  {
+    "id": "64",
+    "nombre": "Mecánico Industrial"
+  },
+  {
+    "id": "65",
+    "nombre": "Universitario"
+  },
+  {
+    "id": "66",
+    "nombre": "Licenciado en Economia"
+  },
+  {
+    "id": "67",
+    "nombre": "Ingeniero Agropecuario"
+  },
+  {
+    "id": "68",
+    "nombre": "Arquitecto"
+  },
+  {
+    "id": "69",
+    "nombre": "Catador de Cafe"
+  },
+  {
+    "id": "70",
+    "nombre": "Taxista"
+  },
+  {
+    "id": "71",
+    "nombre": "Radio Tecnico"
+  },
+  {
+    "id": "72",
+    "nombre": "Ingenieria Agroforestal"
+  },
+  {
+    "id": "73",
+    "nombre": "Modista"
+  },
+  {
+    "id": "74",
+    "nombre": "Pintor"
+  },
+  {
+    "id": "75",
+    "nombre": "Operador de Maquinaria"
+  },
+  {
+    "id": "76",
+    "nombre": "Agente Vendedor"
+  },
+  {
+    "id": "77",
+    "nombre": "Panificadora"
+  },
+  {
+    "id": "78",
+    "nombre": "Veterinario Tecnico"
+  },
+  {
+    "id": "79",
+    "nombre": "Tecnico en Administración"
+  },
+  {
+    "id": "80",
+    "nombre": "Jubilado (a)"
+  },
+  {
+    "id": "81",
+    "nombre": "Comunicador Social"
+  },
+  {
+    "id": "82",
+    "nombre": "Clasificador de Madera"
+  },
+  {
+    "id": "83",
+    "nombre": "Ingeniero Agronomo"
+  },
+  {
+    "id": "84",
+    "nombre": "Licenciado en Desarrollo Social"
+  },
+  {
+    "id": "85",
+    "nombre": "Bodeguero"
+  },
+  {
+    "id": "86",
+    "nombre": "Operador de Bombeo"
+  },
+  {
+    "id": "87",
+    "nombre": "Inspector del Ministerio de Salud"
+  },
+  {
+    "id": "88",
+    "nombre": "Anasteciologo (a)"
+  },
+  {
+    "id": "89",
+    "nombre": "Licenciado en Psicologia"
+  },
+  {
+    "id": "90",
+    "nombre": "Auxiliar de Enfermeria"
+  },
+  {
+    "id": "91",
+    "nombre": "Tornero Industrial"
+  },
+  {
+    "id": "92",
+    "nombre": "Ingeniero Mecanico"
+  },
+  {
+    "id": "93",
+    "nombre": "Psicologo(a)"
+  },
+  {
+    "id": "94",
+    "nombre": "Conserje"
+  },
+  {
+    "id": "95",
+    "nombre": "Ejecutivo de Ventas"
+  },
+  {
+    "id": "96",
+    "nombre": "Camarografo"
+  },
+  {
+    "id": "97",
+    "nombre": "Medico Naturista"
+  },
+  {
+    "id": "98",
+    "nombre": "Sociologo"
+  },
+  {
+    "id": "99",
+    "nombre": "Contratista"
+  },
+  {
+    "id": "100",
+    "nombre": "ginecologo"
+  },
+  {
+    "id": "101",
+    "nombre": "Licenciado(a) en Relaciones Internacionales"
+  },
+  {
+    "id": "102",
+    "nombre": "Empresario Radial"
+  },
+  {
+    "id": "103",
+    "nombre": "Ingeniero ambiental"
+  },
+  {
+    "id": "104",
+    "nombre": "Empresario"
+  },
+  {
+    "id": "105",
+    "nombre": "Cafetalero"
+  },
+  {
+    "id": "106",
+    "nombre": "Cirujano Dentista"
+  },
+  {
+    "id": "107",
+    "nombre": "Fotógrafo"
+  },
+  {
+    "id": "108",
+    "nombre": "Licienciado(a) en Administración Agropecuaria"
+  },
+  {
+    "id": "109",
+    "nombre": "Ciencia de los Alimentos"
+  },
+  {
+    "id": "110",
+    "nombre": "Asistente de Ventas"
+  },
+  {
+    "id": "111",
+    "nombre": "Medico y Cirujano"
+  },
+  {
+    "id": "112",
+    "nombre": "Cosmetologa"
+  },
+  {
+    "id": "113",
+    "nombre": "Topógrafo"
+  },
+  {
+    "id": "114",
+    "nombre": "Tecnólogo (a) Medico(a)"
+  },
+  {
+    "id": "115",
+    "nombre": "Licenciado(a) en Ciencias Ambientales"
+  },
+  {
+    "id": "116",
+    "nombre": "Lustrador"
+  },
+  {
+    "id": "117",
+    "nombre": "Operador de Poso"
+  },
+  {
+    "id": "118",
+    "nombre": "Jardinero"
+  },
+  {
+    "id": "119",
+    "nombre": "Caficultor"
+  },
+  {
+    "id": "120",
+    "nombre": "Dependiente de Tienda"
+  },
+  {
+    "id": "121",
+    "nombre": "Dependiente Farmaceutica"
+  },
+  {
+    "id": "122",
+    "nombre": "Tecnico en Control de Vectores"
+  },
+  {
+    "id": "123",
+    "nombre": "Tecnico en Contabilidad Publica"
+  },
+  {
+    "id": "124",
+    "nombre": "Licenciado(a) en contaduria publica y auditoria"
+  },
+  {
+    "id": "125",
+    "nombre": "Cajera"
+  },
+  {
+    "id": "126",
+    "nombre": "Supervisor de Credito"
+  },
+  {
+    "id": "127",
+    "nombre": "Bibliotecario"
+  },
+  {
+    "id": "128",
+    "nombre": "Zapatero"
+  },
+  {
+    "id": "129",
+    "nombre": "Locutor de Radio"
+  },
+  {
+    "id": "130",
+    "nombre": "Economista"
+  },
+  {
+    "id": "131",
+    "nombre": "Estudiante Universitario"
+  },
+  {
+    "id": "132",
+    "nombre": "Barbero"
+  },
+  {
+    "id": "133",
+    "nombre": "Serigrafista"
+  },
+  {
+    "id": "134",
+    "nombre": "Ingeniero Forestal"
+  },
+  {
+    "id": "135",
+    "nombre": "Licenciado en Ciencias Sociales"
+  },
+  {
+    "id": "136",
+    "nombre": "Tecnico en Maquinaria Agricola"
+  },
+  {
+    "id": "137",
+    "nombre": "Traductor"
+  },
+  {
+    "id": "138",
+    "nombre": "Tecnico en Electricidad"
+  },
+  {
+    "id": "139",
+    "nombre": "Ingeniero en Electrocomunicaciones"
+  },
+  {
+    "id": "140",
+    "nombre": "Técnico en Cadena de Frio"
+  },
+  {
+    "id": "141",
+    "nombre": "Tecnico Forestal"
+  },
+  {
+    "id": "142",
+    "nombre": "Administrador agropecuario"
+  },
+  {
+    "id": "143",
+    "nombre": "Técnico en Refrigeración"
+  },
+  {
+    "id": "144",
+    "nombre": "Cobrador de Ruta"
+  },
+  {
+    "id": "145",
+    "nombre": "Periodista"
+  },
+  {
+    "id": "146",
+    "nombre": "Analista de Credito"
+  },
+  {
+    "id": "147",
+    "nombre": "Herrero"
+  },
+  {
+    "id": "148",
+    "nombre": "Trabajadora Social"
+  },
+  {
+    "id": "149",
+    "nombre": "Operador de Equipo de Bombero"
+  },
+  {
+    "id": "150",
+    "nombre": "Artesano"
+  },
+  {
+    "id": "151",
+    "nombre": "Inspector Municipal"
+  },
+  {
+    "id": "152",
+    "nombre": "Licenciada en Español"
+  },
+  {
+    "id": "153",
+    "nombre": "Chef"
+  },
+  {
+    "id": "154",
+    "nombre": "Respostero (a)"
+  },
+  {
+    "id": "155",
+    "nombre": "Instructor de Manejo"
+  },
+  {
+    "id": "156",
+    "nombre": "Acerrador"
+  },
+  {
+    "id": "157",
+    "nombre": "Meteorologo"
+  },
+  {
+    "id": "158",
+    "nombre": "Auxiliar de Venta"
+  },
+  {
+    "id": "159",
+    "nombre": "Vendedor Ambulante"
+  },
+  {
+    "id": "160",
+    "nombre": "Técnico Electronico"
+  },
+  {
+    "id": "161",
+    "nombre": "Matarife"
+  },
+  {
+    "id": "162",
+    "nombre": "Gerente de Operaciones"
+  },
+  {
+    "id": "163",
+    "nombre": "Agente de bienes y Raices"
+  },
+  {
+    "id": "164",
+    "nombre": "Técnico en Planificación"
+  },
+  {
+    "id": "165",
+    "nombre": "Promotora de Ventas"
+  },
+  {
+    "id": "166",
+    "nombre": "Medico Forense"
+  },
+  {
+    "id": "167",
+    "nombre": "Joyero"
+  },
+  {
+    "id": "168",
+    "nombre": "Maderero"
+  },
+  {
+    "id": "169",
+    "nombre": "Plomero"
+  },
+  {
+    "id": "170",
+    "nombre": "Administración Turistica"
+  },
+  {
+    "id": "171",
+    "nombre": "Ingeniero Electronico"
+  },
+  {
+    "id": "172",
+    "nombre": "Medico Internista"
+  },
+  {
+    "id": "173",
+    "nombre": "Organizadora de Banquetes"
+  },
+  {
+    "id": "174",
+    "nombre": "Productor Agricola"
+  },
+  {
+    "id": "175",
+    "nombre": "Fisioterapeuta"
+  },
+  {
+    "id": "176",
+    "nombre": "Licenciada Cosmetologia"
+  },
+  {
+    "id": "177",
+    "nombre": "Licenciado en Comunicación Social"
+  },
+  {
+    "id": "178",
+    "nombre": "Dibujante"
+  },
+  {
+    "id": "179",
+    "nombre": "Obstetra"
+  },
+  {
+    "id": "180",
+    "nombre": "Colector"
+  },
+  {
+    "id": "181",
+    "nombre": "Dependiente"
+  },
+  {
+    "id": "182",
+    "nombre": "Licenciada en Pedagogia"
+  },
+  {
+    "id": "183",
+    "nombre": "Relojero"
+  },
+  {
+    "id": "184",
+    "nombre": "Técnica en sistema de producción"
+  },
+  {
+    "id": "185",
+    "nombre": "Vicealcaldesa"
+  },
+  {
+    "id": "186",
+    "nombre": "Operaria"
+  },
+  {
+    "id": "187",
+    "nombre": "Mecanico/Agricultor"
+  },
+  {
+    "id": "188",
+    "nombre": "Técnico Agronomo"
+  },
+  {
+    "id": "189",
+    "nombre": "Gerente Aduanero"
+  },
+  {
+    "id": "190",
+    "nombre": "Técnico en Salud"
+  },
+  {
+    "id": "191",
+    "nombre": "Licenciada en Ciencia de la Educación"
+  },
+  {
+    "id": "192",
+    "nombre": "Técnico en Educación de Adulto"
+  },
+  {
+    "id": "193",
+    "nombre": "Promotora Social"
+  },
+  {
+    "id": "194",
+    "nombre": "Digitadora"
+  },
+  {
+    "id": "195",
+    "nombre": "Promotor politico"
+  },
+  {
+    "id": "196",
+    "nombre": "Negociante"
+  },
+  {
+    "id": "197",
+    "nombre": "Técnico superior en Ciencias Agrarias"
+  },
+  {
+    "id": "198",
+    "nombre": "Promotor de Credito"
+  },
+  {
+    "id": "199",
+    "nombre": "Técnico Electrómecanico"
+  },
+  {
+    "id": "200",
+    "nombre": "Educador(a)"
+  },
+  {
+    "id": "201",
+    "nombre": "Licenciado(a) en Banca y Finanzas"
+  },
+  {
+    "id": "202",
+    "nombre": "Electrisista Automotriz"
+  },
+  {
+    "id": "203",
+    "nombre": "Agronomo/veterinario"
+  },
+  {
+    "id": "204",
+    "nombre": "Delegado del Instituto de Turismo"
+  },
+  {
+    "id": "205",
+    "nombre": "Licenciado en Mercadeo"
+  },
+  {
+    "id": "206",
+    "nombre": "Ingeniero en Diseño y Construccion"
+  },
+  {
+    "id": "207",
+    "nombre": "Quimico Farmaceutico"
+  },
+  {
+    "id": "208",
+    "nombre": "Comerciante/Agricultor"
+  },
+  {
+    "id": "209",
+    "nombre": "Licenciada en Matematicas"
+  },
+  {
+    "id": "210",
+    "nombre": "Mesera"
+  },
+  {
+    "id": "211",
+    "nombre": "Bartender"
+  },
+  {
+    "id": "212",
+    "nombre": "Educadora Comunitaria"
+  },
+  {
+    "id": "213",
+    "nombre": "Licenciado en Ingles"
+  },
+  {
+    "id": "214",
+    "nombre": "Ortopedista"
+  },
+  {
+    "id": "215",
+    "nombre": "Operador de Computadoras"
+  },
+  {
+    "id": "216",
+    "nombre": "Técnico Veterinario"
+  },
+  {
+    "id": "217",
+    "nombre": "Ingenieria Agroecologica"
+  },
+  {
+    "id": "218",
+    "nombre": "Jefe de filial ENACAL"
+  },
+  {
+    "id": "219",
+    "nombre": "Teniente Policia Nacional"
+  },
+  {
+    "id": "220",
+    "nombre": "Supervisor de promotores"
+  },
+  {
+    "id": "221",
+    "nombre": "EPIDEMIOLOGO"
+  },
+  {
+    "id": "222",
+    "nombre": "Operador de Enacal"
+  },
+  {
+    "id": "223",
+    "nombre": "Bombero de Gasolinera"
+  },
+  {
+    "id": "224",
+    "nombre": "Alguacil del Juzgado"
+  },
+  {
+    "id": "225",
+    "nombre": "Supervisor(a) de Alimentación"
+  },
+  {
+    "id": "226",
+    "nombre": "Técnico de Mantenimiento"
+  },
+  {
+    "id": "227",
+    "nombre": "Procurador Auxiliar"
+  },
+  {
+    "id": "228",
+    "nombre": "Bombero"
+  },
+  {
+    "id": "229",
+    "nombre": "Técnico Anestesiologo"
+  },
+  {
+    "id": "230",
+    "nombre": "Operador"
+  },
+  {
+    "id": "231",
+    "nombre": "Florista"
+  },
+  {
+    "id": "232",
+    "nombre": "Vendedor"
+  },
+  {
+    "id": "233",
+    "nombre": "Auxiliar de Farmacia"
+  },
+  {
+    "id": "234",
+    "nombre": "Tortillera"
+  },
+  {
+    "id": "235",
+    "nombre": "Licenciado en Bioanalisis"
+  },
+  {
+    "id": "236",
+    "nombre": "Mecánico Automotriz"
+  },
+  {
+    "id": "237",
+    "nombre": "Licenciado(a) en Mercadotecnia"
+  },
+  {
+    "id": "238",
+    "nombre": "Licenciado en Cultura Fisica"
+  },
+  {
+    "id": "239",
+    "nombre": "Administrador de Empresas"
+  },
+  {
+    "id": "240",
+    "nombre": "Responsable en Servivio General (Hospital)"
+  },
+  {
+    "id": "241",
+    "nombre": "Licenciado(a) en Biologia"
+  },
+  {
+    "id": "242",
+    "nombre": "Maestro(a)"
+  },
+  {
+    "id": "243",
+    "nombre": "Obrera del Campo"
+  },
+  {
+    "id": "244",
+    "nombre": "Director de Servicios Municipales"
+  },
+  {
+    "id": "245",
+    "nombre": "Licenciado(a) en Ciencia"
+  },
+  {
+    "id": "246",
+    "nombre": "SOLDADO"
+  },
+  {
+    "id": "247",
+    "nombre": "Ingeniera en sistema de producción agropecuaria"
+  },
+  {
+    "id": "248",
+    "nombre": "Secretaria Ejecutiva"
+  },
+  {
+    "id": "249",
+    "nombre": "Secretario Ambiental"
+  },
+  {
+    "id": "250",
+    "nombre": "Dama de Compañia"
+  },
+  {
+    "id": "251",
+    "nombre": "Medico"
+  },
+  {
+    "id": "252",
+    "nombre": "Chofer"
+  },
+  {
+    "id": "253",
+    "nombre": "Productor Ganadero"
+  },
+  {
+    "id": "254",
+    "nombre": "Docente"
+  },
+  {
+    "id": "255",
+    "nombre": "Operador de Fabricas de Puros"
+  },
+  {
+    "id": "256",
+    "nombre": "Rolera"
+  },
+  {
+    "id": "257",
+    "nombre": "Bonchero"
+  },
+  {
+    "id": "258",
+    "nombre": "Nutricionista"
+  },
+  {
+    "id": "259",
+    "nombre": "Docente de Primaria"
+  },
+  {
+    "id": "260",
+    "nombre": "Auxiliar de odontologa"
+  },
+  {
+    "id": "261",
+    "nombre": "diseñadora grafica"
+  },
+  {
+    "id": "262",
+    "nombre": "Técnico departamental de Educación"
+  },
+  {
+    "id": "263",
+    "nombre": "Licenciada(o) en Relaciones Internacionales"
+  },
+  {
+    "id": "264",
+    "nombre": "Asesor pedagogico"
+  },
+  {
+    "id": "265",
+    "nombre": "Licenciada Psicoterapeuta"
+  },
+  {
+    "id": "266",
+    "nombre": "Licenciado en Derecho"
+  },
+  {
+    "id": "267",
+    "nombre": "Trabajador de la Salud"
+  },
+  {
+    "id": "268",
+    "nombre": "Aserrador"
+  },
+  {
+    "id": "269",
+    "nombre": "Pintor automotriz"
+  },
+  {
+    "id": "270",
+    "nombre": "Educadora de Preescolar"
+  },
+  {
+    "id": "271",
+    "nombre": "lic. En Administracio Internacional"
+  },
+  {
+    "id": "272",
+    "nombre": "Licenciada en Enfermeria"
+  },
+  {
+    "id": "273",
+    "nombre": "Bachiller"
+  },
+  {
+    "id": "274",
+    "nombre": "Teologo"
+  },
+  {
+    "id": "275",
+    "nombre": "Obrero de la Construccion"
+  },
+  {
+    "id": "276",
+    "nombre": "Contador Publico"
+  },
+  {
+    "id": "277",
+    "nombre": "Maestra de Preescolar"
+  },
+  {
+    "id": "278",
+    "nombre": "Ingeniero(a)"
+  },
+  {
+    "id": "279",
+    "nombre": "Religiosa"
+  },
+  {
+    "id": "280",
+    "nombre": "Técnico Superior en Agronomia"
+  },
+  {
+    "id": "281",
+    "nombre": "CARRETONERO"
+  },
+  {
+    "id": "282",
+    "nombre": "Técnico(a) en Contaduria"
+  },
+  {
+    "id": "283",
+    "nombre": "Licenciado(a) en Sociologia"
+  },
+  {
+    "id": "284",
+    "nombre": "Productor Cafetalero"
+  },
+  {
+    "id": "285",
+    "nombre": "Técnico Medio Agropecuario"
+  },
+  {
+    "id": "286",
+    "nombre": "Operario de Construcción"
+  },
+  {
+    "id": "287",
+    "nombre": "Productor de Tabaco"
+  },
+  {
+    "id": "288",
+    "nombre": "Licenciado(a) en Administración de Empresas"
+  },
+  {
+    "id": "289",
+    "nombre": "Profesora de Primaria"
+  },
+  {
+    "id": "290",
+    "nombre": "Maestra"
+  },
+  {
+    "id": "291",
+    "nombre": "Tecnico Anestecista"
+  },
+  {
+    "id": "292",
+    "nombre": "Obrero(a)del Tabaco"
+  },
+  {
+    "id": "293",
+    "nombre": "Veterinario"
+  },
+  {
+    "id": "294",
+    "nombre": "Técnico Agropecuario"
+  },
+  {
+    "id": "295",
+    "nombre": "Licenciado(a) en Salud Pública"
+  },
+  {
+    "id": "296",
+    "nombre": "Empleada Domestica"
+  },
+  {
+    "id": "297",
+    "nombre": "Técnico Operador de Posos"
+  },
+  {
+    "id": "298",
+    "nombre": "Supervisor empresa claro"
+  },
+  {
+    "id": "299",
+    "nombre": "Ingeniero en Minas"
+  },
+  {
+    "id": "300",
+    "nombre": "Tecnico en Computacion"
+  },
+  {
+    "id": "301",
+    "nombre": "Servicios Administrativos"
+  },
+  {
+    "id": "302",
+    "nombre": "Tecnico en Higiene y Epidemiologia"
+  },
+  {
+    "id": "303",
+    "nombre": "Licenciado(a) en Farmacia"
+  },
+  {
+    "id": "304",
+    "nombre": "Técnico en Tabaco"
+  },
+  {
+    "id": "305",
+    "nombre": "Técnico Medio en Contabilidad"
+  },
+  {
+    "id": "306",
+    "nombre": "Mecanico(a) Dental"
+  },
+  {
+    "id": "307",
+    "nombre": "Licenciado(a) en Informática"
+  },
+  {
+    "id": "308",
+    "nombre": "COORDINADOR DE PROYECTOS"
+  },
+  {
+    "id": "309",
+    "nombre": "Pastor"
+  },
+  {
+    "id": "310",
+    "nombre": "OFICIOS DOMESTICOS"
+  },
+  {
+    "id": "311",
+    "nombre": "Vulganizador"
+  },
+  {
+    "id": "312",
+    "nombre": "Agente de Venta"
+  },
+  {
+    "id": "313",
+    "nombre": "Ingeniero Arquitecto"
+  },
+  {
+    "id": "314",
+    "nombre": "Tecnico en Topografia"
+  },
+  {
+    "id": "315",
+    "nombre": "Obispo"
+  },
+  {
+    "id": "316",
+    "nombre": "Recaudador Tributario"
+  },
+  {
+    "id": "317",
+    "nombre": "SUPERVISOR DE LEVANTAMIENTO"
+  },
+  {
+    "id": "318",
+    "nombre": "Licenciado(a) en Computación"
+  },
+  {
+    "id": "319",
+    "nombre": "Lic en Bioanalisis"
+  },
+  {
+    "id": "320",
+    "nombre": "Promotor"
+  },
+  {
+    "id": "321",
+    "nombre": "Técnico Hidraulico"
+  },
+  {
+    "id": "322",
+    "nombre": "Ingeniero en Geologia"
+  },
+  {
+    "id": "323",
+    "nombre": "Licenciado en Administracion Agropecuaria"
+  },
+  {
+    "id": "324",
+    "nombre": "Licenciado en Contaduria"
+  },
+  {
+    "id": "325",
+    "nombre": "Mecanografo(a)"
+  },
+  {
+    "id": "326",
+    "nombre": "Licenciado en Administración Internacional"
+  },
+  {
+    "id": "327",
+    "nombre": "Agente Policial"
+  },
+  {
+    "id": "328",
+    "nombre": "Secretaria Comercial"
+  },
+  {
+    "id": "329",
+    "nombre": "Contabilidad Técnica"
+  },
+  {
+    "id": "330",
+    "nombre": "Licenciada en Ingles"
+  },
+  {
+    "id": "331",
+    "nombre": "Licenciada en Banca y Finanza"
+  },
+  {
+    "id": "332",
+    "nombre": "Sargento del Ejercito"
+  },
+  {
+    "id": "333",
+    "nombre": "Técnico en Ortopedia"
+  },
+  {
+    "id": "334",
+    "nombre": "Técnico en Estadistica"
+  },
+  {
+    "id": "335",
+    "nombre": "Mecánico de Motocicleta"
+  },
+  {
+    "id": "336",
+    "nombre": "Protesista Dental"
+  },
+  {
+    "id": "337",
+    "nombre": "Colector de Impuestos"
+  },
+  {
+    "id": "338",
+    "nombre": "Obrero Y Carpintero"
+  },
+  {
+    "id": "339",
+    "nombre": "Técnico Trabajo Social"
+  },
+  {
+    "id": "340",
+    "nombre": "Productor"
+  },
+  {
+    "id": "341",
+    "nombre": "Ingeniero Hidrotécnico"
+  },
+  {
+    "id": "342",
+    "nombre": "Ingeniero en Gerencia Agropecuaria"
+  },
+  {
+    "id": "343",
+    "nombre": "Auditor"
+  },
+  {
+    "id": "344",
+    "nombre": "Administrador de Finca"
+  },
+  {
+    "id": "345",
+    "nombre": "Técnico Operador"
+  },
+  {
+    "id": "346",
+    "nombre": "Licenciado(a) en Lengua y Literatura"
+  },
+  {
+    "id": "347",
+    "nombre": "Docente de Secundaria"
+  },
+  {
+    "id": "348",
+    "nombre": "Joyero y Relojero"
+  },
+  {
+    "id": "349",
+    "nombre": "Técnico en Telecomunicaciones"
+  },
+  {
+    "id": "350",
+    "nombre": "Niñera"
+  },
+  {
+    "id": "351",
+    "nombre": "Tecnico de radio"
+  },
+  {
+    "id": "352",
+    "nombre": "Quimico lndustrial"
+  },
+  {
+    "id": "353",
+    "nombre": "Confeccionista"
+  },
+  {
+    "id": "354",
+    "nombre": "Licenciada en Teologia"
+  },
+  {
+    "id": "355",
+    "nombre": "Alfarero"
+  },
+  {
+    "id": "356",
+    "nombre": "Técnico medio en Administracion Agropecuaria"
+  },
+  {
+    "id": "357",
+    "nombre": "Hornadora"
+  },
+  {
+    "id": "358",
+    "nombre": "Responsable de Bodega"
+  },
+  {
+    "id": "359",
+    "nombre": "Electricista y Conductor"
+  },
+  {
+    "id": "360",
+    "nombre": "Tecnico en enfermedades de transmision vectorial"
+  },
+  {
+    "id": "361",
+    "nombre": "Afanadora"
+  },
+  {
+    "id": "362",
+    "nombre": "Licenciada en Turismo"
+  },
+  {
+    "id": "363",
+    "nombre": "Licenciado en Agronegocio"
+  },
+  {
+    "id": "364",
+    "nombre": "Zootecnista"
+  },
+  {
+    "id": "365",
+    "nombre": "Promotor del Minsa"
+  },
+  {
+    "id": "366",
+    "nombre": "Cardista"
+  },
+  {
+    "id": "367",
+    "nombre": "Doctor(a)"
+  },
+  {
+    "id": "368",
+    "nombre": "Profesora de Computacion"
+  },
+  {
+    "id": "369",
+    "nombre": "Dependiente de Libreria"
+  },
+  {
+    "id": "370",
+    "nombre": "Técnico de la Secretaria Técnica del Marena"
+  },
+  {
+    "id": "371",
+    "nombre": "Técnico en Reparación de Electrodomesticos"
+  },
+  {
+    "id": "372",
+    "nombre": "Productor Forestal"
+  },
+  {
+    "id": "373",
+    "nombre": "Telegrafista"
+  },
+  {
+    "id": "374",
+    "nombre": "Licenciado(a) en Trabajo Social"
+  },
+  {
+    "id": "375",
+    "nombre": "Técnico de Radio Difucion"
+  },
+  {
+    "id": "376",
+    "nombre": "Analista"
+  },
+  {
+    "id": "377",
+    "nombre": "Operador de Telecomunicacion"
+  },
+  {
+    "id": "378",
+    "nombre": "Regente Forestal"
+  },
+  {
+    "id": "379",
+    "nombre": "Maestra de Ingles"
+  },
+  {
+    "id": "380",
+    "nombre": "Agricultor-Comerciante"
+  },
+  {
+    "id": "381",
+    "nombre": "Lic. en Quimica y Biologia"
+  },
+  {
+    "id": "382",
+    "nombre": "Tecnico de Catastro"
+  },
+  {
+    "id": "383",
+    "nombre": "Gerente Agropecuario"
+  },
+  {
+    "id": "384",
+    "nombre": "Gestor de Cobro"
+  },
+  {
+    "id": "385",
+    "nombre": "Bioanalista Clinico"
+  },
+  {
+    "id": "386",
+    "nombre": "Ingeniero en Ciencias Agrarias"
+  },
+  {
+    "id": "387",
+    "nombre": "Desarrollo Social"
+  },
+  {
+    "id": "388",
+    "nombre": "Licenciada en Contabilidad"
+  },
+  {
+    "id": "389",
+    "nombre": "Obrero del Volante"
+  },
+  {
+    "id": "390",
+    "nombre": "Profesora de Corte y Confección"
+  },
+  {
+    "id": "391",
+    "nombre": "Orfebre"
+  },
+  {
+    "id": "392",
+    "nombre": "Auxiliar en Contabilidad"
+  },
+  {
+    "id": "393",
+    "nombre": "Lic. en Educacion Fisica"
+  },
+  {
+    "id": "394",
+    "nombre": "Ayudante de Autobus"
+  },
+  {
+    "id": "395",
+    "nombre": "Ing en Telecomunicaciones"
+  },
+  {
+    "id": "396",
+    "nombre": "Tecnico en Bioanalisis Clinico"
+  },
+  {
+    "id": "397",
+    "nombre": "Ing Hidraulico"
+  },
+  {
+    "id": "398",
+    "nombre": "Agente Aduanero"
+  },
+  {
+    "id": "399",
+    "nombre": "Técnico en Salud Ambiental"
+  },
+  {
+    "id": "400",
+    "nombre": "Piloto de Avion"
+  },
+  {
+    "id": "401",
+    "nombre": "Ingeniera Quimica"
+  },
+  {
+    "id": "402",
+    "nombre": "Licenciada en Quimica"
+  },
+  {
+    "id": "403",
+    "nombre": "Ayudante de Albañileria"
+  },
+  {
+    "id": "404",
+    "nombre": "Agricultor Y Ganadero"
+  },
+  {
+    "id": "405",
+    "nombre": "Agente de Seguridad"
+  },
+  {
+    "id": "406",
+    "nombre": "Musico"
+  },
+  {
+    "id": "407",
+    "nombre": "Licenciado en Gerencia Agropecuaria"
+  },
+  {
+    "id": "408",
+    "nombre": "Estudiante de Medicina"
+  },
+  {
+    "id": "409",
+    "nombre": "Diputada Suplente"
+  },
+  {
+    "id": "410",
+    "nombre": "Misionero"
+  },
+  {
+    "id": "411",
+    "nombre": "Ingeniero(a) en Alimentos"
+  },
+  {
+    "id": "412",
+    "nombre": "Agronomo/Epidemiologo"
+  },
+  {
+    "id": "413",
+    "nombre": "Director/Maestro"
+  },
+  {
+    "id": "414",
+    "nombre": "TECNICO DE EDUCACION"
+  },
+  {
+    "id": "415",
+    "nombre": "Encargado de Bodega"
+  },
+  {
+    "id": "416",
+    "nombre": "Facultador Judicial"
+  },
+  {
+    "id": "417",
+    "nombre": "Supervisora de Preescolar"
+  },
+  {
+    "id": "418",
+    "nombre": "Tecnico Ambiental"
+  },
+  {
+    "id": "419",
+    "nombre": "Lic en Desarrollo Rural"
+  },
+  {
+    "id": "420",
+    "nombre": "Innovador Metalurgico"
+  },
+  {
+    "id": "421",
+    "nombre": "Transporte Acuatico"
+  },
+  {
+    "id": "422",
+    "nombre": "Tecnico en Recuperacion de Credito"
+  },
+  {
+    "id": "423",
+    "nombre": "Licenciado en Tecnologia Medica"
+  },
+  {
+    "id": "424",
+    "nombre": "Ingeniero Zootecnista"
+  },
+  {
+    "id": "425",
+    "nombre": "Artesano de Calzado"
+  },
+  {
+    "id": "426",
+    "nombre": "Ing en Gerencia Agropecuaria"
+  },
+  {
+    "id": "427",
+    "nombre": "LICENCIADA EN MATERNO INFANTIL"
+  },
+  {
+    "id": "428",
+    "nombre": "Tecnico en higiene"
+  },
+  {
+    "id": "429",
+    "nombre": "Docente de Educacion Pre-escolar"
+  },
+  {
+    "id": "430",
+    "nombre": "Ing en Gestion ambiental"
+  },
+  {
+    "id": "431",
+    "nombre": "Asistente del Hogar"
+  },
+  {
+    "id": "432",
+    "nombre": "Licenciada en Quimica y Farmacia"
+  },
+  {
+    "id": "433",
+    "nombre": "Laboratorista Clinico"
+  },
+  {
+    "id": "434",
+    "nombre": "Técnico en Educacion Primaria"
+  },
+  {
+    "id": "435",
+    "nombre": "Operador Cajero"
+  },
+  {
+    "id": "436",
+    "nombre": "Partero(a)"
+  },
+  {
+    "id": "437",
+    "nombre": "Operadora de Central de equipo de Esterilizacion"
+  },
+  {
+    "id": "438",
+    "nombre": "Ingeniero En Recursos Naturales"
+  },
+  {
+    "id": "439",
+    "nombre": "Profesor de Educacion Media"
+  },
+  {
+    "id": "440",
+    "nombre": "Técnico en Mecanica Automotriz"
+  },
+  {
+    "id": "441",
+    "nombre": "Tecnico en Insiminacion Artificial"
+  },
+  {
+    "id": "442",
+    "nombre": "Lic Quimico Farmaceutico"
+  },
+  {
+    "id": "443",
+    "nombre": "Despachadora de Insumo Medico"
+  },
+  {
+    "id": "444",
+    "nombre": "Secretaria Bilingue"
+  },
+  {
+    "id": "445",
+    "nombre": "Tecnica Dentista"
+  },
+  {
+    "id": "446",
+    "nombre": "Operador de Soldador"
+  },
+  {
+    "id": "447",
+    "nombre": "Técnico en Epidemiologia"
+  },
+  {
+    "id": "448",
+    "nombre": "Tecnica en Educacion"
+  },
+  {
+    "id": "449",
+    "nombre": "Esterilizadora de equipos Medicos"
+  },
+  {
+    "id": "450",
+    "nombre": "Técnica en Promotoria Social"
+  },
+  {
+    "id": "451",
+    "nombre": "Técnico Superior en Educacion Fisica y Deporte"
+  },
+  {
+    "id": "452",
+    "nombre": "Técnico Medio en Educacion Social"
+  },
+  {
+    "id": "453",
+    "nombre": "Bionaucia Clinica"
+  },
+  {
+    "id": "454",
+    "nombre": "Peluquero"
+  },
+  {
+    "id": "455",
+    "nombre": "Coordinador Municipal Gabinete de Familia"
+  },
+  {
+    "id": "456",
+    "nombre": "Comercio"
+  },
+  {
+    "id": "457",
+    "nombre": "Ingeniera Agronoma"
+  },
+  {
+    "id": "458",
+    "nombre": "Electromecanico"
+  },
+  {
+    "id": "459",
+    "nombre": "Evaluador Catastral"
+  },
+  {
+    "id": "460",
+    "nombre": "TECNICO ELECTRICISTA"
+  },
+  {
+    "id": "461",
+    "nombre": "AGRIMENSOR"
+  },
+  {
+    "id": "462",
+    "nombre": "Historiador"
+  },
+  {
+    "id": "463",
+    "nombre": "DELEGADO DEL MINISTERIO DE EDUCACION"
+  },
+  {
+    "id": "464",
+    "nombre": "Alcalde Municipal"
+  },
+  {
+    "id": "465",
+    "nombre": "Ingenieria en Alimentos"
+  },
+  {
+    "id": "466",
+    "nombre": "Agricultor/Pastor Evangelico"
+  },
+  {
+    "id": "467",
+    "nombre": "Recolector de Impuestos"
+  },
+  {
+    "id": "468",
+    "nombre": "Oficial de Credito"
+  },
+  {
+    "id": "469",
+    "nombre": "Ing AgroEcologica"
+  },
+  {
+    "id": "470",
+    "nombre": "Responsable de Enfermedades transmisible"
+  },
+  {
+    "id": "471",
+    "nombre": "Responsable de Caja"
+  },
+  {
+    "id": "472",
+    "nombre": "Inspector Sanitario"
+  },
+  {
+    "id": "473",
+    "nombre": "Técnico en Circuitos"
+  },
+  {
+    "id": "474",
+    "nombre": "Coordinadora de las escuelas de computacion"
+  },
+  {
+    "id": "475",
+    "nombre": "Tecnico en reparacion de celular"
+  },
+  {
+    "id": "476",
+    "nombre": "Analista Telefonico"
+  },
+  {
+    "id": "477",
+    "nombre": "Contador Administrativo"
+  },
+  {
+    "id": "478",
+    "nombre": "Tornero"
+  },
+  {
+    "id": "479",
+    "nombre": "Promotora de Salud"
+  },
+  {
+    "id": "480",
+    "nombre": "Asesor Financiero"
+  },
+  {
+    "id": "481",
+    "nombre": "Agropecuario"
+  },
+  {
+    "id": "482",
+    "nombre": "Delegado Municipal(IND)"
+  },
+  {
+    "id": "483",
+    "nombre": "Secretario Politico"
+  },
+  {
+    "id": "484",
+    "nombre": "Operadora de Cafe"
+  },
+  {
+    "id": "485",
+    "nombre": "Administracion de Finanza"
+  },
+  {
+    "id": "486",
+    "nombre": "Productor Musical"
+  },
+  {
+    "id": "487",
+    "nombre": "Tecnico en Diseño y Construccion"
+  },
+  {
+    "id": "488",
+    "nombre": "Alguacil"
+  },
+  {
+    "id": "489",
+    "nombre": "Licenciado en Laboratorio Clinico"
+  },
+  {
+    "id": "490",
+    "nombre": "Inspector de Vectores"
+  },
+  {
+    "id": "491",
+    "nombre": "Ingeniero Agrario"
+  },
+  {
+    "id": "492",
+    "nombre": "Contructor"
+  },
+  {
+    "id": "493",
+    "nombre": "Dependiente de Venta"
+  },
+  {
+    "id": "494",
+    "nombre": "Ingenieria en Ciencias Agrarias"
+  },
+  {
+    "id": "495",
+    "nombre": "Técnica En Farmacia"
+  },
+  {
+    "id": "496",
+    "nombre": "Botero"
+  },
+  {
+    "id": "497",
+    "nombre": "Asistente Técnico"
+  },
+  {
+    "id": "498",
+    "nombre": "Estilista Cosmetologa"
+  },
+  {
+    "id": "499",
+    "nombre": "Tecnico en Traumatologia"
+  },
+  {
+    "id": "500",
+    "nombre": "Lector y Colector de Medidores"
+  },
+  {
+    "id": "501",
+    "nombre": "Tecnico y Locutor de Radio"
+  },
+  {
+    "id": "502",
+    "nombre": "Inspector del Rastro"
+  },
+  {
+    "id": "503",
+    "nombre": "Tecnico de Enfermedad Vectorial"
+  },
+  {
+    "id": "504",
+    "nombre": "Asistente"
+  },
+  {
+    "id": "505",
+    "nombre": "Artesano del Cuero"
+  },
+  {
+    "id": "506",
+    "nombre": "Vigilante de Seguridad"
+  },
+  {
+    "id": "507",
+    "nombre": "Abatizador"
+  },
+  {
+    "id": "508",
+    "nombre": "Técnico del MINSA"
+  },
+  {
+    "id": "509",
+    "nombre": "Asesor de Credito"
+  },
+  {
+    "id": "510",
+    "nombre": "Licenciado en Agro Negocio"
+  },
+  {
+    "id": "511",
+    "nombre": "Asistente Administrativo"
+  },
+  {
+    "id": "512",
+    "nombre": "Supervisora de Educacion"
+  },
+  {
+    "id": "513",
+    "nombre": "Licenciada en Ciencias Sociales"
+  },
+  {
+    "id": "514",
+    "nombre": "Analista Clinica"
+  },
+  {
+    "id": "515",
+    "nombre": "Profesora de Preescolar"
+  },
+  {
+    "id": "516",
+    "nombre": "Maestra de Educacion Inicial"
+  },
+  {
+    "id": "517",
+    "nombre": "Maestra de Secundaria"
+  },
+  {
+    "id": "518",
+    "nombre": "Trabajadora Domestica"
+  },
+  {
+    "id": "519",
+    "nombre": "Lic. en Biologia"
+  },
+  {
+    "id": "520",
+    "nombre": "Maestra de Primaria"
+  },
+  {
+    "id": "521",
+    "nombre": "Terapeuta"
+  },
+  {
+    "id": "522",
+    "nombre": "Minero"
+  },
+  {
+    "id": "523",
+    "nombre": "Guirisero"
+  },
+  {
+    "id": "524",
+    "nombre": "Minero Artesanal"
+  },
+  {
+    "id": "525",
+    "nombre": "Gerente"
+  },
+  {
+    "id": "526",
+    "nombre": "Asistente de Topografia"
+  },
+  {
+    "id": "527",
+    "nombre": "Coloproctólogo"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "nombre": "Caballerias",
+    "codigo": "Cb"
+  },
+  {
+    "id": "2",
+    "nombre": "Hectareas",
+    "codigo": "Ha"
+  },
+  {
+    "id": "3",
+    "nombre": "Metros Cuadrados",
+    "codigo": "M2"
+  },
+  {
+    "id": "4",
+    "nombre": "Manzana",
+    "codigo": "Mz"
+  },
+  {
+    "id": "5",
+    "nombre": "Sin Datos",
+    "codigo": "SD"
+  },
+  {
+    "id": "6",
+    "nombre": "Vrs2",
+    "codigo": "Vrs2"
+  }
+]

@@ -603,7 +603,8 @@ const app = createApp({
                 fotosMarcadasBorrar,
                 formData,
                 listData,
-                updateData
+                updateData,
+                openCatalog  // <-- Exponer función global
             };
             console.log('✅ Vue app context guardado globalmente (con tracking de fotos)');
         });
@@ -776,6 +777,28 @@ const app = createApp({
             return data.CodigoCamino || '-';
         };
 
+        // --- GESTIÓN DE CATÁLOGOS GLOBALES A PANTALLA COMPLETA ---
+        const catalogParams = ref(null); // Contendrá las opciones (name, targetVar...)
+
+        const openCatalog = (options) => {
+            // Guardamos qué catálogo se pidió y a qué variable local de retorno va dirigida
+            catalogParams.value = options;
+            operation.value = 'SelectCatalog';
+        };
+
+        const onCatalogSelect = (result) => {
+            if (result && catalogParams.value?.onSelect) {
+                catalogParams.value.onSelect(result);
+            }
+            catalogParams.value = null; // Limpiar después de usar
+            operation.value = 'Edit'; // Volver al formulario
+        };
+
+        const cancelCatalog = () => {
+            catalogParams.value = null;
+            operation.value = 'Edit';
+        };
+
         return {
             operation,
             formType,
@@ -791,6 +814,12 @@ const app = createApp({
             formData,
             fotos,
             encuestador,
+
+            // Catálogo Global
+            catalogParams,
+            openCatalog,
+            onCatalogSelect,
+            cancelCatalog,
 
             // Acciones
 

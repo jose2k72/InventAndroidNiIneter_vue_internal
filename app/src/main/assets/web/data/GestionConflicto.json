@@ -1,0 +1,37 @@
+[
+  {
+    "id": "1",
+    "nombre": "En Via de Administrativa",
+    "codigo": "VIA_ADMIN"
+  },
+  {
+    "id": "2",
+    "nombre": "En Via Judicial",
+    "codigo": "VIA_JUDI"
+  },
+  {
+    "id": "3",
+    "nombre": "Sin Tramite",
+    "codigo": "SIN_TRAM"
+  },
+  {
+    "id": "4",
+    "nombre": "Dispuesto a Mediaci?n",
+    "codigo": "A_MEDIC"
+  },
+  {
+    "id": "5",
+    "nombre": "No Acepta Mediaci?n",
+    "codigo": "NO_MEDIC"
+  },
+  {
+    "id": "6",
+    "nombre": "Otra",
+    "codigo": "OTRO"
+  },
+  {
+    "id": "7",
+    "nombre": "Via tradicional comunitaria",
+    "codigo": "VIA_COMUN"
+  }
+]

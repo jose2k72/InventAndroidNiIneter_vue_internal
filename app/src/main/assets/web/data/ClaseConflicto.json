@@ -1,0 +1,67 @@
+[
+  {
+    "id": "1",
+    "nombre": "Linderos",
+    "codigo": "1"
+  },
+  {
+    "id": "2",
+    "nombre": "Servidumbre de pase",
+    "codigo": "2"
+  },
+  {
+    "id": "3",
+    "nombre": "Servidumbre de agua",
+    "codigo": "3"
+  },
+  {
+    "id": "4",
+    "nombre": "Medida",
+    "codigo": "4"
+  },
+  {
+    "id": "5",
+    "nombre": "Entre socios",
+    "codigo": "5"
+  },
+  {
+    "id": "6",
+    "nombre": "Invasión",
+    "codigo": "6"
+  },
+  {
+    "id": "7",
+    "nombre": "Entre ocupantes y ex dueños",
+    "codigo": "7"
+  },
+  {
+    "id": "8",
+    "nombre": "Ocupación de áreas protegidas",
+    "codigo": "8"
+  },
+  {
+    "id": "9",
+    "nombre": "Área en demasia",
+    "codigo": "9"
+  },
+  {
+    "id": "10",
+    "nombre": "Ocupación sin autorización",
+    "codigo": "10"
+  },
+  {
+    "id": "11",
+    "nombre": "Resolución administrativa adversa",
+    "codigo": "11"
+  },
+  {
+    "id": "12",
+    "nombre": "Solvencia denegada",
+    "codigo": "12"
+  },
+  {
+    "id": "13",
+    "nombre": "Otros",
+    "codigo": "13"
+  }
+]

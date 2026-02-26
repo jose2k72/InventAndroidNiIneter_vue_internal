@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1",
+    "nombre": "En Proceso"
+  },
+  {
+    "id": "2",
+    "nombre": "Levantado"
+  },
+  {
+    "id": "3",
+    "nombre": "Aprobado en Campo"
+  },
+  {
+    "id": "4",
+    "nombre": "Enviado a Correccion (Campo)"
+  },
+  {
+    "id": "5",
+    "nombre": "Enviado"
+  },
+  {
+    "id": "6",
+    "nombre": "Dibujado"
+  },
+  {
+    "id": "7",
+    "nombre": "Aprobado en Gabinete"
+  },
+  {
+    "id": "8",
+    "nombre": "Enviado a Correccion (Gabinete)"
+  },
+  {
+    "id": "9",
+    "nombre": "Corregido"
+  },
+  {
+    "id": "10",
+    "nombre": "Migrado"
+  }
+]

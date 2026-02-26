@@ -1,0 +1,46 @@
+[
+  {
+    "id": "1",
+    "nombre": "Otros"
+  },
+  {
+    "id": "2",
+    "nombre": "Pendiente Analisis"
+  },
+  {
+    "id": "3",
+    "nombre": "Proyecto IAN"
+  },
+  {
+    "id": "4",
+    "nombre": "Sector Reformado R.A."
+  },
+  {
+    "id": "5",
+    "nombre": "Sitios"
+  },
+  {
+    "id": "6",
+    "nombre": "Tierras Ejidales"
+  },
+  {
+    "id": "7",
+    "nombre": "Tierras Estatales"
+  },
+  {
+    "id": "8",
+    "nombre": "Tierras Indigenas"
+  },
+  {
+    "id": "9",
+    "nombre": "Tierras Municipales"
+  },
+  {
+    "id": "10",
+    "nombre": "Tierras Nacionales"
+  },
+  {
+    "id": "11",
+    "nombre": "Tierras Privadas"
+  }
+]

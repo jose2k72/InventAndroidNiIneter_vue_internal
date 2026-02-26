@@ -10,6 +10,24 @@ const FormPropietarioNatural = {
             <h2>👤 Propietario (Persona Natural)</h2>
             
             <div class="section">
+                <h3>🆔 Identificación</h3>
+                
+                <div class="coords-grid">
+                    <div class="form-group">
+                        <label :style="{color: errors.TipoIdentificacionCatalog ? 'red' : 'inherit', fontWeight: errors.TipoIdentificacionCatalog ? 'bold' : 'normal'}">Tipo de Identificación *</label>
+                        <select v-model.number="formData.TipoIdentificacionCatalog">
+                             <option :value="null" disabled selected>Seleccione...</option>
+                             <option v-for="opt in catalogos.TipoIdentificacion" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. Identificación *</label>
+                        <input type="text" v-model="formData.Identificacion" placeholder="Ej: 001-000000-0000A">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
                 <h3>📝 Datos Personales</h3>
                 
                 <div class="coords-grid">
@@ -36,10 +54,10 @@ const FormPropietarioNatural = {
 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label :style="{color: errors.Gender ? 'red' : 'inherit', fontWeight: errors.Gender ? 'bold' : 'normal'}">Género *</label>
-                        <select v-model.number="formData.Gender">
+                        <label :style="{color: errors.GenderCatalog ? 'red' : 'inherit', fontWeight: errors.GenderCatalog ? 'bold' : 'normal'}">Género *</label>
+                        <select v-model.number="formData.GenderCatalog">
                              <option :value="null" disabled selected>Seleccione...</option>
-                             <option v-for="opt in catalogos.Generos" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
+                             <option v-for="opt in catalogos.Generos" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -50,20 +68,20 @@ const FormPropietarioNatural = {
 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label :style="{color: errors.CivilState ? 'red' : 'inherit', fontWeight: errors.CivilState ? 'bold' : 'normal'}">Estado Civil *</label>
-                        <select v-model.number="formData.CivilState">
+                        <label :style="{color: errors.CivilStateCatalog ? 'red' : 'inherit', fontWeight: errors.CivilStateCatalog ? 'bold' : 'normal'}">Estado Civil *</label>
+                        <select v-model.number="formData.CivilStateCatalog">
                              <option :value="null" disabled selected>Seleccione...</option>
-                             <option v-for="opt in catalogos.EstadoCivil" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
+                             <option v-for="opt in catalogos.EstadoCivil" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                         </select>
                     </div>
                     <div class="form-group">
                        <label :style="{color: errors.ProfessionCatalog ? 'red' : 'inherit', fontWeight: errors.ProfessionCatalog ? 'bold' : 'normal'}">Profesión u Oficio *</label>
-                        <catalogo-selector
-                            v-model="profesionWrapper"
-                            catalog-name="Profesiones"
-                            label="Seleccionar profesión..."
-                            placeholder="Buscar profesión..."
-                        ></catalogo-selector>
+                       <!-- Selector que llama a la vista principal -->
+                       <div class="selector-display" @click="pedirProfesionGlobal">
+                           <span v-if="profesionName" style="color: #1565C0; font-weight: 600;">{{ profesionName }}</span>
+                           <span v-else style="color: #757575;">Seleccione una profesión...</span>
+                           <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                       </div>
                     </div>
                 </div>
             </div>
@@ -73,8 +91,8 @@ const FormPropietarioNatural = {
                 
                 <div class="coords-grid">
                     <div class="form-group">
-                         <label :style="{color: errors.ResidenceDepartamento ? 'red' : 'inherit', fontWeight: errors.ResidenceDepartamento ? 'bold' : 'normal'}">Departamento *</label>
-                        <input type="text" v-model="formData.ResidenceDepartamento">
+                         <label :style="{color: errors.ResidenceMunicipioCatalog ? 'red' : 'inherit', fontWeight: errors.ResidenceMunicipioCatalog ? 'bold' : 'normal'}">ID Municipio *</label>
+                        <input type="number" v-model.number="formData.ResidenceMunicipioCatalog" placeholder="Temporal: ID Mun">
                     </div>
                     <div class="form-group">
                         <label :style="{color: errors.ResidenceComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceComarca ? 'bold' : 'normal'}">Comarca *</label>
@@ -104,40 +122,53 @@ const FormPropietarioNatural = {
         </div>
     `,
     setup(props, { emit }) {
-        const formData = Vue.reactive({ ...props.data });
+        // IMPORTANTE: No usar spread — necesitamos el mismo objeto de app.js para que
+        // los cambios del callback (desde SelectCatalog) persistan al recrear el componente.
+        const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
 
         // Variables para nombres visuales
-        const profesionName = Vue.ref(formData.ProfessionCatalog ? '(ID: ' + formData.ProfessionCatalog + ')' : '');
+        // Inicializar el nombre visual desde el campo helper _ProfessionName (persiste en app.js)
+        const profesionName = Vue.ref(formData._ProfessionName || '');
 
-        // Catálogos locales
+        // Catálogos locales quemados (pequeños) extraídos de los JSONs originales
         const catalogos = {
+            TipoIdentificacion: [
+                { id: 1, nombre: 'Cédula de identidad', codigo: 'CI' },
+                { id: 2, nombre: 'Cédula de Residencia', codigo: 'CR' },
+                { id: 3, nombre: 'Pasaporte', codigo: 'PP' },
+                { id: 4, nombre: 'Numero RUC', codigo: 'RUC' },
+                { id: 5, nombre: 'Carnet de Notario', codigo: 'CN' },
+                { id: 6, nombre: 'Otro', codigo: 'OT' }
+            ],
             Generos: [
-                { id: 0, name: 'Masculino' },
-                { id: 1, name: 'Femenino' }
+                { id: 1, nombre: 'Femenino' },
+                { id: 2, nombre: 'Masculino' }
             ],
             EstadoCivil: [
-                { id: 1, name: 'Soltero(a)' },
-                { id: 2, name: 'Casado(a)' },
-                { id: 3, name: 'Unión de Hecho' }
+                { id: 1, nombre: 'Soltero(a)' },
+                { id: 2, nombre: 'Casado(a)' },
+                { id: 3, nombre: 'Union de Hecho' }
             ]
         };
 
-        const profesionWrapper = Vue.computed({
-            get: () => ({
-                id: formData.ProfessionCatalog,
-                name: profesionName.value
-            }),
-            set: (val) => {
-                if (val) {
-                    formData.ProfessionCatalog = val.id;
-                    profesionName.value = val.name;
-                } else {
-                    formData.ProfessionCatalog = 0;
-                    profesionName.value = '';
-                }
+        // Llamada a la app global usando el contexto global asegurado vueAppContext
+        const pedirProfesionGlobal = () => {
+            if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
+                vueAppContext.openCatalog({
+                    catalogName: 'Profesion',
+                    label: 'Buscar Profesión...',
+                    placeholder: 'Nombre o ID...',
+                    onSelect: (val) => {
+                        formData.ProfessionCatalog = val.id;    // <- campo DTO (va al backend)
+                        formData._ProfessionName = val.name; // <- helper UI (persiste en app.js)
+                        profesionName.value = val.name;         // <- actualiza el texto visible ahora
+                    }
+                });
+            } else {
+                console.error("❌ Contexto global vueAppContext.openCatalog no encontrado.");
             }
-        });
+        };
 
         const save = () => {
             // Limpiar errores previos
@@ -145,43 +176,51 @@ const FormPropietarioNatural = {
 
             const errorList = [];
 
-            if (!formData.FirstName) {
+            if (!formData.TipoIdentificacionCatalog) {
+                errors.TipoIdentificacionCatalog = true;
+                errorList.push('Tipo de Identificación');
+            }
+            if (!formData.Identificacion?.trim()) {
+                errors.Identificacion = true;
+                errorList.push('No. Identificación');
+            }
+            if (!formData.FirstName?.trim()) {
                 errors.FirstName = true;
                 errorList.push('Primer Nombre');
             }
-            if (!formData.FirstSurName) {
+            if (!formData.FirstSurName?.trim()) {
                 errors.FirstSurName = true;
                 errorList.push('Primer Apellido');
             }
-            if (formData.Gender === null || formData.Gender === undefined) {
-                errors.Gender = true;
+            if (!formData.GenderCatalog) {
+                errors.GenderCatalog = true;
                 errorList.push('Género');
             }
             if (formData.Age === null || formData.Age === undefined || formData.Age === '') {
                 errors.Age = true;
                 errorList.push('Edad');
             }
-            if (formData.CivilState === null || formData.CivilState === undefined) {
-                errors.CivilState = true;
+            if (!formData.CivilStateCatalog) {
+                errors.CivilStateCatalog = true;
                 errorList.push('Estado Civil');
             }
             if (!formData.ProfessionCatalog) {
                 errors.ProfessionCatalog = true;
                 errorList.push('Profesión');
             }
-            if (!formData.ResidenceDepartamento) {
-                errors.ResidenceDepartamento = true;
-                errorList.push('Departamento');
+            if (!formData.ResidenceMunicipioCatalog) {
+                errors.ResidenceMunicipioCatalog = true;
+                errorList.push('Municipio (ID catalog)');
             }
-            if (!formData.ResidenceComarca) {
+            if (!formData.ResidenceComarca?.trim()) {
                 errors.ResidenceComarca = true;
                 errorList.push('Comarca');
             }
-            if (!formData.ResidenceBarrio) {
+            if (!formData.ResidenceBarrio?.trim()) {
                 errors.ResidenceBarrio = true;
                 errorList.push('Barrio');
             }
-            if (!formData.ResidenceDireccion) {
+            if (!formData.ResidenceDireccion?.trim()) {
                 errors.ResidenceDireccion = true;
                 errorList.push('Dirección');
             }
@@ -203,7 +242,8 @@ const FormPropietarioNatural = {
             formData,
             errors,
             catalogos,
-            profesionWrapper,
+            profesionName,
+            pedirProfesionGlobal,
             save
         };
     }
