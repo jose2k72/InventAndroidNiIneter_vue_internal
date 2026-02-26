@@ -659,46 +659,13 @@ const app = createApp({
         const startCreate = (type) => {
             console.log('🏁 Iniciando creación:', type);
 
-            // 1. Validaciones de Exclusividad de Propietarios
+            // 1. Validaciones de Exclusividad de Propietarios (REMOVIDO: Ahora se permite mezcla y multiplicidad)
+            /*
             const hasNatural = listData.value.some(item => item.Data?.Type === 'PropietarioNatural');
             const hasJuridico = listData.value.some(item => item.Data?.Type === 'PropietarioJuridica');
+            ... logic removed ...
+            */
 
-            if (type === 'PropietarioNatural' && hasJuridico) {
-                showConfirmModal({
-                    icon: '🚫',
-                    title: 'Acción no permitida',
-                    message: 'Ya existe un Propietario Jurídico registrado. No se pueden mezclar tipos de propietarios en el mismo predio.',
-                    confirmText: 'Entendido',
-                    cancelText: '',
-                    onConfirm: () => { }
-                });
-                return;
-            }
-
-            if (type === 'PropietarioJuridica') {
-                if (hasJuridico) {
-                    showConfirmModal({
-                        icon: '🚫',
-                        title: 'Límite alcanzado',
-                        message: 'Solo se puede registrar un (1) Propietario Jurídico por predio.',
-                        confirmText: 'Entendido',
-                        cancelText: '',
-                        onConfirm: () => { }
-                    });
-                    return;
-                }
-                if (hasNatural) {
-                    showConfirmModal({
-                        icon: '🚫',
-                        title: 'Acción no permitida',
-                        message: 'Existen Propietarios Naturales registrados. No se puede agregar un propietario jurídico a este predio.',
-                        confirmText: 'Entendido',
-                        cancelText: '',
-                        onConfirm: () => { }
-                    });
-                    return;
-                }
-            }
 
             // 2. Validación de Entrevistado Único
             const hasEntrevistado = listData.value.some(item => item.Data?.Type === 'Entrevistado');

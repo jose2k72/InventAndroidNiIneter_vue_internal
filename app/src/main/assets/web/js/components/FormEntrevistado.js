@@ -1,6 +1,6 @@
 /**
  * Componente FormEntrevistado - Vue 3
- * Formulario para el Entrevistado basado en Entrevistado.cs y Person.cs
+ * Formulario para el Entrevistado basado en Person.cs y Entrevistado.cs de C#
  */
 
 const FormEntrevistado = {
@@ -8,26 +8,45 @@ const FormEntrevistado = {
     template: `
         <div class="form-container">
             <h2>🎤 Entrevistado / Informante</h2>
-            
+
             <div class="section">
                 <h3>📋 Relación</h3>
                 
-                <div class="form-group">
-                    <label :style="{color: errors.RelacionConParcela ? 'red' : 'inherit', fontWeight: errors.RelacionConParcela ? 'bold' : 'normal'}">Relación con la parcela *</label>
-                    <select v-model.number="formData.RelacionConParcela">
-                        <option :value="null" disabled selected>Seleccione...</option>
-                        <option v-for="opt in catalogos.RelacionInformanteParcela" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
-                    </select>
+                <div class="coords-grid">
+                    <div class="form-group">
+                        <label :style="{color: errors.RelacionConParcelaCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionConParcelaCatalog ? 'bold' : 'normal'}">Relación con la parcela *</label>
+                        <select v-model.number="formData.RelacionConParcelaCatalog">
+                            <option :value="null" disabled selected>Seleccione...</option>
+                            <option v-for="opt in catalogos.RelacionInformanteParcela" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label :style="{color: errors.RelacionInformantePropietarioCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionInformantePropietarioCatalog ? 'bold' : 'normal'}">Relación con el propietario *</label>
+                        <!-- Selector que llama a la vista principal -->
+                        <div class="selector-display" @click="pedirRelacionPropietarioGlobal">
+                            <span v-if="relacionPropietarioName" style="color: #1565C0; font-weight: 600;">{{ relacionPropietarioName }}</span>
+                            <span v-else style="color: #757575;">Seleccione relación...</span>
+                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label :style="{color: errors.RelacionInformantePropietarioCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionInformantePropietarioCatalog ? 'bold' : 'normal'}">Relación con el/la propietario(a) *</label>
-                    <catalogo-selector
-                        v-model="relacionPropietarioWrapper"
-                        catalog-name="RelacionInformantePropietario"
-                        label="Seleccionar relación..."
-                        placeholder="Buscar relación..."
-                    ></catalogo-selector>
+            </div>
+            
+            <div class="section">
+                <h3>🆔 Identificación</h3>
+                
+                <div class="coords-grid">
+                    <div class="form-group">
+                        <label :style="{color: errors.TipoIdentificacionCatalog ? 'red' : 'inherit', fontWeight: errors.TipoIdentificacionCatalog ? 'bold' : 'normal'}">Tipo de Identificación *</label>
+                        <select v-model.number="formData.TipoIdentificacionCatalog">
+                             <option :value="null" disabled selected>Seleccione...</option>
+                             <option v-for="opt in catalogos.TipoIdentificacion" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. Identificación *</label>
+                        <input type="text" v-model="formData.Identificacion" placeholder="Ej: 001-000000-0000A">
+                    </div>
                 </div>
             </div>
 
@@ -37,31 +56,31 @@ const FormEntrevistado = {
                 <div class="coords-grid">
                     <div class="form-group">
                         <label :style="{color: errors.FirstName ? 'red' : 'inherit', fontWeight: errors.FirstName ? 'bold' : 'normal'}">Primer Nombre *</label>
-                        <input type="text" v-model="formData.FirstName">
+                        <input type="text" v-model="formData.FirstName" placeholder="Ej: Juan">
                     </div>
                     <div class="form-group">
                         <label>Segundo Nombre</label>
-                        <input type="text" v-model="formData.SecondName">
+                        <input type="text" v-model="formData.SecondName" placeholder="Ej: Antonio">
                     </div>
                 </div>
 
                 <div class="coords-grid">
                     <div class="form-group">
                         <label :style="{color: errors.FirstSurName ? 'red' : 'inherit', fontWeight: errors.FirstSurName ? 'bold' : 'normal'}">Primer Apellido *</label>
-                        <input type="text" v-model="formData.FirstSurName">
+                        <input type="text" v-model="formData.FirstSurName" placeholder="Ej: Pérez">
                     </div>
                     <div class="form-group">
                         <label>Segundo Apellido</label>
-                        <input type="text" v-model="formData.SecondSurName">
+                        <input type="text" v-model="formData.SecondSurName" placeholder="Ej: García">
                     </div>
                 </div>
 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label :style="{color: errors.Gender ? 'red' : 'inherit', fontWeight: errors.Gender ? 'bold' : 'normal'}">Género *</label>
-                        <select v-model.number="formData.Gender">
-                            <option :value="null" disabled selected>Seleccione...</option>
-                            <option v-for="opt in catalogos.Generos" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
+                        <label :style="{color: errors.GenderCatalog ? 'red' : 'inherit', fontWeight: errors.GenderCatalog ? 'bold' : 'normal'}">Género *</label>
+                        <select v-model.number="formData.GenderCatalog">
+                             <option :value="null" disabled selected>Seleccione...</option>
+                             <option v-for="opt in catalogos.Generos" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -72,39 +91,78 @@ const FormEntrevistado = {
 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label :style="{color: errors.CivilState ? 'red' : 'inherit', fontWeight: errors.CivilState ? 'bold' : 'normal'}">Estado Civil *</label>
-                        <select v-model.number="formData.CivilState">
+                        <label :style="{color: errors.CivilStateCatalog ? 'red' : 'inherit', fontWeight: errors.CivilStateCatalog ? 'bold' : 'normal'}">Estado Civil *</label>
+                        <select v-model.number="formData.CivilStateCatalog">
                              <option :value="null" disabled selected>Seleccione...</option>
-                             <option v-for="opt in catalogos.EstadoCivil" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
+                             <option v-for="opt in catalogos.EstadoCivil" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label :style="{color: errors.ProfessionCatalog ? 'red' : 'inherit', fontWeight: errors.ProfessionCatalog ? 'bold' : 'normal'}">Profesión u Oficio *</label>
-                        <catalogo-selector
-                            v-model="profesionWrapper"
-                            catalog-name="Profesiones"
-                            label="Seleccionar profesión..."
-                            placeholder="Buscar profesión..."
-                        ></catalogo-selector>
+                       <label :style="{color: errors.ProfessionCatalog ? 'red' : 'inherit', fontWeight: errors.ProfessionCatalog ? 'bold' : 'normal'}">Profesión u Oficio *</label>
+                       <!-- Selector que llama a la vista principal -->
+                       <div class="selector-display" @click="pedirProfesionGlobal">
+                           <span v-if="profesionName" style="color: #1565C0; font-weight: 600;">{{ profesionName }}</span>
+                           <span v-else style="color: #757575;">Seleccione una profesión...</span>
+                           <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                       </div>
                     </div>
                 </div>
             </div>
 
             <div class="section">
                 <h3>🏠 Residencia</h3>
-                
-                <div class="coords-grid">
-                    <div class="form-group">
-                        <label :style="{color: errors.ResidenceDepartamento ? 'red' : 'inherit', fontWeight: errors.ResidenceDepartamento ? 'bold' : 'normal'}">Departamento *</label>
-                        <input type="text" v-model="formData.ResidenceDepartamento">
+
+                <!-- Municipio: selector visual de dos niveles -->
+                <div class="form-group">
+                    <label :style="{color: errors.ResidenceMunicipioCatalog ? 'red' : 'inherit', fontWeight: errors.ResidenceMunicipioCatalog ? 'bold' : 'normal'}">Municipio de Residencia *</label>
+
+                    <!-- Trigger para abrir el selector -->
+                    <div class="selector-display" @click="pedirMunicipioGlobal" style="margin-bottom: 6px;">
+                        <span v-if="muniDisplay" style="color: #1565C0; font-weight: 600;">Cambiar...</span>
+                        <span v-else style="color: #757575;">Seleccione departamento / municipio...</span>
+                        <span style="color: #1976D2; font-size: 1.2rem;">📍</span>
                     </div>
-                    <div class="form-group">
-                        <label :style="{color: errors.ResidenceComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceComarca ? 'bold' : 'normal'}">Comarca *</label>
-                        <input type="text" v-model="formData.ResidenceComarca">
+
+                    <!-- Visualización del departamento seleccionado (readonly) -->
+                    <div v-if="deptoDisplay" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px 12px;
+                        background: #e3f2fd;
+                        border: 1px solid #90caf9;
+                        border-radius: 6px;
+                        margin-bottom: 6px;
+                        font-size: 14px;
+                    ">
+                        <span style="font-weight: bold; color: #1565C0; min-width: 32px;">{{ deptoDisplay.cod }}</span>
+                        <span style="color: #333;">{{ deptoDisplay.nombre }}</span>
+                    </div>
+
+                    <!-- Visualización del municipio seleccionado (readonly) -->
+                    <div v-if="muniDisplay" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px 12px;
+                        background: #e8f5e9;
+                        border: 1px solid #a5d6a7;
+                        border-radius: 6px;
+                        font-size: 14px;
+                    ">
+                        <span style="font-weight: bold; color: #2e7d32; min-width: 32px;">{{ muniDisplay.cod }}</span>
+                        <span style="color: #333;">{{ muniDisplay.nombre }}</span>
                     </div>
                 </div>
-                
-                 <div class="form-group">
+
+                <!-- Comarca en una sola línea -->
+                <div class="form-group">
+                    <label :style="{color: errors.ResidenceComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceComarca ? 'bold' : 'normal'}">Comarca *</label>
+                    <input type="text" v-model="formData.ResidenceComarca">
+                </div>
+
+                <!-- Barrio / Caserío en una sola línea -->
+                <div class="form-group">
                     <label :style="{color: errors.ResidenceBarrio ? 'red' : 'inherit', fontWeight: errors.ResidenceBarrio ? 'bold' : 'normal'}">Barrio / Caserío *</label>
                     <input type="text" v-model="formData.ResidenceBarrio">
                 </div>
@@ -126,66 +184,111 @@ const FormEntrevistado = {
         </div>
     `,
     setup(props, { emit }) {
-        const formData = Vue.reactive({ ...props.data });
+        // IMPORTANTE: No usar spread — necesitamos el mismo objeto de app.js para que
+        // los cambios del callback (desde SelectCatalog) persistan al recrear el componente.
+        const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
 
-        // Variables para nombres visuales (el modelo solo tiene IDs)
-        // Inicialmente vacíos o con fallback al ID si ya existe dato
-        const relacionPropietarioName = Vue.ref(formData.RelacionInformantePropietarioCatalog ? '(ID: ' + formData.RelacionInformantePropietarioCatalog + ')' : '');
-        const profesionName = Vue.ref(formData.ProfessionCatalog ? '(ID: ' + formData.ProfessionCatalog + ')' : '');
+        // Variables para nombres visuales de Municipio
+        // Los _helper persisten en formData (que es el objeto de app.js)
+        const deptoDisplay = Vue.ref(
+            formData._DeptoNombre
+                ? { cod: formData._CodDepto, nombre: formData._DeptoNombre }
+                : null
+        );
+        const muniDisplay = Vue.ref(
+            formData._MuniNombre
+                ? { cod: formData.ResidenceMunicipioCatalog ? String(formData.ResidenceMunicipioCatalog).slice(-2) : '', nombre: formData._MuniNombre }
+                : null
+        );
 
-        // Catálogos locales (Enums hardcoded para garantizar carga)
+        // Llamada al selector de municipio (dos niveles)
+        const pedirMunicipioGlobal = () => {
+            if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openMunicipio === 'function') {
+                vueAppContext.openMunicipio({
+                    onSelect: (resultado) => {
+                        // DTO: código completo del municipio
+                        formData.ResidenceMunicipioCatalog = resultado.codMuni;
+                        // Helpers UI: persisten en el objeto de app.js
+                        formData._CodDepto = resultado.codDepto;
+                        formData._DeptoNombre = resultado.departamento;
+                        formData._MuniNombre = resultado.municipio;
+                        // Actualizar visualización local
+                        deptoDisplay.value = { cod: resultado.codDepto, nombre: resultado.departamento };
+                        muniDisplay.value = { cod: resultado.codMuni.slice(-2), nombre: resultado.municipio };
+                    }
+                });
+            } else {
+                console.error('❌ vueAppContext.openMunicipio no encontrado.');
+            }
+        };
+
+        // Nombre visual de profesión (helper UI que persiste en formData)
+        const profesionName = Vue.ref(formData._ProfessionName || '');
+        const relacionPropietarioName = Vue.ref(formData._RelacionPropietarioName || '');
+
+        // Llamada a la app global usando el contexto global asegurado vueAppContext
         const catalogos = {
             RelacionInformanteParcela: [
-                { id: 1, name: 'Propietario(a)' },
-                { id: 2, name: 'Poseedor(a)' },
-                { id: 3, name: 'Representante' },
-                { id: 4, name: 'Particular' },
-                { id: 5, name: 'Otro' }
+                { id: 1, nombre: 'Propietario(a)' },
+                { id: 2, nombre: 'Poseedor(a)' },
+                { id: 3, nombre: 'Representante' },
+                { id: 4, nombre: 'Particular' },
+                { id: 5, nombre: 'Otro' }
+            ],
+            TipoIdentificacion: [
+                { id: 1, nombre: 'Cédula de identidad', codigo: 'CI' },
+                { id: 2, nombre: 'Cédula de Residencia', codigo: 'CR' },
+                { id: 3, nombre: 'Pasaporte', codigo: 'PP' },
+                { id: 4, nombre: 'Numero RUC', codigo: 'RUC' },
+                { id: 5, nombre: 'Carnet de Notario', codigo: 'CN' },
+                { id: 6, nombre: 'Otro', codigo: 'OT' }
             ],
             Generos: [
-                { id: 0, name: 'Masculino' },
-                { id: 1, name: 'Femenino' }
+                { id: 1, nombre: 'Femenino' },
+                { id: 2, nombre: 'Masculino' }
             ],
             EstadoCivil: [
-                { id: 1, name: 'Soltero(a)' },
-                { id: 2, name: 'Casado(a)' },
-                { id: 3, name: 'Unión de Hecho' }
+                { id: 1, nombre: 'Soltero(a)' },
+                { id: 2, nombre: 'Casado(a)' },
+                { id: 3, nombre: 'Union de Hecho' }
             ]
         };
 
-        // Computed Wrappers para CatalogoSelector (ID <-> {id, name})
-        const relacionPropietarioWrapper = Vue.computed({
-            get: () => ({
-                id: formData.RelacionInformantePropietarioCatalog,
-                name: relacionPropietarioName.value
-            }),
-            set: (val) => {
-                if (val) {
-                    formData.RelacionInformantePropietarioCatalog = val.id;
-                    relacionPropietarioName.value = val.name;
-                } else {
-                    formData.RelacionInformantePropietarioCatalog = 0;
-                    relacionPropietarioName.value = '';
-                }
+        const pedirRelacionPropietarioGlobal = () => {
+            if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
+                vueAppContext.openCatalog({
+                    catalogName: 'RelacionInformantePropietario',
+                    label: 'Buscar Relación...',
+                    placeholder: 'Nombre o ID...',
+                    onSelect: (val) => {
+                        formData.RelacionInformantePropietarioCatalog = val.id;    // <- campo DTO
+                        formData._RelacionPropietarioName = val.name; // <- helper UI
+                        relacionPropietarioName.value = val.name;         // <- actualiza vista local
+                    }
+                });
+            } else {
+                console.error("❌ Contexto global vueAppContext.openCatalog no encontrado.");
             }
-        });
+        };
 
-        const profesionWrapper = Vue.computed({
-            get: () => ({
-                id: formData.ProfessionCatalog,
-                name: profesionName.value
-            }),
-            set: (val) => {
-                if (val) {
-                    formData.ProfessionCatalog = val.id;
-                    profesionName.value = val.name;
-                } else {
-                    formData.ProfessionCatalog = 0;
-                    profesionName.value = '';
-                }
+        // Llamada a la app global usando el contexto global asegurado vueAppContext
+        const pedirProfesionGlobal = () => {
+            if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
+                vueAppContext.openCatalog({
+                    catalogName: 'Profesion',
+                    label: 'Buscar Profesión...',
+                    placeholder: 'Nombre o ID...',
+                    onSelect: (val) => {
+                        formData.ProfessionCatalog = val.id;    // <- campo DTO (va al backend)
+                        formData._ProfessionName = val.name; // <- helper UI (persiste en app.js)
+                        profesionName.value = val.name;         // <- actualiza el texto visible ahora
+                    }
+                });
+            } else {
+                console.error("❌ Contexto global vueAppContext.openCatalog no encontrado.");
             }
-        });
+        };
 
         const save = () => {
             // Limpiar errores previos
@@ -193,51 +296,59 @@ const FormEntrevistado = {
 
             const errorList = [];
 
-            if (formData.RelacionConParcela === null || formData.RelacionConParcela === undefined) {
-                errors.RelacionConParcela = true;
+            if (!formData.RelacionConParcelaCatalog) {
+                errors.RelacionConParcelaCatalog = true;
                 errorList.push('Relación con la parcela');
             }
             if (!formData.RelacionInformantePropietarioCatalog) {
                 errors.RelacionInformantePropietarioCatalog = true;
                 errorList.push('Relación con el propietario');
             }
-            if (!formData.FirstName) {
+            if (!formData.TipoIdentificacionCatalog) {
+                errors.TipoIdentificacionCatalog = true;
+                errorList.push('Tipo de Identificación');
+            }
+            if (!formData.Identificacion?.trim()) {
+                errors.Identificacion = true;
+                errorList.push('No. Identificación');
+            }
+            if (!formData.FirstName?.trim()) {
                 errors.FirstName = true;
                 errorList.push('Primer Nombre');
             }
-            if (!formData.FirstSurName) {
+            if (!formData.FirstSurName?.trim()) {
                 errors.FirstSurName = true;
                 errorList.push('Primer Apellido');
             }
-            if (formData.Gender === null || formData.Gender === undefined) {
-                errors.Gender = true;
+            if (!formData.GenderCatalog) {
+                errors.GenderCatalog = true;
                 errorList.push('Género');
             }
             if (formData.Age === null || formData.Age === undefined || formData.Age === '') {
                 errors.Age = true;
                 errorList.push('Edad');
             }
-            if (formData.CivilState === null || formData.CivilState === undefined) {
-                errors.CivilState = true;
+            if (!formData.CivilStateCatalog) {
+                errors.CivilStateCatalog = true;
                 errorList.push('Estado Civil');
             }
             if (!formData.ProfessionCatalog) {
                 errors.ProfessionCatalog = true;
                 errorList.push('Profesión');
             }
-            if (!formData.ResidenceDepartamento) {
-                errors.ResidenceDepartamento = true;
-                errorList.push('Departamento');
+            if (!formData.ResidenceMunicipioCatalog) {
+                errors.ResidenceMunicipioCatalog = true;
+                errorList.push('Municipio (ID catalog)');
             }
-            if (!formData.ResidenceComarca) {
+            if (!formData.ResidenceComarca?.trim()) {
                 errors.ResidenceComarca = true;
                 errorList.push('Comarca');
             }
-            if (!formData.ResidenceBarrio) {
+            if (!formData.ResidenceBarrio?.trim()) {
                 errors.ResidenceBarrio = true;
                 errorList.push('Barrio');
             }
-            if (!formData.ResidenceDireccion) {
+            if (!formData.ResidenceDireccion?.trim()) {
                 errors.ResidenceDireccion = true;
                 errorList.push('Dirección');
             }
@@ -259,12 +370,17 @@ const FormEntrevistado = {
             formData,
             errors,
             catalogos,
-            relacionPropietarioWrapper,
-            profesionWrapper,
+            relacionPropietarioName,
+            pedirRelacionPropietarioGlobal,
+            profesionName,
+            pedirProfesionGlobal,
+            deptoDisplay,
+            muniDisplay,
+            pedirMunicipioGlobal,
             save
         };
     }
 };
 
-// Registrar componente usando app global
+// Registrar componente
 window.app.component('form-entrevistado', FormEntrevistado);
