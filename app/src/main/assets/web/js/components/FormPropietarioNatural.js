@@ -88,19 +88,58 @@ const FormPropietarioNatural = {
 
             <div class="section">
                 <h3>🏠 Residencia</h3>
-                
-                <div class="coords-grid">
-                    <div class="form-group">
-                         <label :style="{color: errors.ResidenceMunicipioCatalog ? 'red' : 'inherit', fontWeight: errors.ResidenceMunicipioCatalog ? 'bold' : 'normal'}">ID Municipio *</label>
-                        <input type="number" v-model.number="formData.ResidenceMunicipioCatalog" placeholder="Temporal: ID Mun">
+
+                <!-- Municipio: selector visual de dos niveles -->
+                <div class="form-group">
+                    <label :style="{color: errors.ResidenceMunicipioCatalog ? 'red' : 'inherit', fontWeight: errors.ResidenceMunicipioCatalog ? 'bold' : 'normal'}">Municipio de Residencia *</label>
+
+                    <!-- Trigger para abrir el selector -->
+                    <div class="selector-display" @click="pedirMunicipioGlobal" style="margin-bottom: 6px;">
+                        <span v-if="muniDisplay" style="color: #1565C0; font-weight: 600;">Cambiar...</span>
+                        <span v-else style="color: #757575;">Seleccione departamento / municipio...</span>
+                        <span style="color: #1976D2; font-size: 1.2rem;">📍</span>
                     </div>
-                    <div class="form-group">
-                        <label :style="{color: errors.ResidenceComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceComarca ? 'bold' : 'normal'}">Comarca *</label>
-                        <input type="text" v-model="formData.ResidenceComarca">
+
+                    <!-- Visualización del departamento seleccionado (readonly) -->
+                    <div v-if="deptoDisplay" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px 12px;
+                        background: #e3f2fd;
+                        border: 1px solid #90caf9;
+                        border-radius: 6px;
+                        margin-bottom: 6px;
+                        font-size: 14px;
+                    ">
+                        <span style="font-weight: bold; color: #1565C0; min-width: 32px;">{{ deptoDisplay.cod }}</span>
+                        <span style="color: #333;">{{ deptoDisplay.nombre }}</span>
+                    </div>
+
+                    <!-- Visualización del municipio seleccionado (readonly) -->
+                    <div v-if="muniDisplay" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px 12px;
+                        background: #e8f5e9;
+                        border: 1px solid #a5d6a7;
+                        border-radius: 6px;
+                        font-size: 14px;
+                    ">
+                        <span style="font-weight: bold; color: #2e7d32; min-width: 32px;">{{ muniDisplay.cod }}</span>
+                        <span style="color: #333;">{{ muniDisplay.nombre }}</span>
                     </div>
                 </div>
-                
-                 <div class="form-group">
+
+                <!-- Comarca en una sola línea -->
+                <div class="form-group">
+                    <label :style="{color: errors.ResidenceComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceComarca ? 'bold' : 'normal'}">Comarca *</label>
+                    <input type="text" v-model="formData.ResidenceComarca">
+                </div>
+
+                <!-- Barrio / Caserío en una sola línea -->
+                <div class="form-group">
                     <label :style="{color: errors.ResidenceBarrio ? 'red' : 'inherit', fontWeight: errors.ResidenceBarrio ? 'bold' : 'normal'}">Barrio / Caserío *</label>
                     <input type="text" v-model="formData.ResidenceBarrio">
                 </div>
@@ -127,11 +166,44 @@ const FormPropietarioNatural = {
         const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
 
-        // Variables para nombres visuales
-        // Inicializar el nombre visual desde el campo helper _ProfessionName (persiste en app.js)
+        // Variables para nombres visuales de Municipio
+        // Los _helper persisten en formData (que es el objeto de app.js)
+        const deptoDisplay = Vue.ref(
+            formData._DeptoNombre
+                ? { cod: formData._CodDepto, nombre: formData._DeptoNombre }
+                : null
+        );
+        const muniDisplay = Vue.ref(
+            formData._MuniNombre
+                ? { cod: formData.ResidenceMunicipioCatalog ? String(formData.ResidenceMunicipioCatalog).slice(-2) : '', nombre: formData._MuniNombre }
+                : null
+        );
+
+        // Llamada al selector de municipio (dos niveles)
+        const pedirMunicipioGlobal = () => {
+            if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openMunicipio === 'function') {
+                vueAppContext.openMunicipio({
+                    onSelect: (resultado) => {
+                        // DTO: código completo del municipio
+                        formData.ResidenceMunicipioCatalog = resultado.codMuni;
+                        // Helpers UI: persisten en el objeto de app.js
+                        formData._CodDepto = resultado.codDepto;
+                        formData._DeptoNombre = resultado.departamento;
+                        formData._MuniNombre = resultado.municipio;
+                        // Actualizar visualización local
+                        deptoDisplay.value = { cod: resultado.codDepto, nombre: resultado.departamento };
+                        muniDisplay.value = { cod: resultado.codMuni.slice(-2), nombre: resultado.municipio };
+                    }
+                });
+            } else {
+                console.error('❌ vueAppContext.openMunicipio no encontrado.');
+            }
+        };
+
+        // Nombre visual de profesión (helper UI que persiste en formData)
         const profesionName = Vue.ref(formData._ProfessionName || '');
 
-        // Catálogos locales quemados (pequeños) extraídos de los JSONs originales
+        // Llamada a la app global usando el contexto global asegurado vueAppContext
         const catalogos = {
             TipoIdentificacion: [
                 { id: 1, nombre: 'Cédula de identidad', codigo: 'CI' },
@@ -244,6 +316,9 @@ const FormPropietarioNatural = {
             catalogos,
             profesionName,
             pedirProfesionGlobal,
+            deptoDisplay,
+            muniDisplay,
+            pedirMunicipioGlobal,
             save
         };
     }

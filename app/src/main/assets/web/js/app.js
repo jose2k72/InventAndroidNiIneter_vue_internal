@@ -288,10 +288,11 @@ const app = createApp({
             Type: 'PropietarioNatural',
             // Person fields
             FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
-            Gender: null, // null para forzar selección
-            Age: null, // null para forzar entrada
-            CivilState: null, // null para forzar selección
+            Gender: null,
+            Age: null,
+            CivilState: null,
             ProfessionCatalog: 0,
+            ResidenceMunicipioCatalog: '',  // CodMuni completo ej: '5525'
             ResidenceDireccion: '',
             ResidenceDepartamento: '',
             ResidenceComarca: '',
@@ -582,6 +583,27 @@ const app = createApp({
             });
         };
 
+        // ── Selector de Municipio (dos niveles: Dpto → Municipio) ──────────
+        const municipioParams = Vue.ref(null);
+
+        const openMunicipio = (params) => {
+            municipioParams.value = params || {};
+            operation.value = 'SelectMunicipio';
+        };
+
+        const onMunicipioSelect = (resultado) => {
+            if (municipioParams.value && typeof municipioParams.value.onSelect === 'function') {
+                municipioParams.value.onSelect(resultado);
+            }
+            municipioParams.value = null;
+            operation.value = 'Edit';
+        };
+
+        const cancelMunicipio = () => {
+            municipioParams.value = null;
+            operation.value = 'Edit';
+        };
+
         // Abrir cámara
         const openCamera = () => {
             if (typeof Android !== 'undefined') {
@@ -604,7 +626,8 @@ const app = createApp({
                 formData,
                 listData,
                 updateData,
-                openCatalog  // <-- Exponer función global
+                openCatalog,    // <- Selector catálogo grande (Profesión, etc.)
+                openMunicipio   // <- Selector municipio dos niveles
             };
             console.log('✅ Vue app context guardado globalmente (con tracking de fotos)');
         });
@@ -815,11 +838,16 @@ const app = createApp({
             fotos,
             encuestador,
 
-            // Catálogo Global
+            // Catálogo Global (un nivel - ej. Profesión)
             catalogParams,
             openCatalog,
             onCatalogSelect,
             cancelCatalog,
+
+            // Selector Municipio (dos niveles: Depto → Municipio)
+            municipioParams,
+            onMunicipioSelect,
+            cancelMunicipio,
 
             // Acciones
 

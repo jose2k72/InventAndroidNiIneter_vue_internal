@@ -428,6 +428,12 @@
                 :label="catalogParams.label || 'Seleccionar...'" :placeholder="catalogParams.placeholder || 'Buscar...'"
                 @cancel="cancelCatalog" @select="onCatalogSelect"></catalogo-selector-grande>
         </div>
+
+        <!-- Vista Global Selección Municipio (Dos Niveles) -->
+        <div v-else-if="operation === 'SelectMunicipio'">
+            <catalogo-selector-two-levels @cancel="cancelMunicipio"
+                @select="onMunicipioSelect"></catalogo-selector-two-levels>
+        </div>
     </div>
 
     <!-- Modal Selección de Ruta (Template) -->
@@ -452,6 +458,7 @@
     <!-- Componentes Vue (se registran en la app ya creada) -->
     <script src="js/components/CatalogoSelector.js"></script>
     <script src="js/components/CatalogoSelectorGrande.js"></script>
+    <script src="js/components/CatalogoSelectorTwoLevels.js"></script>
     <script src="js/components/FormAcera.js"></script>
     <script src="js/components/FormCosto.js"></script>
     <script src="js/components/FormEncuestaCatastral.js"></script>

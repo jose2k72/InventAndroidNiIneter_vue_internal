@@ -1,6 +1,75 @@
 # Changelog - Inv Goico ACERAS
 
-## [2026-02-08] - Sesión de Desarrollo
+## [2026-02-26] - Selectores Globales de Catálogo + Municipio
+
+### Nuevas Funcionalidades
+
+#### 🔍 `CatalogoSelectorGrande` — Selector a Pantalla Completa (Un nivel)
+- Nuevo componente Vue que reemplaza el `<select>` nativo para catálogos grandes.
+- Layout: campo de búsqueda fijo arriba → lista scrolleable central → botones ACEPTAR/CANCELAR fijos al fondo.
+- Búsqueda en tiempo real filtrada por nombre o ID.
+- Carga progresiva (lazy): 35 items iniciales + 30 más por scroll (`IntersectionObserver`).
+- Usa **solo estilos inline** para máxima compatibilidad con Android WebView.
+- **Archivo:** `js/components/CatalogoSelectorGrande.js`
+
+#### 🗺️ `CatalogoSelectorTwoLevels` — Selector Jerárquico (Dos niveles)
+- Nuevo componente para selección de Departamento→Municipio.
+- Dos listas scrolleables apiladas: Departamentos arriba, Municipios del depto seleccionado abajo.
+- Código depto completo (`"55"`) + código municipio últimos 2 dígitos (`"25"` de `"5525"`).
+- El DTO recibe el `CodMuni` completo (`"5525"`) en `ResidenceMunicipioCatalog`.
+- **Archivo:** `js/components/CatalogoSelectorTwoLevels.js`
+- **Datos:** `data/DepartamentosMunicipios.json`
+
+#### 🔄 Mecanismo Global de Operaciones en `app.js`
+- Nuevo estado `operation = 'SelectCatalog'` para activar `CatalogoSelectorGrande`.
+- Nuevo estado `operation = 'SelectMunicipio'` para activar `CatalogoSelectorTwoLevels`.
+- Referencias y funciones expuestas en `vueAppContext` para que los formularios hijos las invoquen:
+  - `openCatalog(options)` / `onCatalogSelect(result)` / `cancelCatalog()`
+  - `openMunicipio(params)` / `onMunicipioSelect(resultado)` / `cancelMunicipio()`
+
+### Mejoras en Formularios
+
+#### 📝 `FormPropietarioNatural` — Sección Identificación y Residencia
+- **Selección de Profesión**: Campo visual con lupa (🔍) que abre `CatalogoSelectorGrande` al toque.
+- **Selección de Municipio**: Campo visual con pin (📍) que abre `CatalogoSelectorTwoLevels`.
+  - Muestra departamento seleccionado en ficha azul (readonly).
+  - Muestra municipio seleccionado en ficha verde (readonly).
+- **Comarca y Barrio/Caserío**: Rediseñados como campos de línea individual (no en grid).
+- `ResidenceMunicipioCatalog` ahora es `String` (antes `Number`) con el código completo.
+
+### Correcciones Técnicas
+
+#### 🐛 Persistencia de Datos al Regresar del Selector
+- **Problema:** Vue destruye y recrea el formulario al cambiar `operation`. Los nombres visuales se perdían.
+- **Solución:** `formData = Vue.reactive(props.data)` sin spread, más campos `_helper`:
+  - `formData._ProfessionName` — nombre de profesión seleccionada
+  - `formData._CodDepto`, `formData._DeptoNombre`, `formData._MuniNombre` — datos de municipio
+- Los `_helpers` persisten porque `formData` apunta al mismo objeto reactivo de `app.js`.
+
+#### 🐛 Funciones de Cierre del Selector no Accesibles desde Template
+- **Problema:** `cancelMunicipio` y `onMunicipioSelect` definidas en `setup()` pero no en `return {}`.
+- **Solución:** Añadidas al `return { ... }` de app.js.
+
+### Documentación Creada
+
+| Documento | Descripción |
+|-----------|-------------|
+| `SELECTORES_CATALOGO_GLOBAL.md` | Documentación completa: arquitectura, props, eventos, patrones de uso, checklist para nuevos selectores, notas técnicas WebView |
+
+### Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `js/components/CatalogoSelectorGrande.js` | Rediseño total: estilos inline, lista scrolleable robusta, selección visual con ✓ |
+| `js/components/CatalogoSelectorTwoLevels.js` | **Nuevo** — selector dos niveles depto/municipio |
+| `js/app.js` | Añadidos `openMunicipio`, `cancelMunicipio`, `onMunicipioSelect`, `municipioParams`; `ResidenceMunicipioCatalog` en modelo |
+| `js/components/FormPropietarioNatural.js` | Sección Residencia rediseñada; persistencia de nombres visuales |
+| `index.html` | Vista `SelectMunicipio`; carga del nuevo script |
+| `docs/SELECTORES_CATALOGO_GLOBAL.md` | **Nuevo** — documentación de selectores |
+
+---
+
+
 
 ### Nuevas Funcionalidades
 
