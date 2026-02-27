@@ -184,7 +184,51 @@ const FormEncuestaCatastral = {
                 </div>
             </div>
 
-            <!-- SECCIÓN 5: DOCUMENTOS -->
+            <!-- SECCIÓN 5: DATOS REGISTRALES (Movida) -->
+            <div class="section">
+                <h3>📜 Datos Registrales</h3>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" v-model="formData.TieneDatosRegistrales">
+                        <span class="checkmark"></span>
+                        ¿Tiene Datos Registrales?
+                    </label>
+                </div>
+                <div v-if="formData.TieneDatosRegistrales">
+                    <div class="coords-grid">
+                        <div class="form-group">
+                            <label :style="{color: errors.FechaAdquisicion ? 'red' : 'inherit', fontWeight: errors.FechaAdquisicion ? 'bold' : 'normal'}">Fecha Adquisición *</label>
+                            <input type="date" v-model="formData.FechaAdquisicion">
+                        </div>
+                        <div class="form-group">
+                            <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha Registro *</label>
+                            <input type="date" v-model="formData.FechaRegistro">
+                        </div>
+                    </div>
+                    <div class="coords-grid">
+                        <div class="form-group">
+                            <label :style="{color: errors.NoFinca ? 'red' : 'inherit', fontWeight: errors.NoFinca ? 'bold' : 'normal'}">No. Finca *</label>
+                            <input type="text" v-model="formData.NoFinca">
+                        </div>
+                        <div class="form-group">
+                            <label :style="{color: errors.Tomo ? 'red' : 'inherit', fontWeight: errors.Tomo ? 'bold' : 'normal'}">Tomo *</label>
+                            <input type="text" v-model="formData.Tomo">
+                        </div>
+                    </div>
+                    <div class="coords-grid">
+                        <div class="form-group">
+                            <label :style="{color: errors.Folio ? 'red' : 'inherit', fontWeight: errors.Folio ? 'bold' : 'normal'}">Folio *</label>
+                            <input type="text" v-model="formData.Folio">
+                        </div>
+                        <div class="form-group">
+                            <label :style="{color: errors.Asiento ? 'red' : 'inherit', fontWeight: errors.Asiento ? 'bold' : 'normal'}">Asiento *</label>
+                            <input type="text" v-model="formData.Asiento">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 6: DOCUMENTOS -->
             <div class="section">
                 <h3>📂 Documentos</h3>
                 
@@ -248,7 +292,7 @@ const FormEncuestaCatastral = {
                 </div>
             </div>
 
-            <!-- SECCIÓN 6: A FAVOR DE -->
+            <!-- SECCIÓN 7: A FAVOR DE -->
             <div class="section">
                 <h3>🤝 A Favor De (Terceros)</h3>
                 <div class="form-group checkbox-group">
@@ -273,52 +317,7 @@ const FormEncuestaCatastral = {
                     </div>
                 </div>
             </div>
-
-            <!-- SECCIÓN 7: DATOS REGISTRALES -->
-            <div class="section">
-                <h3>📜 Datos Registrales</h3>
-                <div class="form-group checkbox-group">
-                    <label class="checkbox-container">
-                        <input type="checkbox" v-model="formData.TieneDatosRegistrales">
-                        <span class="checkmark"></span>
-                        ¿Tiene Datos Registrales?
-                    </label>
-                </div>
-                <div v-if="formData.TieneDatosRegistrales">
-                    <div class="coords-grid">
-                        <div class="form-group">
-                            <label :style="{color: errors.FechaAdquisicion ? 'red' : 'inherit', fontWeight: errors.FechaAdquisicion ? 'bold' : 'normal'}">Fecha Adquisición *</label>
-                            <input type="date" v-model="formData.FechaAdquisicion">
-                        </div>
-                        <div class="form-group">
-                            <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha Registro *</label>
-                            <input type="date" v-model="formData.FechaRegistro">
-                        </div>
-                    </div>
-                    <div class="coords-grid">
-                        <div class="form-group">
-                            <label :style="{color: errors.NoFinca ? 'red' : 'inherit', fontWeight: errors.NoFinca ? 'bold' : 'normal'}">No. Finca *</label>
-                            <input type="text" v-model="formData.NoFinca">
-                        </div>
-                        <div class="form-group">
-                            <label :style="{color: errors.Tomo ? 'red' : 'inherit', fontWeight: errors.Tomo ? 'bold' : 'normal'}">Tomo *</label>
-                            <input type="text" v-model="formData.Tomo">
-                        </div>
-                    </div>
-                    <div class="coords-grid">
-                        <div class="form-group">
-                            <label :style="{color: errors.Folio ? 'red' : 'inherit', fontWeight: errors.Folio ? 'bold' : 'normal'}">Folio *</label>
-                            <input type="text" v-model="formData.Folio">
-                        </div>
-                        <div class="form-group">
-                            <label :style="{color: errors.Asiento ? 'red' : 'inherit', fontWeight: errors.Asiento ? 'bold' : 'normal'}">Asiento *</label>
-                            <input type="text" v-model="formData.Asiento">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CONFLICTOS -->
+            <!-- SECCIÓN 8: CONFLICTOS -->
             <div class="section">
                 <h3>⚠️ Conflictos</h3>
                 <div class="form-group checkbox-group">
