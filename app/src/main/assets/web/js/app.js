@@ -22,6 +22,7 @@ const app = createApp({
         const formType = ref('');
         const currentId = ref(-1);
         const currentIndex = ref(0);
+        const savedScrollPos = ref(0);
 
         // Datos de ubicación
         const latLng = reactive({
@@ -309,7 +310,9 @@ const app = createApp({
             Tomo: '',
             Folio: '',
             Asiento: '',
-            GestionConflictoCatalog: null,
+            ClaseConflictoCatalog: null,
+            TieneConflicto: false,
+            ClaseConflictoOtroText: '',
             // Helpers UI
             _MuniNombre: '', _DeptoNombre: '', _CodDepto: '',
             _ParentescoName: '', _ConflictoName: ''
@@ -630,6 +633,7 @@ const app = createApp({
         const municipioParams = Vue.ref(null);
 
         const openMunicipio = (params) => {
+            savedScrollPos.value = window.scrollY;
             municipioParams.value = params || {};
             operation.value = 'SelectMunicipio';
         };
@@ -655,6 +659,23 @@ const app = createApp({
                 console.log('Cámara no disponible en modo desarrollo');
             }
         };
+
+        // Restaurar scroll al volver de selectores
+        Vue.watch(operation, (newOp, oldOp) => {
+            const viewsWithScroll = ['Edit', 'Create'];
+            const selectors = ['SelectCatalog', 'SelectMunicipio'];
+
+            if (viewsWithScroll.includes(newOp) && selectors.includes(oldOp)) {
+                Vue.nextTick(() => {
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: savedScrollPos.value,
+                            behavior: 'auto'
+                        });
+                    }, 50); // Un pequeño delay para asegurar renderizado de componentes pesados
+                });
+            }
+        });
 
         // Inicializar al montar
         onMounted(() => {
@@ -811,6 +832,7 @@ const app = createApp({
 
         const openCatalog = (options) => {
             // Guardamos qué catálogo se pidió y a qué variable local de retorno va dirigida
+            savedScrollPos.value = window.scrollY;
             catalogParams.value = options;
             operation.value = 'SelectCatalog';
         };

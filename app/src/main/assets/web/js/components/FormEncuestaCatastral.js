@@ -204,8 +204,8 @@ const FormEncuestaCatastral = {
                         </div>
                         
                         <div class="form-group">
-                            <label>Tipo de Documento</label>
-                            <div class="selector-display" @click="pedirDocumentoGlobal(index)">
+                            <label :style="{color: (errors['Doc' + index + '_Catalog']) ? 'red' : 'inherit', fontWeight: (errors['Doc' + index + '_Catalog']) ? 'bold' : 'normal'}">Tipo de Documento *</label>
+                            <div class="selector-display" @click="pedirDocumentoGlobal(index)" :style="{borderColor: (errors['Doc' + index + '_Catalog']) ? '#d32f2f' : '#ccc'}">
                                 <span v-if="doc._DocumentoName" style="color: #1565C0; font-weight: 600;">{{ doc._DocumentoName }}</span>
                                 <span v-else style="color: #757575;">Seleccione un documento...</span>
                                 <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
@@ -213,13 +213,13 @@ const FormEncuestaCatastral = {
                         </div>
 
                         <div class="form-group">
-                            <label>Autor o Notario</label>
-                            <input type="text" v-model="doc.AutorNotario">
+                            <label :style="{color: (errors['Doc' + index + '_Autor']) ? 'red' : 'inherit', fontWeight: (errors['Doc' + index + '_Autor']) ? 'bold' : 'normal'}">Autor o Notario *</label>
+                            <input type="text" v-model="doc.AutorNotario" :style="{borderColor: (errors['Doc' + index + '_Autor']) ? '#d32f2f' : '#ccc'}">
                         </div>
 
                         <div class="form-group">
-                            <label>Fecha de Documento</label>
-                            <input type="date" v-model="doc.FechaDocumento">
+                            <label :style="{color: (errors['Doc' + index + '_Fecha']) ? 'red' : 'inherit', fontWeight: (errors['Doc' + index + '_Fecha']) ? 'bold' : 'normal'}">Fecha de Documento *</label>
+                            <input type="date" v-model="doc.FechaDocumento" :style="{borderColor: (errors['Doc' + index + '_Fecha']) ? '#d32f2f' : '#ccc'}">
                         </div>
                     </div>
                     
@@ -260,12 +260,12 @@ const FormEncuestaCatastral = {
                 </div>
                 <div v-if="formData.EsAFavorDe">
                     <div class="form-group">
-                        <label>Nombre del Tercero</label>
+                        <label :style="{color: errors.AFavorDe ? 'red' : 'inherit', fontWeight: errors.AFavorDe ? 'bold' : 'normal'}">Nombre del Tercero *</label>
                         <input type="text" v-model="formData.AFavorDe">
                     </div>
                     <div class="form-group">
-                        <label>Parentesco / Relación</label>
-                        <div class="selector-display" @click="pedirParentescoGlobal">
+                        <label :style="{color: errors.RelacionConPoseedorCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionConPoseedorCatalog ? 'bold' : 'normal'}">Parentesco / Relación *</label>
+                        <div class="selector-display" @click="pedirParentescoGlobal" :style="{borderColor: errors.RelacionConPoseedorCatalog ? '#d32f2f' : '#ccc'}">
                             <span v-if="parentescoName" style="color: #1565C0; font-weight: 600;">{{ parentescoName }}</span>
                             <span v-else style="color: #757575;">Seleccione parentesco...</span>
                             <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
@@ -287,31 +287,31 @@ const FormEncuestaCatastral = {
                 <div v-if="formData.TieneDatosRegistrales">
                     <div class="coords-grid">
                         <div class="form-group">
-                            <label>Fecha Adquisición</label>
+                            <label :style="{color: errors.FechaAdquisicion ? 'red' : 'inherit', fontWeight: errors.FechaAdquisicion ? 'bold' : 'normal'}">Fecha Adquisición *</label>
                             <input type="date" v-model="formData.FechaAdquisicion">
                         </div>
                         <div class="form-group">
-                            <label>Fecha Registro</label>
+                            <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha Registro *</label>
                             <input type="date" v-model="formData.FechaRegistro">
                         </div>
                     </div>
                     <div class="coords-grid">
                         <div class="form-group">
-                            <label>No. Finca</label>
+                            <label :style="{color: errors.NoFinca ? 'red' : 'inherit', fontWeight: errors.NoFinca ? 'bold' : 'normal'}">No. Finca *</label>
                             <input type="text" v-model="formData.NoFinca">
                         </div>
                         <div class="form-group">
-                            <label>Tomo</label>
+                            <label :style="{color: errors.Tomo ? 'red' : 'inherit', fontWeight: errors.Tomo ? 'bold' : 'normal'}">Tomo *</label>
                             <input type="text" v-model="formData.Tomo">
                         </div>
                     </div>
                     <div class="coords-grid">
                         <div class="form-group">
-                            <label>Folio</label>
+                            <label :style="{color: errors.Folio ? 'red' : 'inherit', fontWeight: errors.Folio ? 'bold' : 'normal'}">Folio *</label>
                             <input type="text" v-model="formData.Folio">
                         </div>
                         <div class="form-group">
-                            <label>Asiento</label>
+                            <label :style="{color: errors.Asiento ? 'red' : 'inherit', fontWeight: errors.Asiento ? 'bold' : 'normal'}">Asiento *</label>
                             <input type="text" v-model="formData.Asiento">
                         </div>
                     </div>
@@ -321,12 +321,27 @@ const FormEncuestaCatastral = {
             <!-- CONFLICTOS -->
             <div class="section">
                 <h3>⚠️ Conflictos</h3>
-                <div class="form-group">
-                    <label>Gestión de Conflicto</label>
-                    <div class="selector-display" @click="pedirGestionConflictoGlobal">
-                        <span v-if="conflictoName" style="color: #B71C1C; font-weight: 600;">{{ conflictoName }}</span>
-                        <span v-else style="color: #757575;">Seleccione gestión...</span>
-                        <span style="color: #D32F2F; font-size: 1.2rem;">🔍</span>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" v-model="formData.TieneConflicto">
+                        <span class="checkmark"></span>
+                        ¿Tiene Conflicto?
+                    </label>
+                </div>
+                
+                <div v-if="formData.TieneConflicto">
+                    <div class="form-group">
+                        <label :style="{color: errors.ClaseConflictoCatalog ? 'red' : 'inherit', fontWeight: errors.ClaseConflictoCatalog ? 'bold' : 'normal'}">Clase de Conflicto *</label>
+                        <div class="selector-display" @click="pedirClaseConflictoGlobal" :style="{borderColor: errors.ClaseConflictoCatalog ? '#d32f2f' : '#ccc'}">
+                            <span v-if="conflictoName" style="color: #1565C0; font-weight: 600;">{{ conflictoName }}</span>
+                            <span v-else style="color: #757575;">Seleccione clase...</span>
+                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                        </div>
+                    </div>
+
+                    <div v-if="formData.ClaseConflictoCatalog === 13" class="form-group" style="margin-top: 10px;">
+                        <label :style="{color: errors.ClaseConflictoOtroText ? 'red' : 'inherit', fontWeight: errors.ClaseConflictoOtroText ? 'bold' : 'normal'}">Especifique otro conflicto *</label>
+                        <input type="text" v-model="formData.ClaseConflictoOtroText" :style="{borderColor: errors.ClaseConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa el conflicto...">
                     </div>
                 </div>
             </div>
@@ -443,6 +458,90 @@ const FormEncuestaCatastral = {
             }
         }, { immediate: true });
 
+        // Limpiar documentos al desmarcar la opción
+        Vue.watch(() => formData.PresentaDocumentos, (newVal) => {
+            if (!newVal) {
+                formData.Documentos = [];
+                formData.AreaTitulada = null;
+                formData.UnidadMedidaAreaTituladaCatalog = null;
+                // También limpiar errores visuales relacionados
+                delete errors.Documentos;
+                delete errors.AreaTitulada;
+                delete errors.UnidadMedidaAreaTituladaCatalog;
+                Object.keys(errors).forEach(k => {
+                    if (k.startsWith('Doc')) delete errors[k];
+                });
+            }
+        });
+
+        // Limpiar datos registrales al desmarcar
+        Vue.watch(() => formData.TieneDatosRegistrales, (newVal) => {
+            if (!newVal) {
+                formData.FechaAdquisicion = null;
+                formData.FechaRegistro = null;
+                formData.NoFinca = '';
+                formData.Tomo = '';
+                formData.Folio = '';
+                formData.Asiento = '';
+
+                // Limpiar errores visuales
+                delete errors.FechaAdquisicion;
+                delete errors.FechaRegistro;
+                delete errors.NoFinca;
+                delete errors.Tomo;
+                delete errors.Folio;
+                delete errors.Asiento;
+            }
+        });
+
+        // Limpiar "A Favor De" al desmarcar
+        Vue.watch(() => formData.EsAFavorDe, (newVal) => {
+            if (!newVal) {
+                formData.AFavorDe = '';
+                formData.RelacionConPoseedorCatalog = 0;
+                formData._ParentescoName = '';
+                parentescoName.value = '';
+
+                // Limpiar errores visuales
+                delete errors.AFavorDe;
+                delete errors.RelacionConPoseedorCatalog;
+            }
+        });
+
+        // Watchers reactivos para limpiar errores al escribir/seleccionar
+        Vue.watch(() => formData.AFavorDe, (val) => { if (val?.trim()) delete errors.AFavorDe; });
+        Vue.watch(() => formData.RelacionConPoseedorCatalog, (val) => { if (val) delete errors.RelacionConPoseedorCatalog; });
+
+        // Limpieza reactiva de errores registrales
+        Vue.watch(() => formData.FechaAdquisicion, (val) => { if (val) delete errors.FechaAdquisicion; });
+        Vue.watch(() => formData.FechaRegistro, (val) => { if (val) delete errors.FechaRegistro; });
+        Vue.watch(() => formData.NoFinca, (val) => { if (val?.trim()) delete errors.NoFinca; });
+        Vue.watch(() => formData.Tomo, (val) => { if (val?.trim()) delete errors.Tomo; });
+        Vue.watch(() => formData.Folio, (val) => { if (val?.trim()) delete errors.Folio; });
+        Vue.watch(() => formData.Asiento, (val) => { if (val?.trim()) delete errors.Asiento; });
+        Vue.watch(() => formData.ClaseConflictoCatalog, (val) => {
+            if (val) delete errors.ClaseConflictoCatalog;
+            if (val !== 13) {
+                formData.ClaseConflictoOtroText = '';
+                delete errors.ClaseConflictoOtroText;
+            }
+        });
+        Vue.watch(() => formData.ClaseConflictoOtroText, (val) => { if (val?.trim()) delete errors.ClaseConflictoOtroText; });
+
+        // Limpiar conflictos al desmarcar
+        Vue.watch(() => formData.TieneConflicto, (newVal) => {
+            if (!newVal) {
+                formData.ClaseConflictoCatalog = null;
+                formData.ClaseConflictoOtroText = '';
+                formData._ConflictoName = '';
+                conflictoName.value = '';
+
+                // Limpiar errores visuales
+                delete errors.ClaseConflictoCatalog;
+                delete errors.ClaseConflictoOtroText;
+            }
+        });
+
         const parentescoName = Vue.ref(formData._ParentescoName || '');
         const conflictoName = Vue.ref(formData._ConflictoName || '');
 
@@ -502,13 +601,13 @@ const FormEncuestaCatastral = {
             }
         };
 
-        const pedirGestionConflictoGlobal = () => {
+        const pedirClaseConflictoGlobal = () => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openCatalog({
-                    catalogName: 'GestionConflicto',
-                    label: 'Gestión de Conflicto...',
+                    catalogName: 'ClaseConflicto',
+                    label: 'Clase de Conflicto...',
                     onSelect: (val) => {
-                        formData.GestionConflictoCatalog = parseInt(val.id);
+                        formData.ClaseConflictoCatalog = parseInt(val.id);
                         formData._ConflictoName = val.name;
                         conflictoName.value = val.name;
                     }
@@ -582,12 +681,46 @@ const FormEncuestaCatastral = {
             if (formData.PresentaDocumentos) {
                 if (!formData.AreaTitulada) { errors.AreaTitulada = true; errs.push('Área Titulada'); }
                 if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; errs.push('Unidad Título'); }
+
                 if (!formData.Documentos || formData.Documentos.length === 0) {
                     errors.Documentos = true;
                     errs.push('Al menos un documento');
+                } else {
+                    // Validar cada documento individualmente
+                    formData.Documentos.forEach((doc, idx) => {
+                        if (!doc.DocumentoCatalog) { errors[`Doc${idx}_Catalog`] = true; errs.push(`Doc ${idx + 1} Tipo`); }
+                        if (!doc.AutorNotario?.trim()) { errors[`Doc${idx}_Autor`] = true; errs.push(`Doc ${idx + 1} Autor`); }
+                        if (!doc.FechaDocumento) { errors[`Doc${idx}_Fecha`] = true; errs.push(`Doc ${idx + 1} Fecha`); }
+                    });
                 }
             }
 
+            // Validación de datos registrales
+            if (formData.TieneDatosRegistrales) {
+                if (!formData.FechaAdquisicion) { errors.FechaAdquisicion = true; errs.push('Fecha Adquisición'); }
+                if (!formData.FechaRegistro) { errors.FechaRegistro = true; errs.push('Fecha Registro'); }
+                if (!formData.NoFinca?.trim()) { errors.NoFinca = true; errs.push('No Finca'); }
+                if (!formData.Tomo?.trim()) { errors.Tomo = true; errs.push('Tomo'); }
+                if (!formData.Folio?.trim()) { errors.Folio = true; errs.push('Folio'); }
+                if (!formData.Asiento?.trim()) { errors.Asiento = true; errs.push('Asiento'); }
+            }
+
+            // Validación de A Favor De
+            if (formData.EsAFavorDe) {
+                if (!formData.AFavorDe?.trim()) { errors.AFavorDe = true; errs.push('Nombre Tercero'); }
+                if (!formData.RelacionConPoseedorCatalog) { errors.RelacionConPoseedorCatalog = true; errs.push('Parentesco'); }
+            }
+
+            // Validación de Conflictos
+            if (formData.TieneConflicto) {
+                if (!formData.ClaseConflictoCatalog) {
+                    errors.ClaseConflictoCatalog = true;
+                    errs.push('Clase Conflicto');
+                } else if (formData.ClaseConflictoCatalog === 13 && !formData.ClaseConflictoOtroText?.trim()) {
+                    errors.ClaseConflictoOtroText = true;
+                    errs.push('Especificar Conflicto');
+                }
+            }
             if (errs.length > 0) {
                 const msg = '⚠️ No se puede salvar, faltan datos obligatorios.';
                 if (typeof Android !== 'undefined') Android.showAlert(msg); else alert(msg);
@@ -600,7 +733,7 @@ const FormEncuestaCatastral = {
         return {
             formData, errors, catalogos,
             muniDisplay, deptoDisplay, areaDisplay, parentescoName, conflictoName,
-            pedirMunicipioGlobal, pedirParentescoGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
+            pedirMunicipioGlobal, pedirParentescoGlobal, pedirClaseConflictoGlobal, pedirDocumentoGlobal,
             agregarDocumento, quitarDocumento, capturarFoto, eliminarFoto, save
         };
     }
