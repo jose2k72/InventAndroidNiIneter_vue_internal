@@ -38,6 +38,8 @@ const app = createApp({
         const encuestador = ref('');
         const fechaActual = ref('');
         const idObject = ref(0);
+        const areaCalculada = ref(0);
+        const municipioInterceptado = ref('');
 
         // Lista de datos guardados
         const listData = ref([]);
@@ -81,6 +83,8 @@ const app = createApp({
                     encuestador.value = Android.getEncuestador();
                     fechaActual.value = Android.getFecha();
                     idObject.value = Android.getIdObject();
+                    areaCalculada.value = Android.getAreaCalculada ? Android.getAreaCalculada() : 0;
+                    municipioInterceptado.value = Android.getMunicipioInterceptado ? Android.getMunicipioInterceptado() : '';
 
                     // Cargar datos existentes
                     const jsonData = Android.getData();
@@ -264,24 +268,51 @@ const app = createApp({
 
         const createEncuestaCatastralModel = () => ({
             Type: 'EncuestaCatastral',
-            Departamento: '', CodigoDepartamento: '',
-            Municipio: '', CodigoMunicipio: '',
-            Sector: '', NombreFinca: '',
-            ParcelaCatastrada: '', ParcelaSegregada: '',
-            TipoEncuesta: null, Comarca: '', Barrio: '', Manzana: '', NumeroLote: '',
-            TipoUso: null, Descripcion: '', AreaEstimada: null, UnidadMedidaAreaEstimada: null,
-            // Servidumbre Agua
-            ServidumbreAgua: false, ServidumbreAguaEscritura: false, ServidumbreAguaJudicial: false, ServidumbreAguaAcuerdo: false, ServidumbreAguaOtro: false,
-            // Servidumbre Pase
-            ServidumbrePase: false, ServidumbrePaseEscritura: false, ServidumbrePaseJudicial: false, ServidumbrePaseAcuerdo: false, ServidumbrePaseOtro: false,
-            // Servidumbre Otro
-            ServidumbreOtro: false, ServidumbreOtroEscritura: false, ServidumbreOtroJudicial: false, ServidumbreOtroAcuerdo: false, ServidumbreOtroOtro: false,
-            DerechoParcela: null, NoPersonasSimilarDerecho: 0, PresentaDocumentos: false,
-            DocumentoCatalog: 0, AutorNotario: '', FechaDocumento: null,
-            AreaTitulada: null, UnidadMedidaAreaTitulada: null,
-            EsAFavorDe: false, AFavorDe: '', RelacionConPoseedor: 0,
-            TieneDatosRegistrales: false, FechaAdquisicion: null, FechaRegistro: null,
-            NoFinca: '', Tomo: '', Folio: '', Asiento: ''
+            MunicipioCatalog: null,
+            SectorId: '',
+            ParcelaCatastrada: '',
+            ParcelaSegregada: '',
+            TipoEncuestaCatalog: null,
+            NombreFinca: '',
+            Direccion: '',
+            Cacerio: '',
+            Barrio: '',
+            Manzana: '',
+            NumeroLote: '',
+            TipoUsoCatalog: null,
+            Descripcion: '',
+            AreaEstimada: null,
+            UnidadMedidaAreaEstimadaCatalog: null,
+            ServidumbreAguaCatalog: null,
+            ServidumbreAguaOtroText: '',
+            ServidumbrePaseCatalog: null,
+            ServidumbrePaseOtroText: '',
+            ServidumbreOtroCatalog: null,
+            ServidumbreOtroOtroText: '',
+            DerehoParcelaCatalog: null,
+            NoPersonasSimilarDerecho: 0,
+            PresentaDocumentos: false,
+            Documentos: [],
+            AreaTitulada: null,
+            UnidadMedidaAreaTituladaCatalog: null,
+            EsAFavorDe: false,
+            AFavorDe: '',
+            RelacionConPoseedorCatalog: null,
+            _isFromMap: false,
+            _CodDepto: '',
+            _DeptoNombre: '',
+            _MuniNombre: '',
+            TieneDatosRegistrales: false,
+            FechaAdquisicion: null,
+            FechaRegistro: null,
+            NoFinca: '',
+            Tomo: '',
+            Folio: '',
+            Asiento: '',
+            GestionConflictoCatalog: null,
+            // Helpers UI
+            _MuniNombre: '', _DeptoNombre: '', _CodDepto: '',
+            _ParentescoName: '', _ConflictoName: ''
         });
 
         const createPropietarioNaturalModel = () => ({
@@ -368,6 +399,18 @@ const app = createApp({
                     formData.value = createCostoModel();
                 } else if (type === 'EncuestaCatastral') {
                     formData.value = createEncuestaCatastralModel();
+
+                    // Siempre marcar como bloqueado y asignar área/unidad si viene del mapa
+                    formData.value._isFromMap = true;
+                    formData.value.AreaEstimada = areaCalculada.value;
+                    formData.value.UnidadMedidaAreaEstimadaCatalog = 3; // Metros Cuadrados
+
+                    if (municipioInterceptado.value) {
+                        const muniId = parseInt(municipioInterceptado.value);
+                        if (!isNaN(muniId)) {
+                            formData.value.MunicipioCatalog = muniId;
+                        }
+                    }
                 } else if (type === 'PropietarioNatural') {
                     formData.value = createPropietarioNaturalModel();
                 } else if (type === 'PropietarioJuridica') {
@@ -660,12 +703,8 @@ const app = createApp({
             console.log('🏁 Iniciando creación:', type);
 
             // 1. Validaciones de Exclusividad de Propietarios (REMOVIDO: Ahora se permite mezcla y multiplicidad)
-            /*
             const hasNatural = listData.value.some(item => item.Data?.Type === 'PropietarioNatural');
             const hasJuridico = listData.value.some(item => item.Data?.Type === 'PropietarioJuridica');
-            ... logic removed ...
-            */
-
 
             // 2. Validación de Entrevistado Único
             const hasEntrevistado = listData.value.some(item => item.Data?.Type === 'Entrevistado');

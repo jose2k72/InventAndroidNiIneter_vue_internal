@@ -103,11 +103,15 @@ class FormActivity : AppCompatActivity() {
         const val EXTRA_ID_PREDIO = "id_predio"
         const val EXTRA_EXISTING_ID = "existing_id"
         const val EXTRA_EXISTING_DATA = "existing_data"
+        const val EXTRA_AREA_CALCULADA = "area_calculada"
+        const val EXTRA_MUNICIPIO_CATALOG = "municipio_catalog"
     }
 
     private var idObject: Int = 0
     private var idLayer: Int = 0
     private var idPredio: Int = 0
+    private var areaCalculada: Double = 0.0
+    private var municipioCatalog: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -131,6 +135,8 @@ class FormActivity : AppCompatActivity() {
         idObject = intent.getIntExtra(EXTRA_ID_OBJECT, 0)
         idLayer = intent.getIntExtra(EXTRA_ID_LAYER, 0)
         idPredio = intent.getIntExtra(EXTRA_ID_PREDIO, 0)
+        areaCalculada = intent.getDoubleExtra(EXTRA_AREA_CALCULADA, 0.0)
+        municipioCatalog = intent.getStringExtra(EXTRA_MUNICIPIO_CATALOG) ?: ""
         
         // Detectar si es edición de registro existente
         val existingId = intent.getIntExtra(EXTRA_EXISTING_ID, -1)
@@ -304,6 +310,12 @@ class FormActivity : AppCompatActivity() {
                 "Encuestador"
             }
         }
+
+        @JavascriptInterface
+        fun getAreaCalculada(): Double = areaCalculada
+
+        @JavascriptInterface
+        fun getMunicipioInterceptado(): String = municipioCatalog
 
         @JavascriptInterface
         fun getIdObject(): Int {

@@ -100,35 +100,16 @@ const FormPropietarioNatural = {
                         <span style="color: #1976D2; font-size: 1.2rem;">📍</span>
                     </div>
 
-                    <!-- Visualización del departamento seleccionado (readonly) -->
-                    <div v-if="deptoDisplay" style="
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        padding: 10px 12px;
-                        background: #e3f2fd;
-                        border: 1px solid #90caf9;
-                        border-radius: 6px;
-                        margin-bottom: 6px;
-                        font-size: 14px;
-                    ">
-                        <span style="font-weight: bold; color: #1565C0; min-width: 32px;">{{ deptoDisplay.cod }}</span>
-                        <span style="color: #333;">{{ deptoDisplay.nombre }}</span>
+                    <!-- Visualización del departamento (readonly) -->
+                    <div v-if="deptoDisplay" class="display-box display-box-depto">
+                        <span class="cod">{{ deptoDisplay.cod }}</span>
+                        <span>{{ deptoDisplay.nombre }}</span>
                     </div>
 
-                    <!-- Visualización del municipio seleccionado (readonly) -->
-                    <div v-if="muniDisplay" style="
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        padding: 10px 12px;
-                        background: #e8f5e9;
-                        border: 1px solid #a5d6a7;
-                        border-radius: 6px;
-                        font-size: 14px;
-                    ">
-                        <span style="font-weight: bold; color: #2e7d32; min-width: 32px;">{{ muniDisplay.cod }}</span>
-                        <span style="color: #333;">{{ muniDisplay.nombre }}</span>
+                    <!-- Visualización del municipio (readonly) -->
+                    <div v-if="muniDisplay" class="display-box display-box-muni">
+                        <span class="cod">{{ muniDisplay.cod }}</span>
+                        <span>{{ muniDisplay.nombre }}</span>
                     </div>
                 </div>
 

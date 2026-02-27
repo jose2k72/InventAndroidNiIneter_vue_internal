@@ -415,6 +415,22 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             // NO crear marcador aquí - solo se crea cuando se guarda el dato
             // El marcador se agregará en loadCapturedPoints() al volver con onResume()
 
+            // Calcular área si existe geometría
+            val areaCalculada = if (geometry.wkt.isNotEmpty()) {
+                GeometryUtil.calculateArea32616(geometry.wkt)
+            } else {
+                0.0
+            }
+
+            // Buscar municipio interceptado
+            val municipioCatalog = dbHelper.getMunicipiosAt(longitude, latitude) ?: ""
+            if (municipioCatalog.isEmpty()) {
+                runOnUiThread {
+                    Toast.makeText(this, "⚠️ Error: Ubicación fuera de límites municipales", Toast.LENGTH_LONG).show()
+                }
+                return
+            }
+
             // Abrir FormActivity con los datos del predio
             val intent = Intent(this, FormActivity::class.java).apply {
                 putExtra(FormActivity.EXTRA_LATITUDE, latitude)
@@ -425,7 +441,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 putExtra(FormActivity.EXTRA_ID_OBJECT, geometry.id)
                 putExtra(FormActivity.EXTRA_ID_LAYER, geometry.idLayer)
                 putExtra(FormActivity.EXTRA_ID_PREDIO, geometry.idPredio)
-                // putExtra(FormActivity.EXTRA_RUTAS_ADYACENTES, rutasJson)
+                putExtra(FormActivity.EXTRA_AREA_CALCULADA, areaCalculada)
+                putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, municipioCatalog)
             }
             startActivity(intent)
             

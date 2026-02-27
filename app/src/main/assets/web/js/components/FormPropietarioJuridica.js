@@ -1,6 +1,6 @@
 /**
  * Componente FormPropietarioJuridica - Vue 3
- * Formulario para el Propietario (Persona Jurídica)
+ * Formulario para el Propietario (Persona Jurídica) basado en PropietarioPersonaJuridica.cs
  */
 
 const FormPropietarioJuridica = {
@@ -10,64 +10,69 @@ const FormPropietarioJuridica = {
             <h2>🏢 Propietario (Persona Jurídica)</h2>
             
             <div class="section">
-                <h3>📝 Información General</h3>
+                <h3>🆔 Identificación y Razón Social</h3>
                 
-                <div class="form-group">
-                    <label :style="{color: errors.RazonSocial ? 'red' : 'inherit', fontWeight: errors.RazonSocial ? 'bold' : 'normal'}">Razón Social *</label>
-                    <input type="text" v-model="formData.RazonSocial" placeholder="Nombre de la empresa o entidad">
+                <div class="coords-grid">
+                    <div class="form-group">
+                        <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. RUC *</label>
+                        <input type="text" v-model="formData.Identificacion" placeholder="Ej: J0000000000000">
+                    </div>
+                    <div class="form-group">
+                        <label :style="{color: errors.RazonSocial ? 'red' : 'inherit', fontWeight: errors.RazonSocial ? 'bold' : 'normal'}">Razón Social *</label>
+                        <input type="text" v-model="formData.RazonSocial" placeholder="Nombre legal de la entidad">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label :style="{color: errors.TipoPersonaJuridica ? 'red' : 'inherit', fontWeight: errors.TipoPersonaJuridica ? 'bold' : 'normal'}">Tipo de Persona Jurídica *</label>
-                    <select v-model.number="formData.TipoPersonaJuridica">
+                    <label :style="{color: errors.TipoPersonaJuridicaCatalog ? 'red' : 'inherit', fontWeight: errors.TipoPersonaJuridicaCatalog ? 'bold' : 'normal'}">Tipo de Persona Jurídica *</label>
+                    <select v-model.number="formData.TipoPersonaJuridicaCatalog">
                         <option :value="null" disabled selected>Seleccione...</option>
-                        <option v-for="opt in catalogos.TipoPersonaJuridica" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
+                        <option v-for="opt in catalogos.TipoPersonaJuridica" :key="opt.id" :value="parseInt(opt.id)">{{ opt.nombre }}</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="section">
+                <h3>📜 Registro Público</h3>
                 
-                <div class="coords-grid">
-                    <div class="form-group">
-                        <label>Colectivo</label>
-                        <input type="text" v-model="formData.Colectivo">
-                    </div>
-                    <div class="form-group">
-                        <label>Denominación</label>
-                        <input type="text" v-model="formData.Denominacion">
-                    </div>
+                <div class="form-group">
+                    <label>Registrada En</label>
+                    <input type="text" v-model="formData.RegistradaEn" placeholder="Ej: Registro Público de Managua">
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha de Registro</label>
+                    <input type="date" v-model="formData.FechaRegistro">
                 </div>
             </div>
 
             <div class="section">
-                <h3>📜 Registro</h3>
+                <h3>👥 Composición y Miembros</h3>
                 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label>Registrada En</label>
-                        <input type="text" v-model="formData.RegistradaEn">
-                    </div>
-                    <div class="form-group">
-                        <label>Fecha de Registro</label>
-                        <input type="date" v-model="formData.FechaRegistro">
-                    </div>
-                </div>
-            </div>
-
-            <div class="section">
-                <h3>👥 Composición</h3>
-                
-                <div class="coords-grid">
-                    <div class="form-group">
-                        <label>Número de Socios (Hombres)</label>
+                        <label>Número de Socios</label>
                         <input type="number" v-model.number="formData.NroSocios" min="0">
                     </div>
                     <div class="form-group">
-                        <label>Número de Socias (Mujeres)</label>
+                        <label>Número de Socias</label>
                         <input type="number" v-model.number="formData.NroSocias" min="0">
                     </div>
                 </div>
-                
-                 <div class="form-group">
-                    <label>Número de Miembros</label>
+
+                <div class="coords-grid">
+                    <div class="form-group">
+                        <label>Colectivo</label>
+                        <input type="text" v-model="formData.Colectivo" placeholder="Ej: Grupo X">
+                    </div>
+                    <div class="form-group">
+                        <label>Denominación</label>
+                        <input type="text" v-model="formData.Denominacion" placeholder="Ej: Sucursal Norte">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Número total de Miembros</label>
                     <input type="number" v-model.number="formData.NroMiembros" min="0">
                 </div>
             </div>
@@ -83,35 +88,39 @@ const FormPropietarioJuridica = {
         </div>
     `,
     setup(props, { emit }) {
-        const formData = Vue.reactive({ ...props.data });
+        // IMPORTANTE: Referencia directa para mantener reactividad global
+        const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
 
-        // Manejo de fecha (Vue necesita formato YYYY-MM-DD para input date)
-        if (formData.FechaRegistro && formData.FechaRegistro.includes('T')) {
+        // Normalizar fecha para el input date (YYYY-MM-DD)
+        if (formData.FechaRegistro) {
             formData.FechaRegistro = formData.FechaRegistro.split('T')[0];
         }
 
         const catalogos = {
             TipoPersonaJuridica: [
-                { id: 1, name: 'Sociedad Anónima' },
-                { id: 2, name: 'Sociedad Cooperativa' },
-                { id: 3, name: 'Sociedad R. Limitada' },
-                { id: 4, name: 'Otras' }
+                { id: "1", nombre: "SOCIEDAD ANONIMA" },
+                { id: "2", nombre: "SOCIEDAD COOPERATIVA" },
+                { id: "3", nombre: "SOCIEDAD R LIMITADA" },
+                { id: "4", nombre: "OTRAS" }
             ]
         };
 
         const save = () => {
-            // Limpiar errores previos
+            // Limpiar errores
             Object.keys(errors).forEach(key => delete errors[key]);
-
             const errorList = [];
 
-            if (!formData.RazonSocial) {
+            if (!formData.Identificacion?.trim()) {
+                errors.Identificacion = true;
+                errorList.push('No. RUC');
+            }
+            if (!formData.RazonSocial?.trim()) {
                 errors.RazonSocial = true;
                 errorList.push('Razón Social');
             }
-            if (formData.TipoPersonaJuridica === null || formData.TipoPersonaJuridica === undefined) {
-                errors.TipoPersonaJuridica = true;
+            if (!formData.TipoPersonaJuridicaCatalog) {
+                errors.TipoPersonaJuridicaCatalog = true;
                 errorList.push('Tipo de Persona Jurídica');
             }
 
@@ -124,6 +133,7 @@ const FormPropietarioJuridica = {
                 }
                 return;
             }
+
             emit('save', Vue.toRaw(formData));
         };
 

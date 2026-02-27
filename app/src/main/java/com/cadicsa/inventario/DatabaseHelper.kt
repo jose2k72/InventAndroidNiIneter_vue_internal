@@ -835,6 +835,39 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
         return null
     }
+
+    /**
+     * Busca el polígono de la capa 'Municipios' que contiene el punto dado
+     */
+    fun getMunicipiosAt(lng: Double, lat: Double): String? {
+        val query = """
+            SELECT LOCALIZACION, wkt 
+            FROM objects 
+            WHERE layer = 'Municipios' COLLATE NOCASE
+            AND minX < $lng AND minY < $lat 
+            AND maxX > $lng AND maxY > $lat
+        """.trimIndent()
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(query, null)
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val wktPolygon = cursor.getString(1) ?: continue
+                    if (GeometryUtil.isPointInPolygon(lat, lng, wktPolygon)) {
+                        return cursor.getString(0) // Retorna el valor de LOCALIZACION
+                    }
+                } while (cursor.moveToNext())
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseHelper", "Error en getMunicipiosAt: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+
+        return null
+    }
     
     /**
      * Clase para representar una ruta adyacente

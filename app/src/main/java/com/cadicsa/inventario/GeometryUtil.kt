@@ -41,11 +41,15 @@ object GeometryUtil {
     private val crtm05 = crsFactory.createFromParameters("CRTM05",
         "+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
     
+    // UTM 16N (EPSG:32616) - Nicaragua / Costa Rica
+    private val utm16n = crsFactory.createFromParameters("UTM16N",
+        "+proj=utm +zone=16 +datum=WGS84 +units=m +no_defs")
     
     // Transformadores de coordenadas (cache)
     private val ctFactory = CoordinateTransformFactory()
     private val wgs84ToCrtm05: CoordinateTransform = ctFactory.createTransform(wgs84, crtm05)
     private val crtm05ToWgs84: CoordinateTransform = ctFactory.createTransform(crtm05, wgs84)
+    private val wgs84ToUtm16n: CoordinateTransform = ctFactory.createTransform(wgs84, utm16n)
     
     /**
      * Convierte WKT (Well-Known Text) a Geometría JTS
@@ -293,11 +297,29 @@ object GeometryUtil {
      * @return Geometría en CRTM05 (metros) o null si hay error
      */
     fun projectGeometryToCRTM05(geom: JtsGeometry): JtsGeometry? {
+        return projectGeometryGeneric(geom, wgs84ToCrtm05)
+    }
+
+    /**
+     * Proyecta una geometría de WGS84 a UTM 16N (EPSG:32616)
+     * @param geom Geometría en WGS84
+     * @return Geometría en UTM 16N (metros) o null si hay error
+     */
+    fun projectGeometryTo32616(geom: JtsGeometry): JtsGeometry? {
+        return projectGeometryGeneric(geom, wgs84ToUtm16n)
+    }
+
+    /**
+     * Implementación genérica de proyección de geometría
+     */
+    private fun projectGeometryGeneric(geom: JtsGeometry, transform: CoordinateTransform): JtsGeometry? {
         return try {
             // Transformar cada coordenada
             val coords = geom.coordinates.map { coord ->
-                val projected = projectToCRTM05(coord.y, coord.x) // (lat, lng)
-                Coordinate(projected.first, projected.second) // (east, north)
+                val source = ProjCoordinate(coord.x, coord.y) // (Lng, Lat)
+                val target = ProjCoordinate()
+                transform.transform(source, target)
+                Coordinate(target.x, target.y) // (East, North)
             }.toTypedArray()
             
             // Crear nueva geometría según el tipo
@@ -309,12 +331,13 @@ object GeometryUtil {
                     geometryFactory.createPolygon(ring)
                 }
                 "MultiLineString" -> {
-                    // Para MultiLineString, procesar cada línea
                     val multiLine = geom as org.locationtech.jts.geom.MultiLineString
                     val lines = (0 until multiLine.numGeometries).map { i ->
                         val lineCoords = multiLine.getGeometryN(i).coordinates.map { coord ->
-                            val projected = projectToCRTM05(coord.y, coord.x)
-                            Coordinate(projected.first, projected.second)
+                            val src = ProjCoordinate(coord.x, coord.y)
+                            val tgt = ProjCoordinate()
+                            transform.transform(src, tgt)
+                            Coordinate(tgt.x, tgt.y)
                         }.toTypedArray()
                         geometryFactory.createLineString(lineCoords)
                     }.toTypedArray()
@@ -328,6 +351,22 @@ object GeometryUtil {
         } catch (e: Exception) {
             android.util.Log.e("GeometryUtil", "Error proyectando geometría: ${e.message}")
             null
+        }
+    }
+
+    /**
+     * Calcula el área de una geometría WKT proyectándola a UTM 16N
+     * @param wkt Geometría en formato WKT (WGS84)
+     * @return Área en metros cuadrados
+     */
+    fun calculateArea32616(wkt: String): Double {
+        return try {
+            val geom = wktToGeometry(wkt) ?: return 0.0
+            val projected = projectGeometryTo32616(geom)
+            projected?.area ?: 0.0
+        } catch (e: Exception) {
+            android.util.Log.e("GeometryUtil", "Error calculando área: ${e.message}")
+            0.0
         }
     }
     
