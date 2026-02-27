@@ -320,6 +320,10 @@
                     <img src="images/interview.svg" alt="Entrevistado">
                     <span>ENTREVISTADO</span>
                 </button>
+                <button class="nav-btn" @click="startCreate('Familiares')">
+                    <img src="images/family.svg" alt="Familia">
+                    <span>COMPOSICIÓN FAMILIAR</span>
+                </button>
 
                 <!-- <button class="nav-btn" @click="startCreate('Acera')">
                     <img src="images/sidewalk.svg" alt="Acera">
@@ -420,6 +424,8 @@
                 @cancel="volver" @camera="openCamera"></form-propietario-juridica>
             <form-entrevistado v-if="formType === 'Entrevistado'" :data="formData" @save="sendData" @cancel="volver"
                 @camera="openCamera"></form-entrevistado>
+            <form-familiares v-if="formType === 'Familiares'" :data="formData" @save="sendData"
+                @cancel="volver"></form-familiares>
         </div>
 
         <!-- Vista Global Selección de Catálogo Masivo -->
@@ -465,6 +471,7 @@
     <script src="js/components/FormPropietarioNatural.js"></script>
     <script src="js/components/FormPropietarioJuridica.js"></script>
     <script src="js/components/FormEntrevistado.js"></script>
+    <script src="js/components/FormFamiliares.js"></script>
 
     <!-- Montar la app después de cargar componentes -->
     <script>

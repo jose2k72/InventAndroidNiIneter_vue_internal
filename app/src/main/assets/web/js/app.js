@@ -364,6 +364,11 @@ const app = createApp({
             RelacionInformantePropietarioCatalog: 0
         });
 
+        const createFamiliaresModel = () => ({
+            Type: 'Familiares',
+            Familiares: []
+        });
+
         // Crear líneas de pago
         const createPayLines = (items) => {
             return items.map((item, index) => ({
@@ -420,6 +425,8 @@ const app = createApp({
                     formData.value = createPropietarioJuridicaModel();
                 } else if (type === 'Entrevistado') {
                     formData.value = createEntrevistadoModel();
+                } else if (type === 'Familiares') {
+                    formData.value = createFamiliaresModel();
                 }
             }
 
@@ -622,6 +629,20 @@ const app = createApp({
                     if (realIndex !== -1) {
                         console.log(`🗑️ Eliminando de Vue: ID ${id} en índice real ${realIndex}`);
                         listData.value.splice(realIndex, 1);
+
+                        // Si se elimina el último propietario natural, se elimina la familia automáticamente
+                        if (type === 'PropietarioNatural') {
+                            const stillHasNatural = listData.value.some(x => x.Data?.Type === 'PropietarioNatural');
+                            if (!stillHasNatural) {
+                                const famIdx = listData.value.findIndex(x => x.Data?.Type === 'Familiares');
+                                if (famIdx !== -1) {
+                                    const famId = listData.value[famIdx].Id;
+                                    if (typeof Android !== 'undefined') Android.deleteData(famId);
+                                    listData.value.splice(famIdx, 1);
+                                    console.log('🗑️ Eliminada Composición Familiar automáticamente por falta de Propietario Natural');
+                                }
+                            }
+                        }
                     } else {
                         console.warn(`⚠️ No se encontró el ID ${id} en listData para actualizar la UI`);
                     }
@@ -741,6 +762,27 @@ const app = createApp({
                 return;
             }
 
+            // 2.5 Validación de Familiares Único y Dependencia
+            if (type === 'Familiares') {
+                if (!hasNatural) {
+                    showConfirmModal({
+                        icon: '⚠️',
+                        title: 'Acción requerida',
+                        message: 'Solo se pueden agregar integrantes familiares si existe al menos un Propietario Natural registrado.',
+                        confirmText: 'Entendido',
+                        cancelText: '',
+                        onConfirm: () => { }
+                    });
+                    return;
+                }
+
+                const existing = listData.value.find(item => item.Data?.Type === 'Familiares');
+                if (existing) {
+                    editItem(existing);
+                    return;
+                }
+            }
+
             // 3. Validación de Encuesta Catastral
             if (type === 'EncuestaCatastral') {
                 const hasEncuesta = listData.value.some(item => item.Data?.Type === 'EncuestaCatastral');
@@ -785,7 +827,8 @@ const app = createApp({
                 'EncuestaCatastral': 1,
                 'PropietarioNatural': 2,
                 'PropietarioJuridica': 2,
-                'Entrevistado': 3
+                'Entrevistado': 3,
+                'Familiares': 4
             };
 
             return [...listData.value].sort((a, b) => {
@@ -800,7 +843,8 @@ const app = createApp({
                 'EncuestaCatastral': 'ENCUESTA',
                 'PropietarioNatural': 'PROP. NAT.',
                 'PropietarioJuridica': 'PROP. JUR.',
-                'Entrevistado': 'ENTREVIST.'
+                'Entrevistado': 'ENTREVIST.',
+                'Familiares': 'FAMILIA'
             };
             return names[type] || type;
         };
@@ -810,7 +854,11 @@ const app = createApp({
             if (!data) return '-';
 
             if (data.Type === 'EncuestaCatastral') {
-                return localizacion.value || '-';
+                return data.NombreFinca || localizacion.value || '-';
+            }
+
+            if (data.Type === 'Familiares') {
+                return `Integrantes: ${data.Familiares?.length || 0}`;
             }
 
             if (data.Type === 'PropietarioJuridica') {
