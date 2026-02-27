@@ -178,8 +178,8 @@ const FormEncuestaCatastral = {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Número de personas derecho similar</label>
-                        <input type="number" v-model.number="formData.NoPersonasSimilarDerecho" min="0">
+                        <label :style="{color: errors.NoPersonasSimilarDerecho ? 'red' : 'inherit', fontWeight: errors.NoPersonasSimilarDerecho ? 'bold' : 'normal'}">Número de personas derecho similar *</label>
+                        <input type="number" v-model.number="formData.NoPersonasSimilarDerecho" min="1" :style="{borderColor: errors.NoPersonasSimilarDerecho ? 'red' : '#ccc'}">
                     </div>
                 </div>
             </div>
@@ -664,6 +664,12 @@ const FormEncuestaCatastral = {
             if (!formData.AreaEstimada) { errors.AreaEstimada = true; errs.push('Área Estimada'); }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; errs.push('Unidad Medida'); }
             if (!formData.DerehoParcelaCatalog) { errors.DerehoParcelaCatalog = true; errs.push('Derecho Parcelario'); }
+
+            // Validación de personas con derecho similar (> 0)
+            if (!(formData.NoPersonasSimilarDerecho > 0)) {
+                errors.NoPersonasSimilarDerecho = true;
+                errs.push('No. Personas Similar Derecho');
+            }
 
             // Validación condicional de servidumbres "Otro"
             if (formData.ServidumbreAguaCatalog === 4 && !formData.ServidumbreAguaOtroText?.trim()) {

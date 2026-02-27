@@ -7,7 +7,7 @@ Este documento detalla las nuevas capacidades del sistema de inventario para la 
 Al hacer clic en un predio en el mapa, el formulario se inicializa y presenta un resumen de la información geográfica y los registros existentes vinculados a esa zona.
 
 ### 1.1 Datos dentro del predio
-Esta tabla muestra todos los registros de inventario (Aceras o Costos) que se encuentran **físicamente dentro** del polígono seleccionado.
+Esta tabla muestra todos los registros de inventario (Encuestas Catastrales, Propietarios, etc) que se encuentran **físicamente dentro** del polígono seleccionado.
 - **Lógica**: Utiliza el motor JTS para verificar que la latitud y longitud del punto caen dentro de los límites del predio.
 - **Utilidad**: Permite ver qué se ha capturado en el predio actual sin necesidad de navegar por múltiples menús.
 
@@ -45,7 +45,7 @@ Esta tabla muestra todos los registros de inventario (Aceras o Costos) que se en
  
  ## 3. Comportamiento de la Interfaz
  
- - **Botón Nueva Acera**: Ubicado a la izquierda del encabezado para facilitar el acceso rápido. Al presionarlo, se inicia un formulario totalmente en blanco.
+ - **Botón Nuevo Registro**: Ubicado a la izquierda del encabezado para facilitar el acceso rápido. Al presionarlo, se inicia un formulario totalmente en blanco.
  - **Consistencia Visual**: Las tablas se muestran siempre para dar estructura al formulario. Si no hay datos disponibles, se indica claramente con el mensaje "No hay datos...".
  - **Tracking de Fotos**: El sistema mantiene un control estricto de qué fotos son nuevas, cuáles venían de la base de datos y cuáles han sido marcadas para borrar, procesando los cambios físicos solo al dar clic en "GUARDAR".
  

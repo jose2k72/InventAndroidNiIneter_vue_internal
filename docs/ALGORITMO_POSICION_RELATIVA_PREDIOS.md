@@ -306,9 +306,9 @@ La tabla de "Registros en predios adyacentes" muestra:
 
 | PREDIO/CAMINO | TIPO | ACCIONES |
 |---------------|------|----------|
-| **[E]** [025300200466]/[5-01-001] | Acera | 📋 |
-| **[N]** [025300200467]/[5-01-002] | Costo | 📋 |
-| **[-]** [025300200468]/[-] | Acera | 📋 |
+| **[E]** [025300200466]/[5-01-001] | Encuesta | 📋 |
+| **[N]** [025300200467]/[5-01-002] | Encuesta | 📋 |
+| **[-]** [025300200468]/[-] | Encuesta | 📋 |
 
 - La dirección aparece en **negrita** entre corchetes.
 - Si no se puede calcular la dirección, se muestra **[-]**.

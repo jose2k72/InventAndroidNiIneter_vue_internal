@@ -6,7 +6,7 @@
 |:---------|:------|
 | **Nombre del archivo** | `Map.db` |
 | **Motor** | SQLite |
-| **Ubicación en Android** | `/storage/emulated/0/CADIC.ACERAS/Map.db` |
+| **Ubicación en Android** | `/storage/emulated/0/CADIC.INETER/Map.db` |
 | **Versión actual** | 1 |
 | **Clase de acceso** | `DatabaseHelper.kt` (Singleton) |
 
@@ -15,7 +15,7 @@
 La base de datos se almacena en el almacenamiento externo del dispositivo, fuera del directorio privado de la aplicación:
 
 ```
-/storage/emulated/0/CADIC.ACERAS/Map.db
+/storage/emulated/0/CADIC.INETER/Map.db
 ```
 
 > ⚠️ **Nota**: La lógica de detección de ruta intenta primero tarjetas SD externas (`/mnt/external_sd`, `/mnt/ext_sd`, etc.) antes de usar el almacenamiento interno. Si ninguna tarjeta SD está disponible o es escribible, usa el directorio por defecto.
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS objects (
 
 Esta tabla se usa para:
 1. **Detección de clic en mapa**: Al hacer clic, se buscan objetos cuyo bounding box contenga el punto.
-2. **Verificación de punto en polígono**: Se parsea el campo `wkt` y se verifica si el punto está dentro del polígono usando `PolyUtil.containsLocation()`.
+2. **Verificación de punto en polígono**: Se parsea el campo `wkt` y se verifica si el punto está dentro del polígono usando la librería **JTS (Java Topology Suite)** en el backend.
 
 ---
 
@@ -135,35 +135,27 @@ CREATE TABLE IF NOT EXISTS DATOS (
 
 El campo `DATOS` almacena todo el formulario serializado como JSON. La estructura depende del tipo de formulario:
 
-**Ejemplo para FormAcera:**
+**Ejemplo para FormEncuestaCatastral:**
 ```json
 {
-  "Localizacion": "San José Centro",
-  "CodigoCamino": "SJ-001",
+  "NumBoleta": "001",
+  "Sector": "1",
+  "Bloque": "2",
+  "Predio": "3",
+  "Localizacion": "Barrio Central",
+  "CodigoCamino": "01",
   "LocalProj_East": 492500.25,
   "LocalProj_North": 1095800.50,
   "LatLng_Lat": 9.9281,
   "LatLng_Lng": -84.0907,
-  "Grietas": 3,
-  "Huecos": 2,
-  "Desnudamiento": 1,
-  "Escalonamiento": 2,
-  "Drenaje": 3,
-  "PendienteTransversal": 2,
-  "PendienteLongitudinal": 1,
-  "AnchoLibre": 3,
-  "Obstrucciones": 2,
-  "Accesibilidad": 1,
-  "TapasRejillas": 2,
-  "Escuelas": true,
-  "GobLocal": false,
-  "TerminalBus": true,
-  "Hospitales": false,
-  "Poblacion": true,
-  "Imagenes": "SanJose_SJ001_20260129_143000.jpg,SanJose_SJ001_20260129_143015.jpg",
-  "Observaciones": "Acera en mal estado cerca de la escuela"
+  "Identificacion": "001-123456-0000A",
+  "Nombres": "JUAN",
+  "Apellidos": "PEREZ",
+  "OcupacionCatalog": "Ingeniero",
+  "ResidenceMunicipioCatalog": "5525"
 }
 ```
+
 
 #### Operaciones CRUD
 
@@ -262,5 +254,5 @@ El campo `SINCRONIZADO` en la tabla `DATOS` permite:
 Las imágenes **NO** se almacenan en la base de datos. Solo se guarda el nombre del archivo en el campo `Imagenes` dentro del JSON de `DATOS`. Los archivos físicos residen en:
 
 ```
-/storage/emulated/0/CADIC.ACERAS/*.jpg
+/storage/emulated/0/CADIC.INETER/*.jpg
 ```

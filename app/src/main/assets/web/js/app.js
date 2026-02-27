@@ -589,23 +589,8 @@ const app = createApp({
                     return;
                 }
 
-                if (type === 'PropietarioNatural' || type === 'PropietarioJuridica') {
-                    const propietarios = listData.value.filter(item =>
-                        item.Data?.Type === 'PropietarioNatural' || item.Data?.Type === 'PropietarioJuridica'
-                    );
+                // La restricción de propietarios fue removida a petición del usuario
 
-                    if (propietarios.length <= 1) {
-                        showConfirmModal({
-                            icon: '⚠️',
-                            title: 'Acción impedida',
-                            message: 'No puede eliminar al único Propietario porque existe una Encuesta Catastral vinculada. Debe eliminar la Encuesta primero.',
-                            confirmText: 'Entendido',
-                            cancelText: '',
-                            onConfirm: () => { }
-                        });
-                        return;
-                    }
-                }
             }
 
             // 2. Proceder con la confirmación de borrado
@@ -909,11 +894,11 @@ const app = createApp({
                     return;
                 }
 
-                if ((!hasNatural && !hasJuridico) || !hasEntrevistado) {
+                if (!hasEntrevistado) {
                     showConfirmModal({
                         icon: '⚠️',
                         title: 'Faltan datos',
-                        message: 'Debe registrar primero un Propietario (Natural o Jurídico) y un Entrevistado antes de realizar la encuesta.',
+                        message: 'Debe registrar primero un Entrevistado antes de realizar la encuesta.',
                         confirmText: 'Entendido',
                         cancelText: '',
                         onConfirm: () => { }

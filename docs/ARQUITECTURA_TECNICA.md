@@ -1,4 +1,4 @@
-# Documentación Técnica: Inventario de Aceras (Vue + Android)
+# Documentación Técnica: INETER CADIC (Vue + Android)
 
 ## 1. Arquitectura General
 
@@ -20,34 +20,18 @@ Esta aplicación utiliza una arquitectura híbrida donde la lógica de presentac
 
 ---
 
-## 2. Formularios Disponibles
+## 2. Componentes de Formularios de Encuesta Catastral
 
-La aplicación cuenta con dos formularios de captura de datos:
+La aplicación se transformó desde su prototipo de inventario georreferenciado (Aceras) hacia una red compleja de formularios que integran el **Levantamiento Catastral**, estructurando la información alrededor de la "Ficha":
 
-### 2.1 Formulario Acera (`FormAcera.js`) - **ACTIVO**
+### 2.1 Módulos Principales de la Encuesta
 
-Formulario principal para la evaluación de condición de aceras urbanas. Incluye:
+*   **Propietario Natural** (`FormPropietarioNatural.js`): Controla datos personales, estado civil, y dirección de residencia detallada a nivel jerárquico.
+*   **Encuestado/Entrevistado** (`FormEntrevistado.js`): Mapeado directamente o autocreado silenciosamente del Propietario.
+*   **Composición Familiar** (`FormFamiliares.js`): Captura iterativa de múltiples integrantes aserando dependencia del propietario bajo el mismo predio.
+*   **Catálogos UI** (`CatalogoSelectorGrande`, `CatalogoSelectorTwoLevels`): Interfaces hechas en Vue (sin depender de WebView/Selects nativos problemáticos) para listas extensas como profesiones y selección Departamento->Municipio.
 
-*   **Evaluación Estructural**: Grietas, huecos, desnudamiento, escalonamiento, drenaje.
-*   **Evaluación Funcional**: Pendientes (transversal/longitudinal), ancho libre, obstrucciones, accesibilidad, tapas/rejillas.
-*   **Factor de Actividad**: Proximidad a escuelas, servicios gubernamentales, terminales de bus, hospitales, zonas de alta población.
-*   **Cálculo Automático**: Índice de Condición de Aceras (ICA).
-
-### 2.2 Formulario Costo (`FormCosto.js`) - **DESHABILITADO (pero funcional)**
-
-> ⚠️ **Nota**: Este formulario está actualmente **comentado/deshabilitado** en `index.html`, pero el componente Vue es **completamente funcional** y puede habilitarse cuando sea necesario.
-
-Formulario para estimación de costos de reparación/construcción. Incluye:
-
-*   **Obras Preliminares**: Demolición, limpieza, etc.
-*   **Colocación de Tubería Pluvial**: Materiales y mano de obra.
-*   **Colocación de Tragantes**: Unidades y costos.
-*   **Construcción de Aceras**: Área y costo por m².
-*   **Construcción de Cordón y Cuneta**: Metros lineales.
-*   **Obras Complementarias**: Varios.
-*   **Cálculo Automático**: Total general del presupuesto.
-
-Para habilitarlo, descomentar la sección correspondiente en `assets/web/index.html`.
+> ⚠️ **Nota**: Los formularios heredados del prototipo original de inventario (`FormAcera.js`, `FormCosto.js`) aún están disponibles en el código fuente exclusivamente por motivos de análisis de persistencia o referencia estructural; sin embargo, no forman parte de las reglas del negocio de INETER CADIC.
 
 ---
 
@@ -58,7 +42,7 @@ El sistema de captura de fotos es uno de los puntos más críticos, requiriendo 
 ### Flujo de Captura
 
 1.  **Usuario (Web)**: Presiona el botón "📷 CAPTURAR FOTO" en el formulario.
-2.  **Vue (`FormAcera.js`)**:
+2.  **Vue** (desde el formulario activo):
     *   Ejecuta la función `capturarFoto()`.
     *   **Validación Estricta**: Verifica que existan datos en los campos `Localizacion` y `CodigoCamino`.
         *   *Si falla*: Muestra alerta y detiene el proceso.
@@ -107,14 +91,15 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 ## 5. Estructura de Proyecto
 
 ```text
-/src.android.aceras.vue
+/src.android.ineter.vue
 ├── app
 │   ├── src/main
 │   │   ├── assets/web              <-- Código Fuente Frontend (Vue)
 │   │   │   ├── js
 │   │   │   │   ├── components
-│   │   │   │   │   ├── FormAcera.js    <-- Formulario Acera (ACTIVO)
-│   │   │   │   │   └── FormCosto.js    <-- Formulario Costo (deshabilitado)
+│   │   │   │   │   ├── FormEncuestaCatastral.js
+│   │   │   │   │   ├── FormPropietarioNatural.js
+│   │   │   │   │   ├── FormFamiliares.js
 │   │   │   │   ├── app.js              <-- Punto de entrada Vue
 │   │   │   │   ├── vue.global.prod.js  <-- Librería Vue 3 (Core)
 │   │   │   │   └── proj4.min.js        <-- Librería Proyecciones Geográficas
@@ -146,12 +131,17 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 Se ha implementado una capa de lógica espacial avanzada para mejorar la recolección de datos en campo.
 
 ### 8.1 Lógica Espacial (JTS)
-Debido a la ausencia de extensiones SpatiaLite nativas en algunos entornos, se utiliza **JTS (Java Topology Suite)** en el backend (Kotlin) para realizar operaciones geométricas precisas:
+Debido a la ausencia de extensiones SpatiaLite nativas en algunos entornos y para mayor precisión en la nube de Android, se utiliza **JTS (Java Topology Suite)** en el backend (Kotlin) para realizar todas las operaciones geométricas:
 *   **Contención (`ST_Contains`)**: Se recuperan datos cuyos puntos (Lat/Lng) caen dentro del polígono del predio seleccionado.
 *   **Adyacencia (`ST_Intersects`)**: Se identifican predios vecinos que comparten límites con el seleccionado para recuperar sus datos.
 *   **Optimización BBox**: Todas las consultas SQL filtran primero por *Bounding Box* (minX, minY, maxX, maxY) para minimizar el procesamiento geométrico en memoria.
 
-### 8.2 Clonación de Registros (Copy Action)
+### 8.2 Reglas de Validación y Creación
+1.  **Creación de Encuesta**: Para iniciar una "Encuesta Catastral", el sistema solo requiere que exista al menos un **Entrevistado** registrado en el predio. La obligatoriedad de un Propietario fue eliminada para permitir mayor flexibilidad en campo.
+2.  **Validación de Derecho Similar**: El campo "No Personas Similar Derecho" debe ser estrictamente **mayor que 0** para permitir el guardado de la encuesta.
+3.  **Persistencia de Edad**: Se garantiza que la edad mínima aceptable en personas es **0**.
+
+### 8.3 Clonación de Registros (Copy Action)
 Permite duplicar información existente para acelerar la captura:
 1.  **Origen**: Se puede copiar un dato del predio actual o de un predio vecino.
 2.  **Destino**: La nueva ubicación se define por el punto de clic en el mapa.
@@ -181,7 +171,25 @@ La interfaz muestra dos listas diferenciadas:
 - WebKit para WebView moderno
 - Proj4J (Para proyecciones en backend)
 
-### Frontend (Web/Vue.js)
+### 9.2 Frontend (Web/Vue.js)
 - **Vue 3**: Composition API (Sin build step)
-- **Proj4.js**: Soporte para EPSG:8908 (CRTM05) en frontend
+- **Proj4.js**: Soporte para EPSG:32616 (UTM 16N) para Nicaragua
 - **CSS3**: Diseño basado en Glassmorphism y Flexbox
+
+---
+
+## 10. Gestión de Capas y Visualización
+
+### 10.1 Separación de Visualización (Tiles) y Lógica (WKT)
+
+El sistema opera bajo una separación estricta entre lo que el usuario ve y cómo el sistema calcula:
+
+*   **Visualización (Tiles para Rendimiento)**: Los tiles en la tabla `tiles` contienen la ortofoto con las poligonales de predios **quemadas** (baked). Esta es una optimización visual probada para mantener la fluidez del mapa en el dispositivo móvil, evitando el costo de renderizado vectorial masivo.
+*   **Lógica y Consultas (WKT como Fuente de Verdad)**: Independientemente de lo que se muestre en los tiles, **todas las consultas espaciales** (selección de predio al hacer clic, recuperación de registros dentro del polígono, ubicación de municipales) se realizan exclusivamente contra la geometría **WKT** almacenada en la tabla `objects`.
+*   **Independencia Técnica**: Esta arquitectura garantiza que la aplicación sea robusta: los tiles sirven para la orientación visual del usuario, mientras que los datos vectoriales garantizan la precisión matemática y la integridad de la información capturada. Esto también facilita la adición de nuevos predios en el futuro, ya que la lógica de consulta (JTS) funcionará inmediatamente al insertar el WKT, sin depender de la actualización de la cartografía raster.
+
+2.  **Capa de Municipios**: Capa de soporte "invisible" utilizada por el motor JTS para la asignación automática de catálogos basados en la ubicación.
+2.  **Capa de Municipios**: Capa de soporte "invisible" utilizada por el motor JTS para la asignación automática de catálogos basados en la ubicación.
+3.  **Capas Viales (Rutas)**: Los módulos de rutas locales y nacionales están completamente implementados en el código y presentes en la base de datos (tablas `objects` y `tiles`). Sin embargo, se encuentran **deshabilitadas por diseño** en la interfaz de usuario de esta variante del proyecto.
+4.  **Preservación de Código**: Esta desactivación es puramente a nivel de UI/Configuración para simplificar el flujo del encuestador, manteniendo toda la lógica técnica (procedimientos de cálculo, renderizado de líneas y filtros de base de datos) intacta para futuras activaciones o referencias técnicas.
+

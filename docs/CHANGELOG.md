@@ -1,4 +1,30 @@
-# Changelog - Inv Goico ACERAS
+# Changelog - INETER CADIC (Encuesta Catastral)
+
+## [2026-02-27] - Creación de Entrevistado y Actualización de Modelo
+
+### Nuevas Funcionalidades
+
+#### 👤 Encuesta Catastral: Flexibilización y Validaciones
+- **Eliminación de Restricciones**: Se eliminó la obligación de registrar un "Propietario" antes de crear una "Encuesta Catastral". Ahora solo se requiere un "Entrevistado" registrado.
+- **Validación Estricta**: Se implementó una validación en el campo "Número de personas con derecho similar", exigiendo que sea mayor a **0** para permitir el guardado.
+- **Jerarquía de Borrado**: Se eliminó la restricción que impedía borrar al único propietario si existía una encuesta, manteniendo la consistencia con la nueva regla de creación.
+
+#### 🛠️ Mejoras de Formularios (Propietario y Entrevistado)
+- **Validación de Edad**: Se añadió validación para asegurar que la edad sea mayor o igual a **0**.
+- **Limpieza de UI**: Se eliminó el texto de ejemplo (placeholder) del campo de número de identificación para mejorar la usabilidad.
+
+#### ⚙️ Configuración del Sistema
+- **Target SDK**: Ajustado a **30** para evitar restricciones de acceso a archivos en versiones recientes de Android (Android 14+).
+- **Versionamiento Automático**: Se optimizaron las funciones de autoz-versionado en `build.gradle.kts` basándose en timestamps.
+
+### Cambios en el Modelo de Datos (DTO)
+
+#### 📝 Evolución de `Ficha` DTO
+- Se añadió la propiedad `Sector` para alinear el modelo con el esquema de base de datos final.
+- **`Familiar` DTO**: Se formalizó la estructura de los familiares heredando todas las propiedades base de `Person` y agregando el catálogo específico de parentesco (`ParentescoCatalog`).
+- Los catálogos fueron extraídos satisfactoriamente de la base Excel (`CatalogosV2.xlsx`) a JSON independientes para consumirse desde los selectores de pantalla completa.
+
+---
 
 ## [2026-02-26] - Composición Familiar + Reglas de Negocio
 
@@ -156,7 +182,7 @@
 ### Pendientes / No Implementados
 
 #### ⏳ Versión en Barra de Título
-- Se intentó mostrar la versión de la app en el ActionBar (`Inv Goico ACERAS v2026...`).
+- Se intentó mostrar la versión de la app en el ActionBar (`INETER CADIC v2026...`).
 - El método `PackageManager.getPackageInfo()` no está funcionando correctamente.
 - El intento con `BuildConfig.VERSION_NAME` causó error de compilación.
 - **Estado:** Pendiente de investigar. La funcionalidad base está lista pero comentada.

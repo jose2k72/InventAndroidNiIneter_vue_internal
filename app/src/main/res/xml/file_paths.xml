@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Almacenamiento externo para CADIC.ACERAS -->
+    <!-- Almacenamiento externo para CADIC.INETER -->
     <external-path
         name="external_storage"
         path="." />

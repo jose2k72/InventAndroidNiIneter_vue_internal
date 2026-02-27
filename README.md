@@ -1,6 +1,6 @@
-# Inventario ACERAS Vue - Android App
+# INETER CADIC Vue - Android App
 
-Aplicación Android híbrida para captura de datos de evaluación de aceras urbanas. Utiliza Vue.js embebido en un WebView nativo para combinar la flexibilidad del desarrollo web con el acceso a hardware del dispositivo.
+Aplicación Android híbrida para la captura de encuestas catastrales en campo (INETER CADIC). Utiliza Vue.js embebido en un WebView nativo para combinar la flexibilidad del desarrollo web con el acceso a hardware del dispositivo y persistencia robusta.
 
 ## Stack Tecnológico
 
@@ -22,97 +22,84 @@ Aplicación Android híbrida para captura de datos de evaluación de aceras urba
 ### Frontend (Vue.js)
 - **Vue 3**: Composition API (CDN, sin build)
 - **CSS**: Variables CSS, diseño moderno responsive
-- **Proj4.js**: Reproyección de coordenadas EPSG:4326 → CRTM05
+- **Componentes Reactivos**: Modulares, estructurados para control de estado local
 
 ---
 
-## Formularios Disponibles
+## Formularios Disponibles (Encuesta Catastral)
 
-### 1. Formulario Acera - **ACTIVO**
-- Evaluación Estructural (grietas, huecos, desnudamiento, escalonamiento, drenaje)
-- Evaluación Funcional (pendientes, ancho, obstrucciones, accesibilidad, rejillas)  
-- Factor de Actividad (proximidad a escuelas, hospitales, etc.)
-- Cálculo automático del Índice de Condición de Aceras
+El sistema soporta una estructura compleja de recolección georreferenciada, dividida en múltiples componentes modulares:
 
-### 2. Formulario Costo - **DESHABILITADO (pero funcional)**
-> ⚠️ El componente Vue está **completamente funcional**. Actualmente deshabilitado en `index.html`. Para habilitarlo, descomentar la sección correspondiente.
+### 1. 📋 Encuesta Catastral (`FormEncuestaCatastral.js`)
+- Formulario base o general (Ficha DTO) para captura de predios.
+- Manejo de sector e identificadores clave de la propiedad.
 
-- Obras Preliminares
-- Colocación de Tubería Pluvial
-- Colocación de Tragantes
-- Construcción de Aceras
-- Construcción de Cordón y Cuneta
-- Obras Complementarias
-- Cálculo automático de montos y total general
+### 2. 👤 Propietario Natural (`FormPropietarioNatural.js`)
+- Datos de identificación, situación civil y dirección del propietario humano.
+- Selección avanzada de catálogos (ej. Profesión) y jerarquía geográfica (Departamento/Municipio).
+
+### 3. 🏢 Propietario Jurídico (`FormPropietarioJuridica.js`)
+- Gestión de personas jurídicas o entidades socias del predio.
+
+### 4. 🎤 Entrevistado (`FormEntrevistado.js`)
+- Información de la persona que brinda los datos durante el levantamiento.
+- Funcionalidad especial: **Auto-creación directa (one-click) desde Propietario Natural** si la misma persona da la entrevista.
+
+### 5. 👨‍👩‍👧‍👦 Composición Familiar (`FormFamiliares.js`)
+- Levantamiento de la estructura familiar del predio.
+- Permite agregar múltiples integrantes.
+- Validación estricta y dependencia lógica de la existencia de un "Propietario Natural" base.
+
+*(Nota: Históricamente, el sistema surgió de un marco de "Aceras y Costos", cuyos formularios se mantienen únicamente como material de referencia técnica para lógica de negocio antigua).*
+
+---
+
+## Selectores Globales de Catálogo
+
+El aplicativo ha integrado selectores interactivos avanzados para mejorar la usabilidad web dentro del WebView móvil:
+
+- **`CatalogoSelectorGrande.js`**: Reemplaza combos nativos (Selects) por un componente de pantalla completa con barra de búsqueda, lazy loading e `IntersectionObserver`. Pensado para catálogos extensos (ej. Profesiones).
+- **`CatalogoSelectorTwoLevels.js`**: Selector jerárquico apilado. Implementado para catálogos combinados como "Departamento y Municipio", permitiendo filtrar municipios solo del departamento seleccionado y guardando directamente su identificador compuesto final.
 
 ---
 
 ## Estructura del Proyecto
 
-```
-src.android.aceras.vue/
+```text
+src.android.ineter.vue/
 ├── app/
-│   ├── build.gradle.kts           # Configuración del módulo
+│   ├── build.gradle.kts           
 │   └── src/main/
-│       ├── AndroidManifest.xml    # Manifiesto Android
+│       ├── AndroidManifest.xml    
 │       ├── java/com/cadicsa/inventario/
-│       │   ├── MainActivity.kt    # Actividad principal con mapa
-│       │   └── FormActivity.kt    # Actividad con WebView para Vue
-│       ├── res/
-│       │   ├── layout/            # Layouts XML
-│       │   ├── values/            # Recursos (strings, colors, themes)
-│       │   ├── drawable/          # Iconos vectoriales
-│       │   └── xml/               # FileProvider paths
+│       │   ├── MainActivity.kt    
+│       │   └── FormActivity.kt    
+│       ├── res/                   
 │       └── assets/web/
 │           ├── index.html         # Entrada Vue.js
 │           ├── css/styles.css     # Estilos modernos
 │           └── js/
-│               ├── app.js              # App Vue principal
-│               ├── vue.global.prod.js  # Vue 3 Core
-│               ├── proj4.min.js        # Reproyección coordenadas
+│               ├── app.js                          # State principal y Orquestación
+│               ├── vue.global.prod.js              # Vue 3 Core
 │               └── components/
-│                   ├── FormAcera.js    # Formulario Acera (activo)
-│                   └── FormCosto.js    # Formulario Costo (deshabilitado)
+│                   ├── FormEncuestaCatastral.js
+│                   ├── FormPropietarioNatural.js
+│                   ├── FormPropietarioJuridica.js
+│                   ├── FormEntrevistado.js
+│                   ├── FormFamiliares.js
+│                   ├── CatalogoSelectorGrande.js
+│                   └── CatalogoSelectorTwoLevels.js
 ├── docs/                          # Documentación técnica
-├── gradle/wrapper/
 ├── build.gradle.kts               # Build principal
-├── settings.gradle.kts            # Configuración proyecto
-└── gradle.properties              # JDK 17 configurado localmente
+└── settings.gradle.kts            # Configuración proyecto
 ```
-
----
-
-## Configuración Inicial
-
-1. **Google Maps API Key**: Editar `res/values/strings.xml` y reemplazar `YOUR_API_KEY_HERE`
-
-2. **JDK 17**: Ya configurado en `gradle.properties` para este proyecto (no afecta `JAVA_HOME` global)
-
-3. **Sincronizar Gradle**: Abrir en Android Studio y sincronizar
 
 ---
 
 ## Documentación Adicional
 
-Para información detallada sobre:
-- Arquitectura híbrida Vue + Android
-- Sistema de captura de fotos (prefijos inteligentes)
-- API Bridge (interfaz Javascript)
+Para información detallada técnica, se han segmentado documentos puntuales en el directorio `docs/`:
 
-- API Bridge (interfaz Javascript)
- 
- Ver:
- - [`docs/ARQUITECTURA_TECNICA.md`](docs/ARQUITECTURA_TECNICA.md)
- - [`docs/FUNCIONALIDADES_ESPACIALES.md`](docs/FUNCIONALIDADES_ESPACIALES.md) (Optimización JTS y algoritmos espaciales)
- - [`docs/GUIA_DESPLIEGUE_VARIANTES.md`](docs/GUIA_DESPLIEGUE_VARIANTES.md) (Cómo crear múltiples apps con este código base)
-
----
-
-## Migración desde proyecto anterior
-
-Este proyecto reemplaza:
-- AngularJS → Vue 3
-- Support Libraries → AndroidX
-- Java → Kotlin
-- Gradle 4.6 → Gradle 8.4
-- compileSdkVersion 25 → 34
+- [`docs/ARQUITECTURA_TECNICA.md`](docs/ARQUITECTURA_TECNICA.md) (Arquitectura híbrida global)
+- [`docs/SELECTORES_CATALOGO_GLOBAL.md`](docs/SELECTORES_CATALOGO_GLOBAL.md) (Especificación, eventos y optimización WebView de los Catálogos)
+- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) (Bitácora cronológica de actualizaciones y reglas de negocio)

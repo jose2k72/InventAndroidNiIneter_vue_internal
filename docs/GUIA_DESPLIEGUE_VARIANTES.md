@@ -11,7 +11,7 @@ Para crear variantes independientes que coexistan en el mismo dispositivo, es vi
 *   **Ubicación**: Archivo `app/build.gradle.kts`, bloque `defaultConfig`.
 *   **Comportamiento**:
     *   Si instalas una app con el **mismo** `applicationId`, Android la considerará una **actualización** de la existente y sobrescribirá los datos.
-    *   Si cambias el `applicationId` (ej: `com.cadicsa.tibas` vs `com.cadicsa.goico`), Android la tratará como una **aplicación completamente nueva y separada**.
+    *   Si cambias el `applicationId` (ej: `com.cadicsa.ineter.occidente` vs `com.cadicsa.ineter.oriente`), Android la tratará como una **aplicación completamente nueva y separada**.
 *   **Acción Requerida**: **DEBE CAMBIARSE OBLIGATORIAMENTE** para cada nueva variante.
 
 ### B. `namespace` (Estructura Interna del Código)
@@ -23,12 +23,12 @@ Para crear variantes independientes que coexistan en el mismo dispositivo, es vi
 ### C. `app_name` (Nombre Visible al Usuario)
 *   **¿Qué es?**: El nombre que aparece debajo del icono en el menú del dispositivo y en la barra de título.
 *   **Ubicación**: Archivo `app/src/main/res/values/strings.xml`.
-*   **Comportamiento**: Es puramente cosmético pero vital para que el usuario distinga entre "Inventario Goico" e "Inventario Tibás".
+*   **Comportamiento**: Es puramente cosmético pero vital para que el usuario distinga entre "INETER Occidente" e "INETER Oriente".
 *   **Acción Requerida**: **DEBE CAMBIARSE** para evitar confusión en el usuario.
 
 ## 2. Cómo Crear una Nueva Variante
 
-Para desplegar una nueva versión del inventario para otro proyecto (ej: "Inventario Goicoechea" vs "Inventario Tibás"), siga estos pasos:
+Para desplegar una nueva versión del inventario para otro proyecto (ej: "INETER Occidente" vs "INETER Oriente"), siga estos pasos:
 
 ### Paso 1: Modificar `build.gradle.kts`
 
@@ -87,7 +87,7 @@ defaultConfig {
 ```
 
 **Resultado:**
-- App original: `/sdcard/CADIC.ACERAS/Map.db` + fotos
+- App original: `/sdcard/CADIC.INETER/Map.db` + fotos
 - App nueva: `/sdcard/CADIC.NUEVO_PROYECTO/Map.db` + fotos
 
 **Compartir datos entre variantes:**
@@ -115,6 +115,6 @@ adb shell pm list packages -f | grep cadicsa
 
 Salida esperada (ejemplo):
 ```
-package:/data/app/~~...==/com.cadicsa.inventario.goico.aceras-base.apk=com.cadicsa.inventario.goico.aceras
-package:/data/app/~~...==/com.cadicsa.inventario.tibas-base.apk=com.cadicsa.inventario.tibas
+package:/data/app/~~...==/com.cadicsa.inventario.ineter.occidente-base.apk=com.cadicsa.inventario.ineter.occidente
+package:/data/app/~~...==/com.cadicsa.inventario.ineter.oriente-base.apk=com.cadicsa.inventario.ineter.oriente
 ```

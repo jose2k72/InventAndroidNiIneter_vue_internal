@@ -19,7 +19,7 @@ object AppConfig {
      * Nombre del directorio de almacenamiento en la SD externa
      * Se configura desde build.gradle.kts mediante buildConfigField
      * 
-     * Ejemplo: "CADIC.ACERAS", "CADIC.INETER", etc.
+     * Ejemplo: "CADIC.INETER", "CADIC.NUEVO_PROYECTO", etc.
      */
     val STORAGE_DIR_NAME: String = BuildConfig.STORAGE_DIR_NAME
     
@@ -58,7 +58,7 @@ object AppConfig {
     
     /**
      * Obtiene el directorio completo de almacenamiento de la aplicación
-     * Ejemplo: /storage/emulated/0/CADIC.ACERAS
+     * Ejemplo: /storage/emulated/0/CADIC.INETER
      */
     fun getStorageDirectory(): File {
         val root = getExternalSdCardPath()
@@ -67,7 +67,7 @@ object AppConfig {
     
     /**
      * Obtiene la ruta completa del archivo de base de datos
-     * Ejemplo: /storage/emulated/0/CADIC.ACERAS/Map.db
+     * Ejemplo: /storage/emulated/0/CADIC.INETER/Map.db
      */
     fun getDatabasePath(): String {
         return File(getStorageDirectory(), DATABASE_NAME).absolutePath

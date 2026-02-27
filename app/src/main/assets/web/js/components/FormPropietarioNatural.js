@@ -22,7 +22,7 @@ const FormPropietarioNatural = {
                     </div>
                     <div class="form-group">
                         <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. Identificación *</label>
-                        <input type="text" v-model="formData.Identificacion" placeholder="Ej: 001-000000-0000A">
+                        <input type="text" v-model="formData.Identificacion">
                     </div>
                 </div>
             </div>
@@ -249,9 +249,9 @@ const FormPropietarioNatural = {
                 errors.GenderCatalog = true;
                 errorList.push('Género');
             }
-            if (formData.Age === null || formData.Age === undefined || formData.Age === '') {
+            if (formData.Age === null || formData.Age === undefined || formData.Age === '' || formData.Age < 0) {
                 errors.Age = true;
-                errorList.push('Edad');
+                errorList.push('Edad (debe ser >= 0)');
             }
             if (!formData.CivilStateCatalog) {
                 errors.CivilStateCatalog = true;
