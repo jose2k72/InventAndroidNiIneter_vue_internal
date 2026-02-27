@@ -23,10 +23,18 @@ const FormEntrevistado = {
                     <div class="form-group">
                         <label :style="{color: errors.RelacionInformantePropietarioCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionInformantePropietarioCatalog ? 'bold' : 'normal'}">Relación con el propietario *</label>
                         <!-- Selector que llama a la vista principal -->
-                        <div class="selector-display" @click="pedirRelacionPropietarioGlobal">
-                            <span v-if="relacionPropietarioName" style="color: #1565C0; font-weight: 600;">{{ relacionPropietarioName }}</span>
+                        <div class="selector-display" 
+                             @click="formData.RelacionConParcelaCatalog !== 1 && pedirRelacionPropietarioGlobal()" 
+                             :style="{
+                                 borderColor: errors.RelacionInformantePropietarioCatalog ? '#d32f2f' : '#ccc',
+                                 backgroundColor: formData.RelacionConParcelaCatalog === 1 ? '#f5f5f5' : 'white',
+                                 opacity: formData.RelacionConParcelaCatalog === 1 ? 0.6 : 1,
+                                 cursor: formData.RelacionConParcelaCatalog === 1 ? 'not-allowed' : 'pointer'
+                             }">
+                            <span v-if="formData.RelacionConParcelaCatalog === 1" style="color: #9e9e9e;">No aplica (es Propietario)</span>
+                            <span v-else-if="relacionPropietarioName" style="color: #1565C0; font-weight: 600;">{{ relacionPropietarioName }}</span>
                             <span v-else style="color: #757575;">Seleccione relación...</span>
-                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                            <span v-if="formData.RelacionConParcelaCatalog !== 1" style="color: #1976D2; font-size: 1.2rem;">🔍</span>
                         </div>
                     </div>
                 </div>
@@ -255,6 +263,16 @@ const FormEntrevistado = {
             ]
         };
 
+        // Escuchar cambios en Relación con la parcela
+        Vue.watch(() => formData.RelacionConParcelaCatalog, (newVal) => {
+            if (newVal === 1) { // 1 = Propietario(a)
+                formData.RelacionInformantePropietarioCatalog = 0;
+                formData._RelacionPropietarioName = '';
+                relacionPropietarioName.value = '';
+                delete errors.RelacionInformantePropietarioCatalog;
+            }
+        });
+
         const pedirRelacionPropietarioGlobal = () => {
             if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
                 vueAppContext.openCatalog({
@@ -300,7 +318,8 @@ const FormEntrevistado = {
                 errors.RelacionConParcelaCatalog = true;
                 errorList.push('Relación con la parcela');
             }
-            if (!formData.RelacionInformantePropietarioCatalog) {
+            // Solo validar relación con propietario si el informante NO es el propietario de la parcela
+            if (formData.RelacionConParcelaCatalog !== 1 && !formData.RelacionInformantePropietarioCatalog) {
                 errors.RelacionInformantePropietarioCatalog = true;
                 errorList.push('Relación con el propietario');
             }

@@ -1,5 +1,41 @@
 # Changelog - Inv Goico ACERAS
 
+## [2026-02-26] - Composición Familiar + Reglas de Negocio
+
+### Nuevas Funcionalidades
+
+#### 👨‍👩‍👧‍👦 `FormFamiliares` — Gestión de Composición Familiar
+- Nuevo formulario para capturar los integrantes de la familia de un predio.
+- Permite agregar ilimitados integrantes con: **Primer Nombre**, **Primer Apellido**, **Sexo**, **Edad** y **Parentesco** (obligatorios).
+- Segundo nombre y segundo apellido son opcionales.
+- Usa `CatalogoSelectorGrande` para el campo Parentesco (`Parentesco.json`).
+- **Archivo:** `js/components/FormFamiliares.js`
+
+### Reglas de Negocio Implementadas
+
+- **Registro Único**: Solo se permite un (1) registro de "Composición Familiar" por predio. Si ya existe, el menú redirige automáticamente a la edición del existente.
+- **Dependencia de Propietario Natural**:
+  - No se puede crear una familia si no existe al menos un **Propietario Natural** registrado.
+  - Al eliminar el último Propietario Natural del predio, se elimina el registro de Familiares de forma automática (**borrado en cascada**).
+- **Validación Estricta**: Al guardar, se verifica que cada integrante tenga todos sus campos obligatorios completos.
+
+### Mejoras Técnicas
+
+- **Persistencia Directa**: El formulario trabaja sobre la referencia reactiva de `app.js`, garantizando que los datos no se pierdan al navegar hacia/desde los selectores de catálogo.
+- **Scroll Restoration**: Se mantiene la posición de lectura perfecta al retornar de búsquedas de catálogo.
+- **Watcher Profundo**: Sistema dinámico para limpiar estados de error visual conforme el usuario corrige los campos de cualquier integrante.
+
+### Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `js/components/FormFamiliares.js` | **Nuevo** — componente de gestión de familia |
+| `js/app.js` | Registro del nuevo tipo, validaciones de exclusividad y borrado en cascada |
+| `index.html` | Botón "FAMILIA" con icono nuevo y registro del componente |
+| `images/family.svg` | **Nuevo** — icono para el menú principal |
+
+---
+
 ## [2026-02-26] - Selectores Globales de Catálogo + Municipio
 
 ### Nuevas Funcionalidades

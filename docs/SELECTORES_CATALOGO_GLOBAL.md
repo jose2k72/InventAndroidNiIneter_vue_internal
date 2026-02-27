@@ -242,7 +242,27 @@ return { ..., profesionName, pedirProfesionGlobal };
 </div>
 ```
 
-### 5.2 Usar `CatalogoSelectorTwoLevels` (dos niveles)
+### 5.2 Usar Selectores en Listas Dinámicas (Items Repetibles)
+
+Cuando el selector se usa dentro de un `v-for` (ej. Composición Familiar), se debe pasar el **índice** para actualizar el integrante correcto del array:
+
+```javascript
+const pedirParentesco = (index) => {
+    if (typeof vueAppContext !== 'undefined') {
+        vueAppContext.openCatalog({
+            catalogName: 'Parentesco',
+            label: 'Seleccionar Parentesco...',
+            onSelect: (val) => {
+                // Actualización directa usando el índice del bucle
+                formData.Familiares[index].ParentescoCatalog = parseInt(val.id);
+                formData.Familiares[index]._ParentescoName = val.name;
+            }
+        });
+    }
+};
+```
+
+### 5.3 Usar `CatalogoSelectorTwoLevels` (dos niveles)
 
 ```javascript
 // En setup() del formulario
