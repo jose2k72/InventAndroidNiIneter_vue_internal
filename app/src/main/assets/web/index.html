@@ -46,6 +46,13 @@
             transform: scale(1.05);
         }
 
+        .btn-create-entrevistado img {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            filter: brightness(0) invert(1);
+        }
+
         .btn-copy-list {
             background-color: #007bff;
             color: white;
@@ -411,12 +418,12 @@
                                 class="btn-create-entrevistado"
                                 title="Toma los datos de este propietario y crea un entrevistado"
                                 @click.stop="crearEntrevistadoDesdePropietario(item.Id)">
-                                🎤
+                                <img src="images/interview.svg" alt="Entrevistado">
                             </button>
                             <button v-if="item.Data?.Type === 'Entrevistado'" class="btn-create-entrevistado"
                                 title="Toma los datos de este entrevistado y crea un propietario natural"
                                 @click.stop="crearPropietarioDesdeEntrevistado(item.Id)">
-                                👤
+                                <img src="images/person.svg" alt="Propietario Natural">
                             </button>
                             <button class="btn-delete-list" @click.stop="deleteItem(item.Id)" title="Eliminar registro">
                                 🗑️
