@@ -650,6 +650,117 @@ const app = createApp({
             });
         };
 
+        // Propiedad computada para verificar si hay un entrevistado
+        const hasEntrevistado = Vue.computed(() => {
+            return listData.value.some(item => item.Data?.Type === 'Entrevistado');
+        });
+
+        // Función para crear automáticamente un entrevistado clonando datos de un propietario natural
+        const crearEntrevistadoDesdePropietario = (propietarioId) => {
+            const propietarioObj = listData.value.find(item => item.Id === propietarioId);
+            if (!propietarioObj || !propietarioObj.Data) return;
+
+            const propData = propietarioObj.Data;
+
+            showConfirmModal({
+                icon: '🎤',
+                title: 'Crear Entrevistado',
+                message: '¿Desea crear un Entrevistado automáticamente con los datos de este Propietario Natural?',
+                confirmText: 'Sí, crear',
+                cancelText: 'Cancelar',
+                onConfirm: () => {
+                    const nuevoEntrevistado = createEntrevistadoModel();
+
+                    // Copiar campos comunes
+                    const camposComunes = [
+                        'TipoIdentificacionCatalog', 'Identificacion',
+                        'FirstName', 'SecondName', 'FirstSurName', 'SecondSurName',
+                        'GenderCatalog', 'Age', 'CivilStateCatalog', 'ProfessionCatalog',
+                        'ResidenceMunicipioCatalog', 'ResidenceComarca', 'ResidenceBarrio', 'ResidenceDireccion',
+                        '_ProfessionName', '_CodDepto', '_DeptoNombre', '_MuniNombre'
+                    ];
+
+                    camposComunes.forEach(campo => {
+                        if (propData[campo] !== undefined) {
+                            nuevoEntrevistado[campo] = propData[campo];
+                        }
+                    });
+
+                    // Setear campos obligatorios de entrevistado
+                    nuevoEntrevistado.RelacionConParcelaCatalog = 1; // Propietario
+                    nuevoEntrevistado.RelacionInformantePropietarioCatalog = 0; // null/0 basically
+
+                    // Set metadatos del registro clonado
+                    nuevoEntrevistado.Fecha = fechaActual.value;
+                    nuevoEntrevistado.Encuestador = encuestador.value;
+                    nuevoEntrevistado.IdObject = idObject.value;
+                    nuevoEntrevistado.Localizacion = localizacion.value;
+                    nuevoEntrevistado.LatLng = { Lat: latLng.lat, Lng: latLng.lng };
+                    nuevoEntrevistado.LocalProj = { East: localProj.east, North: localProj.north };
+
+                    // Guardar silenciosamente enviando -1 como ID para crear registro nuevo
+                    if (typeof Android !== 'undefined') {
+                        Android.sendData(-1, JSON.stringify(nuevoEntrevistado));
+                        // Recargar lista desde SQLite para asegurar sync
+                        init();
+                    } else {
+                        console.log('Modo desarrollo: Entrevistado creado', nuevoEntrevistado);
+                    }
+                }
+            });
+        };
+
+        // Función para crear automáticamente un propietario natural clonando datos de un entrevistado
+        const crearPropietarioDesdeEntrevistado = (entrevistadoId) => {
+            const entrevistadoObj = listData.value.find(item => item.Id === entrevistadoId);
+            if (!entrevistadoObj || !entrevistadoObj.Data) return;
+
+            const entreData = entrevistadoObj.Data;
+
+            showConfirmModal({
+                icon: '👤',
+                title: 'Crear Propietario Natural',
+                message: '¿Desea crear un Propietario Natural automáticamente con los datos de este Entrevistado?',
+                confirmText: 'Sí, crear',
+                cancelText: 'Cancelar',
+                onConfirm: () => {
+                    const nuevoPropietario = createPropietarioNaturalModel();
+
+                    // Copiar campos comunes
+                    const camposComunes = [
+                        'TipoIdentificacionCatalog', 'Identificacion',
+                        'FirstName', 'SecondName', 'FirstSurName', 'SecondSurName',
+                        'GenderCatalog', 'Age', 'CivilStateCatalog', 'ProfessionCatalog',
+                        'ResidenceMunicipioCatalog', 'ResidenceComarca', 'ResidenceBarrio', 'ResidenceDireccion',
+                        '_ProfessionName', '_CodDepto', '_DeptoNombre', '_MuniNombre'
+                    ];
+
+                    camposComunes.forEach(campo => {
+                        if (entreData[campo] !== undefined) {
+                            nuevoPropietario[campo] = entreData[campo];
+                        }
+                    });
+
+                    // Set metadatos del registro clonado
+                    nuevoPropietario.Fecha = fechaActual.value;
+                    nuevoPropietario.Encuestador = encuestador.value;
+                    nuevoPropietario.IdObject = idObject.value;
+                    nuevoPropietario.Localizacion = localizacion.value;
+                    nuevoPropietario.LatLng = { Lat: latLng.lat, Lng: latLng.lng };
+                    nuevoPropietario.LocalProj = { East: localProj.east, North: localProj.north };
+
+                    // Guardar silenciosamente enviando -1 como ID para crear registro nuevo
+                    if (typeof Android !== 'undefined') {
+                        Android.sendData(-1, JSON.stringify(nuevoPropietario));
+                        // Recargar lista desde SQLite para asegurar sync
+                        init();
+                    } else {
+                        console.log('Modo desarrollo: Propietario Natural creado', nuevoPropietario);
+                    }
+                }
+            });
+        };
+
         // ── Selector de Municipio (dos niveles: Dpto → Municipio) ──────────
         const municipioParams = Vue.ref(null);
 
@@ -935,7 +1046,10 @@ const app = createApp({
             openCamera,
             resetForm,
             startCreate,
-            startCopy
+            startCopy,
+            hasEntrevistado,
+            crearEntrevistadoDesdePropietario,
+            crearPropietarioDesdeEntrevistado
         };
     }
 });
