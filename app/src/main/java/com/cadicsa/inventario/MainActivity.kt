@@ -437,10 +437,34 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 return
             }
 
+            // Buscar sector interceptado
+            val sectorCatalog = dbHelper.getSectorAt(longitude, latitude) ?: ""
+            if (sectorCatalog.isEmpty()) {
+                runOnUiThread {
+                    Toast.makeText(this, "⚠️ Error: Ubicación fuera de sector cartográfico", Toast.LENGTH_LONG).show()
+                }
+                return
+            }
+
+            // SNAPPING: Buscar si hay puntos ya existentes en un radio de 3 metros
+            val nearbyPoints = dbHelper.getDataByProximity(latitude, longitude, 3.0, true)
+            val finalLatitude: Double
+            val finalLongitude: Double
+            
+            if (nearbyPoints.isNotEmpty()) {
+                val point = nearbyPoints[0]
+                finalLatitude = point.latitud
+                finalLongitude = point.longitud
+                android.util.Log.d("MainActivity", "🧲 Snapping: Usando coordenadas de punto existente (ID: ${point.id})")
+            } else {
+                finalLatitude = latitude
+                finalLongitude = longitude
+            }
+
             // Abrir FormActivity con los datos del predio
             val intent = Intent(this, FormActivity::class.java).apply {
-                putExtra(FormActivity.EXTRA_LATITUDE, latitude)
-                putExtra(FormActivity.EXTRA_LONGITUDE, longitude)
+                putExtra(FormActivity.EXTRA_LATITUDE, finalLatitude)
+                putExtra(FormActivity.EXTRA_LONGITUDE, finalLongitude)
                 putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
                 putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
                 putExtra(FormActivity.EXTRA_LOCALIZACION, geometry.localizacion)
@@ -449,6 +473,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 putExtra(FormActivity.EXTRA_ID_PREDIO, geometry.idPredio)
                 putExtra(FormActivity.EXTRA_AREA_CALCULADA, areaCalculada)
                 putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, municipioCatalog)
+                putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sectorCatalog)
+                putExtra(FormActivity.EXTRA_LAYER_NAME, geometry.layer)
             }
             startActivity(intent)
             
@@ -783,6 +809,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             putExtra(FormActivity.EXTRA_ID_OBJECT, item.idObject)
             putExtra(FormActivity.EXTRA_ID_LAYER, item.idLayer)
             putExtra(FormActivity.EXTRA_ID_PREDIO, item.idPredio)
+            putExtra(FormActivity.EXTRA_LAYER_NAME, item.layer)
         }
         startActivity(intent)
     }

@@ -233,11 +233,11 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
         try {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US)
-            val fecha = dateFormat.format(Date())
+            val fechaActual = dateFormat.format(Date())
+            val inicialesActuales = com.cadicsa.inventario.security.SecurityManager.currentUser?.initials ?: "UNK"
 
             val cv = ContentValues().apply {
                 put("DATOS", data)
-                put("FECHA", fecha)
                 put("SINCRONIZADO", false)
                 put("IMEI", imei)
                 put("ANDROID_ID", androidId)
@@ -252,8 +252,14 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
             }
 
             resultId = if (id == -1) {
+                // Nuevo registro: Se setean campos de creación
+                cv.put("FECHA", fechaActual)
+                cv.put("CREADO_POR", inicialesActuales)
                 db.insert("DATOS", null, cv).toInt()
             } else {
+                // Modificación: No se toca FECHA ni CREADO_POR original
+                cv.put("FECHA_UPDATE", fechaActual)
+                cv.put("ACTUALIZADO_POR", inicialesActuales)
                 db.update("DATOS", cv, "ID=$id", null)
                 id
             }
@@ -331,7 +337,8 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         val longitudGps: Double,
         val idObject: Int,
         val idLayer: Int,
-        val idPredio: Int
+        val idPredio: Int,
+        val layer: String
     )
 
     /**
@@ -341,7 +348,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         val items = mutableListOf<DataItem>()
         val query = """
             SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, 
-                   IDOBJECT, IDLAYER, IDPREDIO 
+                   IDOBJECT, IDLAYER, IDPREDIO, LAYER 
             FROM DATOS
         """.trimIndent()
         
@@ -361,7 +368,8 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
                         longitudGps = cursor.getDouble(6),
                         idObject = cursor.getInt(7),
                         idLayer = cursor.getInt(8),
-                        idPredio = cursor.getInt(9)
+                        idPredio = cursor.getInt(9),
+                        layer = cursor.getString(10) ?: "Aceras"
                     )
                 )
             }
@@ -409,6 +417,67 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         } else {
             "[]"
         }
+    }
+
+    /**
+     * Método unificado para consultas por proximidad geográfica.
+     * Útil para snapping (clic cercano a punto existente) y carga de grupos de puntos (clusters).
+     * 
+     * @param lat Latitud de referencia
+     * @param lng Longitud de referencia
+     * @param radiusInMeters Radio de búsqueda en metros
+     * @param limitToOne Si es true, solo devuelve el primer punto encontrado (modo Snap)
+     * @return Lista de DataItem encontrados
+     */
+    fun getDataByProximity(lat: Double, lng: Double, radiusInMeters: Double, limitToOne: Boolean): List<DataItem> {
+        val items = mutableListOf<DataItem>()
+        
+        // Conversión aproximada de metros a grados decimales para filtro SQL (Bounding Box)
+        // 1 grado de latitud ~ 111,111 metros. 
+        // 1 grado de longitud varía, pero para filtros de 2-3 metros esta aproximación es segura y rápida.
+        val delta = radiusInMeters / 111000.0 
+        
+        val limitSql = if (limitToOne) "LIMIT 1" else ""
+        
+        val query = """
+            SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, 
+                   IDOBJECT, IDLAYER, IDPREDIO, LAYER 
+            FROM DATOS 
+            WHERE LATITUD BETWEEN ${lat - delta} AND ${lat + delta}
+              AND LONGITUD BETWEEN ${lng - delta} AND ${lng + delta}
+            $limitSql
+        """.trimIndent()
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(query, null)
+
+        try {
+            while (cursor.moveToNext()) {
+                // Para mayor precisión (opcional), podríamos calcular la distancia real aquí 
+                // pero el BBox de 3m es suficiente para determinar proximidad en campo.
+                items.add(
+                    DataItem(
+                        id = cursor.getInt(0),
+                        data = cursor.getString(1) ?: "{}",
+                        fecha = cursor.getString(2) ?: "",
+                        latitud = cursor.getDouble(3),
+                        longitud = cursor.getDouble(4),
+                        latitudGps = cursor.getDouble(5),
+                        longitudGps = cursor.getDouble(6),
+                        idObject = cursor.getInt(7),
+                        idLayer = cursor.getInt(8),
+                        idPredio = cursor.getInt(9),
+                        layer = cursor.getString(10) ?: "Aceras"
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseHelper", "Error en getDataByProximity: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+        
+        return items
     }
 
     /**
@@ -862,6 +931,39 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
             }
         } catch (e: Exception) {
             android.util.Log.e("DatabaseHelper", "Error en getMunicipiosAt: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+
+        return null
+    }
+
+    /**
+     * Busca el polígono de la capa 'Sectores' que contiene el punto dado
+     */
+    fun getSectorAt(lng: Double, lat: Double): String? {
+        val query = """
+            SELECT LOCALIZACION, wkt 
+            FROM objects 
+            WHERE layer = 'Sectores' COLLATE NOCASE
+            AND minX < $lng AND minY < $lat 
+            AND maxX > $lng AND maxY > $lat
+        """.trimIndent()
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(query, null)
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val wktPolygon = cursor.getString(1) ?: continue
+                    if (GeometryUtil.isPointInPolygon(lat, lng, wktPolygon)) {
+                        return cursor.getString(0) // Retorna el valor de LOCALIZACION
+                    }
+                } while (cursor.moveToNext())
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseHelper", "Error en getSectorAt: ${e.message}")
         } finally {
             cursor.close()
         }

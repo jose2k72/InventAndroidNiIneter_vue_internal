@@ -105,6 +105,8 @@ class FormActivity : AppCompatActivity() {
         const val EXTRA_EXISTING_DATA = "existing_data"
         const val EXTRA_AREA_CALCULADA = "area_calculada"
         const val EXTRA_MUNICIPIO_CATALOG = "municipio_catalog"
+        const val EXTRA_SECTOR_CATALOG = "sector_catalog"
+        const val EXTRA_LAYER_NAME = "layer_name"
     }
 
     private var idObject: Int = 0
@@ -112,6 +114,8 @@ class FormActivity : AppCompatActivity() {
     private var idPredio: Int = 0
     private var areaCalculada: Double = 0.0
     private var municipioCatalog: String = ""
+    private var sectorCatalog: String = ""
+    private var layerName: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,6 +141,8 @@ class FormActivity : AppCompatActivity() {
         idPredio = intent.getIntExtra(EXTRA_ID_PREDIO, 0)
         areaCalculada = intent.getDoubleExtra(EXTRA_AREA_CALCULADA, 0.0)
         municipioCatalog = intent.getStringExtra(EXTRA_MUNICIPIO_CATALOG) ?: ""
+        sectorCatalog = intent.getStringExtra(EXTRA_SECTOR_CATALOG) ?: ""
+        layerName = intent.getStringExtra(EXTRA_LAYER_NAME) ?: "Aceras"
         
         // Detectar si es edición de registro existente
         val existingId = intent.getIntExtra(EXTRA_EXISTING_ID, -1)
@@ -318,6 +324,9 @@ class FormActivity : AppCompatActivity() {
         fun getMunicipioInterceptado(): String = municipioCatalog
 
         @JavascriptInterface
+        fun getSectorInterceptado(): String = sectorCatalog
+
+        @JavascriptInterface
         fun getIdObject(): Int {
             // Usar el ID del objeto de la BD, o generar uno basado en timestamp si no existe
             return if (idObject > 0) idObject else (System.currentTimeMillis() / 1000).toInt()
@@ -326,9 +335,21 @@ class FormActivity : AppCompatActivity() {
         @JavascriptInterface
         fun getData(): String {
             return try {
-                // Usar búsqueda espacial: datos DENTRO del polígono del predio y no filtrar por idObject
-                DatabaseHelper.getInstance(this@FormActivity).getDataInPolygon(idObject)
+                val dbHelper = DatabaseHelper.getInstance(this@FormActivity)
+                val items = dbHelper.getDataByProximity(latitude, longitude, 3.0, false)
+                
+                val result = StringBuilder("[")
+                items.forEachIndexed { index, item ->
+                    result.append("{\"Id\":${item.id},")
+                    result.append("\"Data\": ${item.data},")
+                    result.append("\"IdObject\":${item.idObject},")
+                    result.append("\"Fecha\": \"${item.fecha}\"}")
+                    if (index < items.size - 1) result.append(",")
+                }
+                result.append("]")
+                result.toString()
             } catch (e: Exception) {
+                android.util.Log.e("FormActivity", "Error en getData: ${e.message}")
                 "[]"
             }
         }
@@ -365,7 +386,7 @@ class FormActivity : AppCompatActivity() {
                     longitud = longitude,
                     latitudGPS = gpsLatitude,
                     longitudGPS = gpsLongitude,
-                    layer = "Aceras",
+                    layer = layerName,
                     idLayer = idLayer,
                     idPredio = idPredio
                 )
