@@ -840,7 +840,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 true
             }
             R.id.menu_admin_passwords -> {
-                showAdminPasswordsDialog()
+                startActivity(Intent(this, ManageUsersActivity::class.java))
                 true
             }
             R.id.menu_import_users -> {
@@ -960,68 +960,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun showAdminPasswordsDialog() {
-        val builder = android.app.AlertDialog.Builder(this)
-        builder.setTitle("Administrar Claves")
-        
-        val layout = android.widget.LinearLayout(this)
-        layout.orientation = android.widget.LinearLayout.VERTICAL
-        val padding = (16 * resources.displayMetrics.density).toInt()
-        layout.setPadding(padding, padding, padding, padding)
-        
-        val spinner = android.widget.Spinner(this)
-        // Todos excepto MASTER
-        val usersToEdit = com.cadicsa.inventario.security.SecurityManager.usersList.filter { it.userName != "MASTER" }
-        val userNames = usersToEdit.map { it.fullName }
-        
-        if (usersToEdit.isEmpty()) {
-            Toast.makeText(this, "No hay usuarios para administrar", Toast.LENGTH_SHORT).show()
-            return
-        }
-        
-        val adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, userNames)
-        spinner.adapter = adapter
-        layout.addView(spinner)
-        
-        val newPassInput = android.widget.EditText(this)
-        newPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        newPassInput.hint = "Nueva Contraseña"
-        layout.addView(newPassInput)
-        
-        builder.setView(layout)
-        builder.setPositiveButton("Actualizar", null)
-        builder.setNegativeButton("Cancelar", null)
-        
-        val dialog = builder.create()
-        dialog.show()
-        
-        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val position = spinner.selectedItemPosition
-            if (position < 0) return@setOnClickListener
-            
-            val targetUser = usersToEdit[position]
-            val newPass = newPassInput.text.toString()
-            
-            if (newPass.isEmpty()) {
-                Toast.makeText(this, "Debe ingresar una nueva contraseña", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            
-            // Cambiar contraseña forzosamente (sin validación antigua)
-            val newSalt = com.cadicsa.inventario.security.SecurityManager.generateSalt()
-            val newHash = com.cadicsa.inventario.security.SecurityManager.hashPassword(newPass, newSalt)
-            targetUser.salt = newSalt
-            targetUser.passwordHash = newHash
-            
-            val saved = com.cadicsa.inventario.security.SecurityManager.saveUsersToJson(this)
-            if (saved) {
-                Toast.makeText(this, "Contraseña de \${targetUser.fullName} actualizada.", Toast.LENGTH_LONG).show()
-                dialog.dismiss()
-            } else {
-                Toast.makeText(this, "Error guardando los cambios.", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     private fun showAboutDialog(autoCloseDurationSeconds: Int = 10, onDismiss: (() -> Unit)? = null) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_about, null)

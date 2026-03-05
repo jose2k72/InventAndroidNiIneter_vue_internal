@@ -16,7 +16,7 @@
         
     <item
         android:id="@+id/menu_admin_passwords"
-        android:title="Administrar Claves"
+        android:title="Administrar Usuarios"
         android:icon="@android:drawable/ic_menu_manage"
         app:showAsAction="never" />
     <!-- Funcionalidad de rutas deshabilitada para esta variante -->
