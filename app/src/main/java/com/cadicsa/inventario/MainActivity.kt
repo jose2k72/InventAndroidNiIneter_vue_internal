@@ -100,7 +100,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Mostrar About al iniciar la app por 4 segundos
-        showAboutDialog(4)
+        // Al cerrar el 'About', se ejecuta el callback para iniciar la autenticación
+        showAboutDialog(4, onDismiss = { checkAuthentication() })
 
         // Solicitar todos los permisos al iniciar
         // Verificar permiso especial para Android 11+
@@ -292,7 +293,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         // checkEncuestador()
 
         // Autenticación obligatoria (Modo Híbrido DDCADIC)
-        checkAuthentication()
+        // MOVIDO AL CALLBACK DE showAboutDialog PARA EVITAR SOLAPE VISUAL
+        // checkAuthentication()
         
         // Listener para recargar rutas cuando se mueve el mapa
         mMap.setOnCameraIdleListener {
@@ -1021,7 +1023,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun showAboutDialog(autoCloseDurationSeconds: Int = 10) {
+    private fun showAboutDialog(autoCloseDurationSeconds: Int = 10, onDismiss: (() -> Unit)? = null) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_about, null)
         
         // Obtener versión de la app
@@ -1047,6 +1049,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             .setCancelable(true)
             .create()
         
+        // AL CERRAR (por cualquier motivo), ejecutar el callback si existe
+        dialog.setOnDismissListener {
+            onDismiss?.invoke()
+        }
+        
         // Hacer que el diálogo se cierre al hacer click en cualquier parte
         dialogView.setOnClickListener {
             dialog.dismiss()
@@ -1063,8 +1070,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun exitApp() {
+        val currentUser = com.cadicsa.inventario.security.SecurityManager.currentUser
+        
         // Mostrar confirmación
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Salir")
             .setMessage("¿Está seguro que desea salir de la aplicación?")
             .setPositiveButton("Sí") { _, _ ->
@@ -1083,8 +1092,22 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Finalizar actividad
                 finish()
             }
-            .setNegativeButton("No", null)
-            .show()
+            
+        if (currentUser == null) {
+            // Si el usuario NO está autenticado (viene del login inicial), 
+            // no puede cancelar este diálogo con el botón "Atrás" ni tocando fuera.
+            // Y si da "No", debe volver forzosamente al login.
+            builder.setCancelable(false)
+            builder.setNegativeButton("No") { _, _ ->
+                showAuthDialog()
+            }
+        } else {
+            // Si el usuario YA está autenticado (salida voluntaria desde el menú),
+            // el comportamiento es el estándar (se puede cancelar y vuelve al mapa).
+            builder.setNegativeButton("No", null)
+        }
+            
+        builder.show()
     }
     
     /**
