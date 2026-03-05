@@ -2,7 +2,23 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     
-    
+    <item
+        android:id="@+id/menu_user_info"
+        android:title="Usuario (Info)"
+        android:enabled="false"
+        app:showAsAction="never" />
+        
+    <item
+        android:id="@+id/menu_change_password"
+        android:title="Cambiar Contraseña"
+        android:icon="@android:drawable/ic_menu_edit"
+        app:showAsAction="never" />
+        
+    <item
+        android:id="@+id/menu_admin_passwords"
+        android:title="Administrar Claves"
+        android:icon="@android:drawable/ic_menu_manage"
+        app:showAsAction="never" />
     <!-- Funcionalidad de rutas deshabilitada para esta variante -->
     <!-- Esta funcionalidad estaba activa en la aplicación origen: com.cadicsa.inventario.goico.aceras -->
     <!-- Descomentar si se necesita en futuras variantes -->
@@ -21,7 +37,12 @@
         android:checked="false"
         app:showAsAction="never" />
     -->
-    
+    <item
+        android:id="@+id/menu_import_users"
+        android:title="Importar Usuarios"
+        android:icon="@android:drawable/ic_menu_save"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/menu_about"
         android:title="Acerca de"

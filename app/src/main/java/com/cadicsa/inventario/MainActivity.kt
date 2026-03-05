@@ -288,7 +288,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         loadCapturedPoints()
         
         // Verificar si se ha configurado el encuestador
-        checkEncuestador()
+        // DESHABILITADO EN ESTA VERSION: Se mantiene el código por acciones futuras
+        // checkEncuestador()
+
+        // Autenticación obligatoria (Modo Híbrido DDCADIC)
+        checkAuthentication()
         
         // Listener para recargar rutas cuando se mueve el mapa
         mMap.setOnCameraIdleListener {
@@ -612,6 +616,85 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
     
     /**
+     * Verifica si se requiere autenticar (modo seguro)
+     */
+    private fun checkAuthentication() {
+        if (com.cadicsa.inventario.security.SecurityManager.currentUser != null) {
+            return // Ya está autenticado
+        }
+
+        com.cadicsa.inventario.security.SecurityManager.initUsers(this)
+        showAuthDialog()
+    }
+
+    private fun showAuthDialog() {
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle(getString(R.string.app_name) + " - Autenticación")
+        builder.setCancelable(false)
+        
+        val layout = android.widget.LinearLayout(this)
+        layout.orientation = android.widget.LinearLayout.VERTICAL
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        layout.setPadding(padding, padding, padding, padding)
+        
+        // 1. Dropdown para usuarios
+        val spinner = android.widget.Spinner(this)
+        val userNames = com.cadicsa.inventario.security.SecurityManager.usersList.map { it.fullName }
+        val adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, userNames)
+        spinner.adapter = adapter
+        layout.addView(spinner)
+        
+        // 2. Input Password
+        val input = android.widget.EditText(this)
+        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        input.hint = "Contraseña"
+        val marginTop = (16 * resources.displayMetrics.density).toInt()
+        val params = android.widget.LinearLayout.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT, 
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        params.topMargin = marginTop
+        input.layoutParams = params
+        layout.addView(input)
+        
+        builder.setView(layout)
+        
+        builder.setPositiveButton("Entrar", null) // Setemos null aquí para evitar que se cierre automáticamente
+        builder.setNegativeButton("Salir") { _, _ ->
+            exitApp()
+        }
+        
+        val dialog = builder.create()
+        dialog.show()
+        
+        // Sobreescribir Positive Button onClick para evitar cierre al fallar password
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val position = spinner.selectedItemPosition
+            if (position < 0) return@setOnClickListener
+            
+            val selectedUser = com.cadicsa.inventario.security.SecurityManager.usersList[position]
+            val password = input.text.toString()
+            
+            if (password.isEmpty()) {
+                Toast.makeText(this, "Debe ingresar contraseña", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            val isAuth = com.cadicsa.inventario.security.SecurityManager.authenticate(selectedUser, password)
+            if (isAuth) {
+                dialog.dismiss()
+                Toast.makeText(this, "Bienvenido, ${selectedUser.fullName}", Toast.LENGTH_SHORT).show()
+                // Una vez logueado, actualizamos el ENCUESTADOR en la BD (legacy compatibilidad)
+                val dbHelper = DatabaseHelper.getInstance(this)
+                dbHelper.updateNombreEncuestador(selectedUser.fullName)
+            } else {
+                Toast.makeText(this, "Contraseña incorrecta", Toast.LENGTH_SHORT).show()
+                input.setText("") // clean input
+            }
+        }
+    }
+    
+    /**
      * Muestra diálogo con lista de registros en un punto
      */
     private fun showPointDataDialog(coords: String) {
@@ -709,11 +792,33 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         return true
     }
 
+    override fun onPrepareOptionsMenu(menu: android.view.Menu?): Boolean {
+        super.onPrepareOptionsMenu(menu)
+        
+        val infoItem = menu?.findItem(R.id.menu_user_info)
+        val changePassItem = menu?.findItem(R.id.menu_change_password)
+        val adminPassItem = menu?.findItem(R.id.menu_admin_passwords)
+        val importItem = menu?.findItem(R.id.menu_import_users)
+        
+        val currentUser = com.cadicsa.inventario.security.SecurityManager.currentUser
+        val userName = currentUser?.userName
+        
+        // 1. Mostrar nombre de usuario al principio (resaltado)
+        infoItem?.title = "👤 " + (currentUser?.fullName ?: "Desconocido")
+        
+        // 2. MASTER y ADMIN pueden acceder a administrar claves e importar JSON
+        val esAdminOMaster = (userName == "ADMIN" || userName == "MASTER")
+        importItem?.isVisible = esAdminOMaster
+        adminPassItem?.isVisible = esAdminOMaster
+        
+        // 3. Todos pueden cambiar su clave EXCEPTO MASTER
+        changePassItem?.isVisible = (userName != "MASTER")
+        
+        return true
+    }
+
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
         return when (item.itemId) {
-            // Funcionalidad de rutas deshabilitada para esta variante
-            // Esta funcionalidad estaba activa en la aplicación origen: com.cadicsa.inventario.goico.aceras
-            // Descomentar si se necesita en futuras variantes
             /*
             R.id.menu_toggle_rutas_locales -> {
                 showRutasLocales = !showRutasLocales
@@ -728,6 +833,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 true
             }
             */
+            R.id.menu_change_password -> {
+                showChangePasswordDialog()
+                true
+            }
+            R.id.menu_admin_passwords -> {
+                showAdminPasswordsDialog()
+                true
+            }
+            R.id.menu_import_users -> {
+                importDeviceUsersFile()
+                true
+            }
             R.id.menu_about -> {
                 showAboutDialog(30)  // 30 segundos cuando se llama desde el menú
                 true
@@ -737,6 +854,170 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 true
             }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun importDeviceUsersFile() {
+        val storageDir = AppConfig.getStorageDirectory()
+        val sourceFile = java.io.File(storageDir, "DeviceUsers.json")
+        val targetFile = java.io.File(filesDir, "DeviceUsers.json")
+
+        if (!sourceFile.exists()) {
+            Toast.makeText(this, "⚠️ No se encontró el archivo DeviceUsers.json en ${storageDir.absolutePath}", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        try {
+            // 1. Copia Segura
+            sourceFile.copyTo(targetFile, overwrite = true)
+            
+            // 2. Destruccion del original (Borrar el rastro publico)
+            val deleted = sourceFile.delete()
+            
+            if (deleted) {
+                Toast.makeText(this, "✅ Importación exitosa. Volviendo a iniciar sesión...", Toast.LENGTH_LONG).show()
+                // 3. Destruir sesion actual y forzar Hot Restart ("Autenticacion Efimera")
+                com.cadicsa.inventario.security.SecurityManager.currentUser = null
+                checkAuthentication()
+            } else {
+                Toast.makeText(this, "⚠️ Importación realizada BUT failed to delete original file.", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error importando DeviceUsers.json: ${e.message}")
+            Toast.makeText(this, "❌ Error fatal copiando el archivo: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun showChangePasswordDialog() {
+        val currentUser = com.cadicsa.inventario.security.SecurityManager.currentUser ?: return
+        
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("Cambiar mi contraseña")
+        
+        val layout = android.widget.LinearLayout(this)
+        layout.orientation = android.widget.LinearLayout.VERTICAL
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        layout.setPadding(padding, padding, padding, padding)
+        
+        val currentPassInput = android.widget.EditText(this)
+        currentPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        currentPassInput.hint = "Contraseña Actual"
+        layout.addView(currentPassInput)
+        
+        val newPassInput = android.widget.EditText(this)
+        newPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        newPassInput.hint = "Nueva Contraseña"
+        layout.addView(newPassInput)
+        
+        val confirmPassInput = android.widget.EditText(this)
+        confirmPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        confirmPassInput.hint = "Confirmar Nueva Contraseña"
+        layout.addView(confirmPassInput)
+        
+        builder.setView(layout)
+        builder.setPositiveButton("Guardar", null)
+        builder.setNegativeButton("Cancelar", null)
+        
+        val dialog = builder.create()
+        dialog.show()
+        
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val currPass = currentPassInput.text.toString()
+            val newPass = newPassInput.text.toString()
+            val confPass = confirmPassInput.text.toString()
+            
+            if (currPass.isEmpty() || newPass.isEmpty() || confPass.isEmpty()) {
+                Toast.makeText(this, "Debe completar todos los campos", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            if (newPass != confPass) {
+                Toast.makeText(this, "La nueva contraseña y la confirmación no coinciden", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            // Validar clave vieja
+            if (!com.cadicsa.inventario.security.SecurityManager.authenticate(currentUser, currPass)) {
+                Toast.makeText(this, "La contraseña actual no es correcta", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            // Cambiar clave
+            val newSalt = com.cadicsa.inventario.security.SecurityManager.generateSalt()
+            val newHash = com.cadicsa.inventario.security.SecurityManager.hashPassword(newPass, newSalt)
+            currentUser.salt = newSalt
+            currentUser.passwordHash = newHash
+            
+            val saved = com.cadicsa.inventario.security.SecurityManager.saveUsersToJson(this)
+            if (saved) {
+                Toast.makeText(this, "Contraseña cambiada exitosamente", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            } else {
+                Toast.makeText(this, "Error guardando los cambios. Verifique log.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun showAdminPasswordsDialog() {
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("Administrar Claves")
+        
+        val layout = android.widget.LinearLayout(this)
+        layout.orientation = android.widget.LinearLayout.VERTICAL
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        layout.setPadding(padding, padding, padding, padding)
+        
+        val spinner = android.widget.Spinner(this)
+        // Todos excepto MASTER
+        val usersToEdit = com.cadicsa.inventario.security.SecurityManager.usersList.filter { it.userName != "MASTER" }
+        val userNames = usersToEdit.map { it.fullName }
+        
+        if (usersToEdit.isEmpty()) {
+            Toast.makeText(this, "No hay usuarios para administrar", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        val adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, userNames)
+        spinner.adapter = adapter
+        layout.addView(spinner)
+        
+        val newPassInput = android.widget.EditText(this)
+        newPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        newPassInput.hint = "Nueva Contraseña"
+        layout.addView(newPassInput)
+        
+        builder.setView(layout)
+        builder.setPositiveButton("Actualizar", null)
+        builder.setNegativeButton("Cancelar", null)
+        
+        val dialog = builder.create()
+        dialog.show()
+        
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val position = spinner.selectedItemPosition
+            if (position < 0) return@setOnClickListener
+            
+            val targetUser = usersToEdit[position]
+            val newPass = newPassInput.text.toString()
+            
+            if (newPass.isEmpty()) {
+                Toast.makeText(this, "Debe ingresar una nueva contraseña", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            // Cambiar contraseña forzosamente (sin validación antigua)
+            val newSalt = com.cadicsa.inventario.security.SecurityManager.generateSalt()
+            val newHash = com.cadicsa.inventario.security.SecurityManager.hashPassword(newPass, newSalt)
+            targetUser.salt = newSalt
+            targetUser.passwordHash = newHash
+            
+            val saved = com.cadicsa.inventario.security.SecurityManager.saveUsersToJson(this)
+            if (saved) {
+                Toast.makeText(this, "Contraseña de \${targetUser.fullName} actualizada.", Toast.LENGTH_LONG).show()
+                dialog.dismiss()
+            } else {
+                Toast.makeText(this, "Error guardando los cambios.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -796,6 +1077,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Error al limpiar recursos: ${e.message}")
                 }
+                // Limpiar la sesión de seguridad
+                com.cadicsa.inventario.security.SecurityManager.currentUser = null
                 
                 // Finalizar actividad
                 finish()
