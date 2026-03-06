@@ -510,6 +510,16 @@ class FormActivity : AppCompatActivity() {
                 ""
             }
         }
+
+        @JavascriptInterface
+        fun getSiguienteConsecutivo(lat: Double, lng: Double): Int {
+            return try {
+                DatabaseHelper.getInstance(this@FormActivity).getSiguienteConsecutivo(lat, lng)
+            } catch (e: Exception) {
+                android.util.Log.e("FormActivity", "Error en getSiguienteConsecutivo: ${e.message}")
+                1
+            }
+        }
     }
 
     private fun requestCameraPermission() {

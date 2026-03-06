@@ -22,10 +22,12 @@ La "Ficha" o Encuesta Catastral es el eje central de la recolección. Para garan
 ### 2.1 Formulario: Encuesta Catastral
 - **Número de personas con derecho similar**: Debe ser estrictamente **mayor que 0**. Esta es una validación de bloqueo; el sistema no permitirá guardar el formulario si el valor es 0 o nulo.
 - **Área Estimada**: Se valida que sea un número positivo. Si viene del mapa, el campo se bloquea para evitar discrepancias con la topografía digital.
+- **Identificadores**: Se utiliza `IdPropiedad` (UUID) para la vinculación única del registro y `IdSector` para la generación del número de encuesta.
 
 ### 2.2 Formulario: Personas (Propietario / Entrevistado)
 - **Edad**: Debe ser **>= 0**.
 - **No. Identificación**: Campo obligatorio. Se eliminaron los placeholders de ejemplo para evitar que el usuario asuma formatos rígidos que no corresponden a todos los tipos de documentos (Cédula, RUC, Pasaporte).
+- **Perfil y Carnet**: Si se selecciona un Perfil del Propietario (Desmovilizado, Retirado, etc.), el campo **Carnet del Perfil** se vuelve obligatorio. Si el perfil es "Otro", la descripción también es obligatoria.
 
 ---
 

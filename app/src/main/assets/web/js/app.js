@@ -41,6 +41,7 @@ const app = createApp({
         const idObject = ref(0);
         const areaCalculada = ref(0);
         const municipioInterceptado = ref('');
+        const sectorInterceptado = ref('');
 
         // Lista de datos guardados
         const listData = ref([]);
@@ -86,6 +87,7 @@ const app = createApp({
                     idObject.value = Android.getIdObject();
                     areaCalculada.value = Android.getAreaCalculada ? Android.getAreaCalculada() : 0;
                     municipioInterceptado.value = Android.getMunicipioInterceptado ? Android.getMunicipioInterceptado() : '';
+                    sectorInterceptado.value = Android.getSectorInterceptado ? Android.getSectorInterceptado() : '';
 
                     // Cargar datos existentes
                     const jsonData = Android.getData();
@@ -105,6 +107,14 @@ const app = createApp({
                 fechaActual.value = new Date().toLocaleDateString('es-CR');
                 idObject.value = Date.now();
             }
+        };
+
+        // Generar UUID v4
+        const generateUUID = () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
         };
 
         // Crear modelo vacío de Acera (FORMATO LEGACY - NO MODIFICAR)
@@ -269,12 +279,18 @@ const app = createApp({
 
         const createEncuestaCatastralModel = () => ({
             Type: 'EncuestaCatastral',
+            NoEncuesta: '',
+            Consecutivo: 0,
+            IdPropiedad: generateUUID(),
             MunicipioCatalog: null,
-            SectorId: '',
+            IdSector: '',
             ParcelaCatastrada: '',
             ParcelaSegregada: '',
             TipoEncuestaCatalog: null,
             NombreFinca: '',
+            OrigenTierraCatalog: null,
+            OrigenTierraOtroText: '',
+            ResenaHistorica: '',
             Direccion: '',
             Cacerio: '',
             Barrio: '',
@@ -313,19 +329,29 @@ const app = createApp({
             ClaseConflictoCatalog: null,
             TieneConflicto: false,
             ClaseConflictoOtroText: '',
+            TieneGestionConflicto: false,
+            GestionConflictoCatalog: null,
+            GestionConflictoOtroText: '',
+            Localizacion: '',
             // Helpers UI
             _MuniNombre: '', _DeptoNombre: '', _CodDepto: '',
-            _ParentescoName: '', _ConflictoName: ''
+            _ParentescoName: '', _ConflictoName: '', _GestionConflictoName: ''
         });
 
         const createPropietarioNaturalModel = () => ({
             Type: 'PropietarioNatural',
             // Person fields
             FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
-            Gender: null,
+            TipoIdentificacionCatalog: null,
+            Identificacion: '',
+            GenderCatalog: null,
             Age: null,
-            CivilState: null,
+            CivilStateCatalog: null,
             ProfessionCatalog: 0,
+            ProfessionOtroText: '',
+            PerfilPropietarioCatalog: null,
+            PerfilPropietarioOtroText: '',
+            PerfilPropietarioCarnet: '',
             ResidenceMunicipioCatalog: '',  // CodMuni completo ej: '5525'
             ResidenceDireccion: '',
             ResidenceDepartamento: '',
@@ -350,17 +376,21 @@ const app = createApp({
             Type: 'Entrevistado',
             // Person fields
             FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
-            Gender: null, // null para forzar selección
+            TipoIdentificacionCatalog: null,
+            Identificacion: '',
+            GenderCatalog: null, // null para forzar selección
             Age: null, // null para forzar entrada
-            CivilState: null, // null para forzar selección
+            CivilStateCatalog: null, // null para forzar selección
             ProfessionCatalog: 0,
+            ProfessionOtroText: '',
             ResidenceDireccion: '',
             ResidenceDepartamento: '',
             ResidenceComarca: '',
             ResidenceBarrio: '',
 
             // Entrevistado fields
-            RelacionConParcela: null, // null para forzar selección
+            RelacionConParcelaCatalog: null, // null para forzar selección
+            RelacionConParcelaOtroText: '',
             RelacionInformantePropietarioCatalog: 0
         });
 
@@ -419,6 +449,10 @@ const app = createApp({
                             formData.value.MunicipioCatalog = muniId;
                         }
                     }
+
+                    if (sectorInterceptado.value) {
+                        formData.value.IdSector = sectorInterceptado.value;
+                    }
                 } else if (type === 'PropietarioNatural') {
                     formData.value = createPropietarioNaturalModel();
                 } else if (type === 'PropietarioJuridica') {
@@ -427,6 +461,14 @@ const app = createApp({
                     formData.value = createEntrevistadoModel();
                 } else if (type === 'Familiares') {
                     formData.value = createFamiliaresModel();
+                }
+
+                // Asegurar que el objeto inicial tenga coordenadas para cálculos locales (como el consecutivo)
+                if (formData.value && !formData.value.LatLng) {
+                    formData.value.LatLng = { Lat: latLng.lat, Lng: latLng.lng };
+                }
+                if (formData.value && !formData.value.Localizacion) {
+                    formData.value.Localizacion = localizacion.value;
                 }
             }
 

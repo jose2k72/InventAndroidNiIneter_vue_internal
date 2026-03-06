@@ -308,6 +308,32 @@ textarea {
     box-shadow: 0 2px 4px var(--shadow);
 }
 
+.id-display-box {
+    background: #f8f9fa;
+    border-left: 4px solid var(--primary);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.id-display-box .label {
+    font-weight: 600;
+    color: var(--gray-dark);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.id-display-box .value {
+    color: var(--primary-dark);
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: 700;
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;

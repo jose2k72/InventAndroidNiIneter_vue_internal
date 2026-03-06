@@ -84,6 +84,32 @@ const FormPropietarioNatural = {
                        </div>
                     </div>
                 </div>
+
+                <!-- Especificar Profesión (cuando es 'Otro' ID 26) -->
+                <div v-if="formData.ProfessionCatalog == 26" class="form-group sub-section" style="margin-top: -10px; margin-bottom: 15px;">
+                    <label :style="{color: errors.ProfessionOtroText ? 'red' : 'inherit', fontWeight: errors.ProfessionOtroText ? 'bold' : 'normal'}">Especificar Profesión *</label>
+                    <input type="text" v-model="formData.ProfessionOtroText" placeholder="Detalle la profesión u oficio...">
+                </div>
+
+                <div class="coords-grid">
+                    <div class="form-group">
+                       <label>Perfil del Propietario</label>
+                       <div class="selector-display" @click="pedirPerfilPropietarioGlobal">
+                           <span v-if="perfilPropietarioName" style="color: #1565C0; font-weight: 600;">{{ perfilPropietarioName }}</span>
+                           <span v-else style="color: #757575;">Seleccione un perfil...</span>
+                           <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                       </div>
+                    </div>
+                    <div v-if="formData.PerfilPropietarioCatalog" class="form-group">
+                        <label :style="{color: errors.PerfilPropietarioCarnet ? 'red' : 'inherit', fontWeight: errors.PerfilPropietarioCarnet ? 'bold' : 'normal'}">Carnet del Perfil *</label>
+                        <input type="text" v-model="formData.PerfilPropietarioCarnet" placeholder="No. de Carnet..." :style="{borderColor: errors.PerfilPropietarioCarnet ? '#d32f2f' : '#ccc'}">
+                    </div>
+                </div>
+
+                <div v-if="formData.PerfilPropietarioCatalog == 7" class="form-group" style="margin-top: 10px;">
+                    <label :style="{color: errors.PerfilPropietarioOtroText ? 'red' : 'inherit', fontWeight: errors.PerfilPropietarioOtroText ? 'bold' : 'normal'}">Especifique Perfil *</label>
+                    <input type="text" v-model="formData.PerfilPropietarioOtroText" placeholder="Detalle el perfil..." :style="{borderColor: errors.PerfilPropietarioOtroText ? '#d32f2f' : '#ccc'}">
+                </div>
             </div>
 
             <div class="section">
@@ -181,8 +207,9 @@ const FormPropietarioNatural = {
             }
         };
 
-        // Nombre visual de profesión (helper UI que persiste en formData)
+        // Nombre visual de profesión y perfil (helpers UI)
         const profesionName = Vue.ref(formData._ProfessionName || '');
+        const perfilPropietarioName = Vue.ref(formData._PerfilPropietarioName || '');
 
         // Llamada a la app global usando el contexto global asegurado vueAppContext
         const catalogos = {
@@ -223,6 +250,47 @@ const FormPropietarioNatural = {
             }
         };
 
+        const pedirPerfilPropietarioGlobal = () => {
+            if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
+                vueAppContext.openCatalog({
+                    catalogName: 'PerfilPropietario',
+                    label: 'Perfil del Propietario...',
+                    onSelect: (val) => {
+                        formData.PerfilPropietarioCatalog = val.id;
+                        formData._PerfilPropietarioName = val.name;
+                        perfilPropietarioName.value = val.name;
+                    }
+                });
+            } else {
+                console.error("❌ Contexto global vueAppContext.openCatalog no encontrado.");
+            }
+        };
+
+        // Limpiar "Otro" si se cambia la profesión
+        Vue.watch(() => formData.ProfessionCatalog, (newVal) => {
+            if (newVal != 26) {
+                formData.ProfessionOtroText = '';
+                delete errors.ProfessionOtroText;
+            }
+        });
+
+        // Limpiar "Otro" y carnet si se cambia el perfil
+        Vue.watch(() => formData.PerfilPropietarioCatalog, (newVal) => {
+            if (!newVal) {
+                formData.PerfilPropietarioOtroText = '';
+                formData.PerfilPropietarioCarnet = '';
+                delete errors.PerfilPropietarioOtroText;
+                delete errors.PerfilPropietarioCarnet;
+            } else if (newVal != 7) {
+                formData.PerfilPropietarioOtroText = '';
+                delete errors.PerfilPropietarioOtroText;
+            }
+        });
+
+        // Limpieza de errores al escribir
+        Vue.watch(() => formData.PerfilPropietarioOtroText, (val) => { if (val?.trim()) delete errors.PerfilPropietarioOtroText; });
+        Vue.watch(() => formData.PerfilPropietarioCarnet, (val) => { if (val?.trim()) delete errors.PerfilPropietarioCarnet; });
+
         const save = () => {
             // Limpiar errores previos
             Object.keys(errors).forEach(key => delete errors[key]);
@@ -261,6 +329,20 @@ const FormPropietarioNatural = {
                 errors.ProfessionCatalog = true;
                 errorList.push('Profesión');
             }
+            if (formData.ProfessionCatalog == 26 && !formData.ProfessionOtroText?.trim()) {
+                errors.ProfessionOtroText = true;
+                errorList.push('Especificar Profesión');
+            }
+            if (formData.PerfilPropietarioCatalog) {
+                if (!formData.PerfilPropietarioCarnet?.trim()) {
+                    errors.PerfilPropietarioCarnet = true;
+                    errorList.push('Carnet del Perfil');
+                }
+                if (formData.PerfilPropietarioCatalog == 7 && !formData.PerfilPropietarioOtroText?.trim()) {
+                    errors.PerfilPropietarioOtroText = true;
+                    errorList.push('Especificar Perfil');
+                }
+            }
             if (!formData.ResidenceMunicipioCatalog) {
                 errors.ResidenceMunicipioCatalog = true;
                 errorList.push('Municipio (ID catalog)');
@@ -297,6 +379,8 @@ const FormPropietarioNatural = {
             catalogos,
             profesionName,
             pedirProfesionGlobal,
+            perfilPropietarioName,
+            pedirPerfilPropietarioGlobal,
             deptoDisplay,
             muniDisplay,
             pedirMunicipioGlobal,

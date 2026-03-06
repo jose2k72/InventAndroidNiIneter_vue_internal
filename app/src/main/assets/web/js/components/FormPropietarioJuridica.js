@@ -60,15 +60,9 @@ const FormPropietarioJuridica = {
                     </div>
                 </div>
 
-                <div class="coords-grid">
-                    <div class="form-group">
-                        <label>Colectivo</label>
-                        <input type="text" v-model="formData.Colectivo" placeholder="Ej: Grupo X">
-                    </div>
-                    <div class="form-group">
-                        <label>Denominación</label>
-                        <input type="text" v-model="formData.Denominacion" placeholder="Ej: Sucursal Norte">
-                    </div>
+                <div class="form-group">
+                    <label>Denominación</label>
+                    <input type="text" v-model="formData.Denominacion" placeholder="Ej: Sucursal Norte">
                 </div>
 
                 <div class="form-group">

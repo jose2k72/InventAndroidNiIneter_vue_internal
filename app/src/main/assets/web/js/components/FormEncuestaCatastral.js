@@ -13,6 +13,11 @@ const FormEncuestaCatastral = {
             <div class="section">
                 <h3>📍 Ubicación y Datos Generales</h3>
                 
+                <div v-if="formData.NoEncuesta" class="id-display-box">
+                    <span class="label">ID Encuesta:</span>
+                    <span class="value">{{ formData.NoEncuesta }}</span>
+                </div>
+                
                 <!-- Municipio: esquema de FormPropietarioNatural -->
                 <!-- Municipio: esquema de FormPropietarioNatural -->
                 <div class="form-group">
@@ -50,7 +55,7 @@ const FormEncuestaCatastral = {
 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label>Caserío</label>
+                        <label>Comarca/Caserío</label>
                         <input type="text" v-model="formData.Cacerio" placeholder="Ej: El Corozo">
                     </div>
                     <div class="form-group">
@@ -104,6 +109,26 @@ const FormEncuestaCatastral = {
                 <div class="form-group">
                     <label>Descripción del Uso</label>
                     <textarea v-model="formData.Descripcion" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra</label>
+                    <div class="selector-display" @click="pedirOrigenTierraGlobal" :style="{borderColor: errors.OrigenTierraCatalog ? '#d32f2f' : '#ccc'}">
+                        <span v-if="origenTierraName" style="color: #1565C0; font-weight: 600;">{{ origenTierraName }}</span>
+                        <span v-else style="color: #757575;">Seleccione origen...</span>
+                        <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                    </div>
+                </div>
+
+                <!-- Especificar Origen si es "Otros" (ID 1) -->
+                <div v-if="formData.OrigenTierraCatalog === 1" class="form-group sub-section">
+                    <label :style="{color: errors.OrigenTierraOtroText ? 'red' : 'inherit'}">Especifique Origen *</label>
+                    <input type="text" v-model="formData.OrigenTierraOtroText" placeholder="Detalle el origen de la tierra...">
+                </div>
+
+                <div class="form-group">
+                    <label>Reseña Histórica</label>
+                    <textarea v-model="formData.ResenaHistorica" rows="4" placeholder="Documentación histórica del predio..."></textarea>
                 </div>
 
                 <div class="coords-grid">
@@ -342,6 +367,31 @@ const FormEncuestaCatastral = {
                         <label :style="{color: errors.ClaseConflictoOtroText ? 'red' : 'inherit', fontWeight: errors.ClaseConflictoOtroText ? 'bold' : 'normal'}">Especifique otro conflicto *</label>
                         <input type="text" v-model="formData.ClaseConflictoOtroText" :style="{borderColor: errors.ClaseConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa el conflicto...">
                     </div>
+
+                    <!-- NUEVO: Vía de Gestión de Conflictos (Anidado) -->
+                    <div class="form-group checkbox-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" v-model="formData.TieneGestionConflicto">
+                            <span class="checkmark"></span>
+                            ¿Tiene Vía de Gestión de Conflicto?
+                        </label>
+                    </div>
+
+                    <div v-if="formData.TieneGestionConflicto">
+                        <div class="form-group">
+                            <label :style="{color: errors.GestionConflictoCatalog ? 'red' : 'inherit', fontWeight: errors.GestionConflictoCatalog ? 'bold' : 'normal'}">Vía de Gestión de Conflictos *</label>
+                            <div class="selector-display" @click="pedirGestionConflictoGlobal" :style="{borderColor: errors.GestionConflictoCatalog ? '#d32f2f' : '#ccc'}">
+                                <span v-if="gestionConflictoName" style="color: #1565C0; font-weight: 600;">{{ gestionConflictoName }}</span>
+                                <span v-else style="color: #757575;">Seleccione vía de gestión...</span>
+                                <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                            </div>
+                        </div>
+
+                        <div v-if="formData.GestionConflictoCatalog === 6" class="form-group" style="margin-top: 10px;">
+                            <label :style="{color: errors.GestionConflictoOtroText ? 'red' : 'inherit', fontWeight: errors.GestionConflictoOtroText ? 'bold' : 'normal'}">Especifique otra gestión *</label>
+                            <input type="text" v-model="formData.GestionConflictoOtroText" :style="{borderColor: errors.GestionConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa la vía de gestión...">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -372,6 +422,35 @@ const FormEncuestaCatastral = {
     setup(props, { emit }) {
         const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
+
+        Vue.onMounted(async () => {
+            // Solo calcular si es un registro NUEVO (sin NoEncuesta)
+            if (!formData.NoEncuesta) {
+                console.log('🏗️ Calculando ID de Encuesta exclusivo...');
+                try {
+                    if (typeof Android !== 'undefined' && Android.getSiguienteConsecutivo) {
+                        const lat = formData.LatLng?.Lat || 0;
+                        const lng = formData.LatLng?.Lng || 0;
+
+                        // Llamada al Bridge para obtener el consecutivo geográfico
+                        const next = Android.getSiguienteConsecutivo(lat, lng);
+                        formData.Consecutivo = next;
+
+                        // Formatear el ID: Muni(4)_Sector(3)_Localizacion_Consecutivo(3)
+                        const muni = String(formData.MunicipioCatalog || '0000').padStart(4, '0');
+                        const sector = String(formData.IdSector || '000').padStart(3, '0');
+                        const loc = props.localizacion || 'SIN_LOC';
+                        const cons = String(next).padStart(3, '0');
+
+                        // El campo NoEncuesta es inmutable una vez generado aquí
+                        formData.NoEncuesta = `${muni}_${sector}_${loc}_${cons}`;
+                        console.log('✅ ID Generado:', formData.NoEncuesta);
+                    }
+                } catch (e) {
+                    console.error('❌ Error al generar NoEncuesta:', e);
+                }
+            }
+        });
 
         // Inicializar lista de documentos si no existe
         if (!formData.Documentos) {
@@ -527,6 +606,16 @@ const FormEncuestaCatastral = {
         });
         Vue.watch(() => formData.ClaseConflictoOtroText, (val) => { if (val?.trim()) delete errors.ClaseConflictoOtroText; });
 
+        // Limpieza reactiva de Origen de la Tierra
+        Vue.watch(() => formData.OrigenTierraCatalog, (val) => {
+            if (val) delete errors.OrigenTierraCatalog;
+            if (val !== 1) { // 1 es "Otros"
+                formData.OrigenTierraOtroText = '';
+                delete errors.OrigenTierraOtroText;
+            }
+        });
+        Vue.watch(() => formData.OrigenTierraOtroText, (val) => { if (val?.trim()) delete errors.OrigenTierraOtroText; });
+
         // Limpiar conflictos al desmarcar
         Vue.watch(() => formData.TieneConflicto, (newVal) => {
             if (!newVal) {
@@ -535,14 +624,50 @@ const FormEncuestaCatastral = {
                 formData._ConflictoName = '';
                 conflictoName.value = '';
 
+                // Limpiar Gestión
+                formData.TieneGestionConflicto = false;
+                formData.GestionConflictoCatalog = null;
+                formData.GestionConflictoOtroText = '';
+                formData._GestionConflictoName = '';
+                gestionConflictoName.value = '';
+
                 // Limpiar errores visuales
                 delete errors.ClaseConflictoCatalog;
                 delete errors.ClaseConflictoOtroText;
+                delete errors.TieneGestionConflicto;
+                delete errors.GestionConflictoCatalog;
+                delete errors.GestionConflictoOtroText;
             }
         });
 
+        // Limpiar Gestión de Conflictos al desmarcar
+        Vue.watch(() => formData.TieneGestionConflicto, (newVal) => {
+            if (!newVal) {
+                formData.GestionConflictoCatalog = null;
+                formData.GestionConflictoOtroText = '';
+                formData._GestionConflictoName = '';
+                gestionConflictoName.value = '';
+
+                // Limpiar errores visuales
+                delete errors.GestionConflictoCatalog;
+                delete errors.GestionConflictoOtroText;
+            }
+        });
+
+        // Observadores para Gestión de Conflictos
+        Vue.watch(() => formData.GestionConflictoCatalog, (val) => {
+            if (val) delete errors.GestionConflictoCatalog;
+            if (val !== 6) { // 6 es "Otra" en GestionConflicto.json
+                formData.GestionConflictoOtroText = '';
+                delete errors.GestionConflictoOtroText;
+            }
+        });
+        Vue.watch(() => formData.GestionConflictoOtroText, (val) => { if (val?.trim()) delete errors.GestionConflictoOtroText; });
+
         const parentescoName = Vue.ref(formData._ParentescoName || '');
         const conflictoName = Vue.ref(formData._ConflictoName || '');
+        const origenTierraName = Vue.ref(formData._OrigenTierraName || '');
+        const gestionConflictoName = Vue.ref(formData._GestionConflictoName || '');
 
         // Normalizar fechas de documentos
         formData.Documentos.forEach(doc => {
@@ -614,6 +739,34 @@ const FormEncuestaCatastral = {
             }
         };
 
+        const pedirOrigenTierraGlobal = () => {
+            if (typeof vueAppContext !== 'undefined') {
+                vueAppContext.openCatalog({
+                    catalogName: 'OrigenTierra',
+                    label: 'Origen de la Tierra...',
+                    onSelect: (val) => {
+                        formData.OrigenTierraCatalog = parseInt(val.id);
+                        formData._OrigenTierraName = val.name;
+                        origenTierraName.value = val.name;
+                    }
+                });
+            }
+        };
+
+        const pedirGestionConflictoGlobal = () => {
+            if (typeof vueAppContext !== 'undefined') {
+                vueAppContext.openCatalog({
+                    catalogName: 'GestionConflicto',
+                    label: 'Vía de Gestión de Conflictos...',
+                    onSelect: (val) => {
+                        formData.GestionConflictoCatalog = parseInt(val.id);
+                        formData._GestionConflictoName = val.name;
+                        gestionConflictoName.value = val.name;
+                    }
+                });
+            }
+        };
+
         const pedirDocumentoGlobal = (index) => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openCatalog({
@@ -671,6 +824,12 @@ const FormEncuestaCatastral = {
                 errs.push('No. Personas Similar Derecho');
             }
 
+            // Validación de Origen de la Tierra "Otro" (ID 1)
+            if (formData.OrigenTierraCatalog === 1 && !formData.OrigenTierraOtroText?.trim()) {
+                errors.OrigenTierraOtroText = true;
+                errs.push('Especificar Origen Tierra');
+            }
+
             // Validación condicional de servidumbres "Otro"
             if (formData.ServidumbreAguaCatalog === 4 && !formData.ServidumbreAguaOtroText?.trim()) {
                 errors.ServidumbreAguaOtroText = true; errs.push('Especificar Agua');
@@ -725,6 +884,16 @@ const FormEncuestaCatastral = {
                     errors.ClaseConflictoOtroText = true;
                     errs.push('Especificar Conflicto');
                 }
+
+                if (formData.TieneGestionConflicto) {
+                    if (!formData.GestionConflictoCatalog) {
+                        errors.GestionConflictoCatalog = true;
+                        errs.push('Vía de Gestión de Conflictos');
+                    } else if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) {
+                        errors.GestionConflictoOtroText = true;
+                        errs.push('Especificar Vía de Gestión');
+                    }
+                }
             }
             if (errs.length > 0) {
                 const msg = '⚠️ No se puede salvar, faltan datos obligatorios.';
@@ -737,8 +906,8 @@ const FormEncuestaCatastral = {
 
         return {
             formData, errors, catalogos,
-            muniDisplay, deptoDisplay, areaDisplay, parentescoName, conflictoName,
-            pedirMunicipioGlobal, pedirParentescoGlobal, pedirClaseConflictoGlobal, pedirDocumentoGlobal,
+            muniDisplay, deptoDisplay, areaDisplay, parentescoName, conflictoName, origenTierraName, gestionConflictoName,
+            pedirMunicipioGlobal, pedirParentescoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
             agregarDocumento, quitarDocumento, capturarFoto, eliminarFoto, save
         };
     }

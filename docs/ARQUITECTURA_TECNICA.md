@@ -139,7 +139,10 @@ Debido a la ausencia de extensiones SpatiaLite nativas en algunos entornos y par
 ### 8.2 Reglas de Validación y Creación
 1.  **Creación de Encuesta**: Para iniciar una "Encuesta Catastral", el sistema solo requiere que exista al menos un **Entrevistado** registrado en el predio. La obligatoriedad de un Propietario fue eliminada para permitir mayor flexibilidad en campo.
 2.  **Validación de Derecho Similar**: El campo "No Personas Similar Derecho" debe ser estrictamente **mayor que 0** para permitir el guardado de la encuesta.
-3.  **Persistencia de Edad**: Se garantiza que la edad mínima aceptable en personas es **0**.
+3.  **Identificadores Técnicos**:
+    - `IdPropiedad` (UUID): Generado automáticamente para cada nueva encuesta.
+    - `IdSector`: Código de 3 dígitos usado para la nomenclatura de la encuesta.
+4.  **Persistencia de Edad**: Se garantiza que la edad mínima aceptable en personas es **0**.
 
 ### 8.3 Clonación de Registros (Copy Action)
 Permite duplicar información existente para acelerar la captura:

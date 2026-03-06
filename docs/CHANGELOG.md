@@ -1,6 +1,33 @@
 # Changelog - INETER CADIC (Encuesta Catastral)
 
-## [2026-02-27] - Creación de Entrevistado y Actualización de Modelo
+## [2026-03-05] - Refactorización de Modelos y Nuevos Perfiles
+
+### Nuevas Funcionalidades
+
+#### 👤 Propietario Natural: Perfiles y Carnetización
+- **Perfil del Propietario**: Se agregó el selector de catálogo `PerfilPropietario.json` (Desmovilizado, Retirado, Campesino Tradicional, etc.).
+- **Carnet de Perfil**: Nuevo campo obligatorio (`PerfilPropietarioCarnet`) que se activa automáticamente al seleccionar cualquier perfil. 
+- **Validación Estricta**: Si se selecciona un perfil, el número de carnet es obligatorio. Si se elige la opción "Otro", el campo descriptivo también es obligatorio.
+- **Limpieza Dinámica**: Al deseleccionar un perfil, se limpian automáticamente el carnet y las descripciones adicionales.
+
+#### 🏡 Encuesta Catastral: Conflictos y Reseña Histórica
+- **Gestión de Conflictos Anidada**: Se implementó una sub-sección "Vía de Gestión de Conflictos" dentro de Conflictos, controlada por el checkbox `TieneGestionConflicto`.
+- **Reseña Histórica**: Se añadió un campo de texto multilínea (`ResenaHistorica`) no obligatorio para documentar antecedentes del predio.
+- **Origen de la Tierra**: Integración total del catálogo con soporte para la opción "Otro" y persistencia de nombres visuales.
+
+### Mejoras de Interfaz (UI/UX)
+- **Claridad de Campo**: El campo "Caserío" se renombró visualmente a "**Comarca/Caserío**" para reflejar mejor la realidad del terreno.
+- **Organización de Formularios**: Los campos de Perfil y Carnet ahora comparten fila para optimizar el espacio vertical.
+- **Simplificación Jurídica**: Se eliminó el campo "Colectivo" en el formulario de Propietario Jurídico por redundancia.
+
+### Cambios Técnicos y de Modelo (DTO)
+- **Renombramiento Semántico**:
+  - `SectorId` → `IdSector`: Unificación de nomenclatura en Backend y Frontend.
+  - `IdParcela` → `IdPropiedad`: Cambio de término "Parcela" a "Propiedad" para alinearse con el flujo legal.
+- **Sincronización DTO**: Las clases `Ficha.cs`, `PropietarioNatural.cs` y `PropietarioPersonaJuridica.cs` fueron actualizadas con atributos `[Display]` y nuevas propiedades.
+
+---
+
 
 ### Nuevas Funcionalidades
 

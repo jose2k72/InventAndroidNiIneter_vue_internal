@@ -1278,4 +1278,68 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         }
         return validas
     }
+    /**
+     * Calcula el siguiente consecutivo para una Encuesta Catastral basada en la ubicación.
+     * 1. Busca el predio que contiene el punto.
+     * 2. Busca todas las fichas previas dentro de ese predio (basado en geometría).
+     * 3. Retorna Max(Consecutivo) + 1.
+     */
+    fun getSiguienteConsecutivo(lat: Double, lng: Double): Int {
+        val db = readableDatabase
+        
+        // 1. Encontrar el predio que contiene la posición actual
+        // getGeometry ya usa JTS para verificar contención
+        val predio = getGeometry(lng, lat, "Predios") ?: return 1
+        
+        // El polígono WKT ya lo tenemos en el objeto Geometry retornado por getGeometry
+        val wktPredio = predio.wkt
+        if (wktPredio.isEmpty()) return 1
+        
+        val geomPredio = GeometryUtil.wktToGeometry(wktPredio) ?: return 1
+        val envelope = geomPredio.envelopeInternal
+        
+        // 2. Buscar candidatos en el Bounding Box del predio (optimización)
+        val query = """
+            SELECT DATOS, LATITUD, LONGITUD 
+            FROM DATOS 
+            WHERE LATITUD BETWEEN ${envelope.minY} AND ${envelope.maxY} 
+              AND LONGITUD BETWEEN ${envelope.minX} AND ${envelope.maxX}
+        """.trimIndent()
+        
+        var maxObserved = 0
+        var processedCount = 0
+        val cursor = db.rawQuery(query, null)
+        
+        try {
+            while (cursor.moveToNext()) {
+                val dLat = cursor.getDouble(1)
+                val dLng = cursor.getDouble(2)
+                
+                // 3. Verificar si el punto está dentro del polígono (Verdad Absoluta)
+                if (GeometryUtil.isPointInPolygon(dLat, dLng, geomPredio)) {
+                    val jsonData = cursor.getString(0) ?: continue
+                    processedCount++
+                    
+                    try {
+                        val json = org.json.JSONObject(jsonData)
+                        // 4. Identificar si es Ficha por el campo Type y extraer Consecutivo
+                        if (json.optString("Type") == "EncuestaCatastral") {
+                            val c = json.optInt("Consecutivo", 0)
+                            android.util.Log.d("DatabaseHelper", "🔍 Ficha encontrada! Consecutivo actual: $c")
+                            if (c > maxObserved) maxObserved = c
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("DatabaseHelper", "Error parseando JSON: ${e.message}")
+                    }
+                }
+            }
+            android.util.Log.d("DatabaseHelper", "✅ getSiguienteConsecutivo: Procesados $processedCount elementos en predio. Max observado: $maxObserved")
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseHelper", "Error en getSiguienteConsecutivo: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+        
+        return maxObserved + 1
+    }
 }

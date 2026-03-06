@@ -38,6 +38,12 @@ const FormEntrevistado = {
                         </div>
                     </div>
                 </div>
+
+                <!-- Especificar Relación (cuando es 'Otro' ID 5) -->
+                <div v-if="formData.RelacionConParcelaCatalog == 5" class="form-group sub-section" style="margin-top: -10px; margin-bottom: 15px;">
+                    <label :style="{color: errors.RelacionConParcelaOtroText ? 'red' : 'inherit', fontWeight: errors.RelacionConParcelaOtroText ? 'bold' : 'normal'}">Especificar Relación *</label>
+                    <input type="text" v-model="formData.RelacionConParcelaOtroText" placeholder="Detalle la relación con la parcela...">
+                </div>
             </div>
             
             <div class="section">
@@ -114,6 +120,12 @@ const FormEntrevistado = {
                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
                        </div>
                     </div>
+                </div>
+
+                <!-- Especificar Profesión (cuando es 'Otro' ID 26) -->
+                <div v-if="formData.ProfessionCatalog == 26" class="form-group sub-section" style="margin-top: -10px; margin-bottom: 15px;">
+                    <label :style="{color: errors.ProfessionOtroText ? 'red' : 'inherit', fontWeight: errors.ProfessionOtroText ? 'bold' : 'normal'}">Especificar Profesión *</label>
+                    <input type="text" v-model="formData.ProfessionOtroText" placeholder="Detalle la profesión u oficio...">
                 </div>
             </div>
 
@@ -271,6 +283,10 @@ const FormEntrevistado = {
                 relacionPropietarioName.value = '';
                 delete errors.RelacionInformantePropietarioCatalog;
             }
+            if (newVal !== 5) {
+                formData.RelacionConParcelaOtroText = '';
+                delete errors.RelacionConParcelaOtroText;
+            }
         });
 
         const pedirRelacionPropietarioGlobal = () => {
@@ -308,6 +324,14 @@ const FormEntrevistado = {
             }
         };
 
+        // Limpiar "Otro" si se cambia la profesión
+        Vue.watch(() => formData.ProfessionCatalog, (newVal) => {
+            if (newVal != 26) {
+                formData.ProfessionOtroText = '';
+                delete errors.ProfessionOtroText;
+            }
+        });
+
         const save = () => {
             // Limpiar errores previos
             Object.keys(errors).forEach(key => delete errors[key]);
@@ -317,6 +341,10 @@ const FormEntrevistado = {
             if (!formData.RelacionConParcelaCatalog) {
                 errors.RelacionConParcelaCatalog = true;
                 errorList.push('Relación con la parcela');
+            }
+            if (formData.RelacionConParcelaCatalog == 5 && !formData.RelacionConParcelaOtroText?.trim()) {
+                errors.RelacionConParcelaOtroText = true;
+                errorList.push('Especificar Relación con la parcela');
             }
             // Solo validar relación con propietario si el informante NO es el propietario de la parcela
             if (formData.RelacionConParcelaCatalog !== 1 && !formData.RelacionInformantePropietarioCatalog) {
@@ -354,6 +382,10 @@ const FormEntrevistado = {
             if (!formData.ProfessionCatalog) {
                 errors.ProfessionCatalog = true;
                 errorList.push('Profesión');
+            }
+            if (formData.ProfessionCatalog == 26 && !formData.ProfessionOtroText?.trim()) {
+                errors.ProfessionOtroText = true;
+                errorList.push('Especificar Profesión');
             }
             if (!formData.ResidenceMunicipioCatalog) {
                 errors.ResidenceMunicipioCatalog = true;
