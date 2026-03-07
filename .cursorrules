@@ -1,0 +1,50 @@
+# Proyecto: NI.INETER.CADIC - Android/Vue
+
+Este archivo establece las reglas de estandarización para el desarrollo, refactorización y mantenimiento del proyecto. Estas reglas deben seguirse estrictamente en cada interacción.
+
+## 🌍 Reglas de Localización (Locale)
+
+1.  **Identificadores y Texto Interno**:
+    *   Usar siempre `Locale.ROOT` para `toUpperCase()` o `toLowerCase()` en identificadores internos, nombres de capas, nombres de tablas SQL y constantes de configuración.
+    *   *Objetivo*: Evitar comportamientos inconsistentes dependiendo del idioma del dispositivo.
+
+2.  **Números y Coordenadas (Específico para SQL/JSON)**:
+    *   Cualquier conversión de un valor numérico (`Double`, `Float`) a `String` destinado a consultas SQL o archivos JSON **DEBE** usar `Locale.US`.
+    *   *Ejemplo*: `String.format(java.util.Locale.US, "%.10f", latitud)`.
+    *   *Objetivo*: Garantizar el punto decimal (`.`) independientemente de si el usuario tiene el sistema en español (donde se usaría coma `,`).
+
+## 📅 Estándar de Fecha y Hora
+
+1.  **Persistencia e Intercambio**:
+    *   Formato obligatorio: **ISO 8601** (`yyyy-MM-dd HH:mm:ss`).
+    *   Se aplica a: Base de Datos SQLite y paquetes JSON de sincronización.
+    *   *Objetivo*: Permitir ordenamiento alfabético cronológico y compatibilidad universal.
+
+2.  **Visualización (UI)**:
+    *   El formato debe adaptarse dinámicamente al `Locale` actual del dispositivo utilizando los formateadores nativos de Android o JavaScript.
+
+## 🗺️ Estándares Espaciales y Geométricos
+
+1.  **Sistemas de Coordenadas (SRS)**:
+    *   **Almacenamiento**: Siempre en WGS 84 (**EPSG:4326**).
+    *   **Intersecciones**: Realizar en **EPSG:4326** para evitar overhead de conversión en verificaciones de puntos contra polígonos.
+    *   **Mediciones (Área/Distancia)**: Proyectar únicamente para el cálculo a **EPSG:32616** (UTM 16N). Este valor debe ser tratable como configuración en el futuro.
+
+2.  **Precisión**:
+    *   **Cálculos**: Mantener precisión total (`Double`).
+    *   **UI**: Formatear a **2 decimales** para visualización del usuario final.
+
+## 🛠️ Calidad de Código y Depuración
+
+1.  **Kotlin (Cero Tolerancia a Nulos)**:
+    *   **Prohibido** el uso del operador `!!` (double-bang).
+    *   Usar siempre Safe Calls (`?.`) y Operador Elvis (`?:`) o bloques `if-let`-like (`?.let { ... }`).
+
+2.  **Mensajería de Logs (Logcat)**:
+    *   Patrón obligatorio: `>>> [CLASE] [METODO]: Mensaje`.
+    *   *Ejemplo*: `Log.d(TAG, ">>> MainActivity onMapReady: Mapa inicializado")`.
+    *   *Objetivo*: Permitir filtrado rápido de la traza de ejecución lógica de la app.
+
+3.  **Refactorización**:
+    *   Dividir archivos grandes de forma **incremental**.
+    *   Compilar y probar la funcionalidad específica después de cada extracción de método o clase.
