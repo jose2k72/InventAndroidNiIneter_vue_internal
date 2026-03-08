@@ -404,7 +404,10 @@ const FormEncuestaCatastral = {
                 <div v-if="fotos.length > 0" class="photos-grid">
                     <div v-for="(foto, index) in fotos" :key="index" class="photo-item">
                         <img :src="foto.data" class="photo-thumbnail" @click="verFoto(foto)">
-                        <button type="button" class="btn-delete" @click="eliminarFoto(foto.name)" style="position: absolute; top: 0; right: 0;">🗑️</button>
+                        <div class="photo-info">
+                            <span class="photo-name">{{ foto.name }}</span>
+                            <button type="button" class="btn-delete" @click="eliminarFoto(foto.name)">🗑️</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -439,7 +442,7 @@ const FormEncuestaCatastral = {
                         // Formatear el ID: Muni(4)_Sector(3)_Localizacion_Consecutivo(3)
                         const muni = String(formData.MunicipioCatalog || '0000').padStart(4, '0');
                         const sector = String(formData.IdSector || '000').padStart(3, '0');
-                        const loc = props.localizacion || 'SIN_LOC';
+                        const loc = formData.Localizacion || 'SIN_LOC';
                         const cons = String(next).padStart(3, '0');
 
                         // El campo NoEncuesta es inmutable una vez generado aquí

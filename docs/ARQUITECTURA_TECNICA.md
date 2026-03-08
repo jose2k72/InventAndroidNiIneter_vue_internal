@@ -11,12 +11,17 @@ Esta aplicación utiliza una arquitectura híbrida donde la lógica de presentac
     *   Tecnología: Vue 3 (Composition API), HTML5, CSS3.
     *   Responsabilidad: Mostrar el formulario, validar datos de entrada, calcular índices automáticamente.
 *   **Backend (Android Nativo)**:
-    *   Ubicación: `app/src/main/java/com/cadicsa/inventario/`
-    *   Tecnología: Kotlin, Android SDK.
-    *   Responsabilidad: Acceso a hardware (Cámara, GPS), manejo de archivos, persistencia en SQLite/GeoPackage, y contenedor del WebView.
+    - Ubicación: `app/src/main/java/com/cadicsa/inventario/`
+    - Tecnología: Kotlin, Android SDK.
+    - **Estructura Desacoplada (Helpers)**:
+        - `FormImageHelper`: Gestión de multimedia y permisos.
+        - `FormWebViewHelper`: Configuración de motor de renderizado.
+        - `utils/SpatialHelper`: Lógica de geocodificación inversa.
+        - `utils/MapHelper`: Orquestación de capas de Google Maps.
 *   **Puente (Bridge)**:
-    *   Mecanismo: `JavascriptInterface`.
-    *   Responsabilidad: Comunicación bidireccional entre Vue y Android.
+    - Archivo: `AndroidBridge.kt`
+    - Mecanismo: `JavascriptInterface` inyectado mediante `WeakReference` para seguridad de memoria.
+    - Responsabilidad: Comunicación bidireccional entre Vue y Android, manejando persistencia y acceso a hardware.
 
 ---
 
@@ -52,9 +57,9 @@ El sistema de captura de fotos es uno de los puntos más críticos, requiriendo 
     *   Recibe el `prefijo` en el método anotado con `@JavascriptInterface`.
     *   Solicita permisos de cámara/almacenamiento si no están concedidos.
     *   Lanza el `Intent` de cámara nativa.
-4.  **Sistema de Archivos (Android)**:
-    *   Crea el archivo físico en: `/storage/emulated/0/CADIC.ACERAS/`.
-    *   **Nomenclatura**: `PREFIJO_TIMESTAMP.jpg`
+45.  **Sistema de Archivos (Android)**:
+    - Utiliza `AppConfig.getStorageDirectory()` (donde reside `map.db`).
+    - **Nomenclatura**: `PREFIJO_TIMESTAMP.jpg`
         *   `PREFIJO`: El string enviado desde Vue, sanitizado (sin caracteres especiales).
         *   `TIMESTAMP`: Formato `yyyyMMdd_HHmmss`.
         *   Ejemplo final: `SanJose_Ruta101_20260129_143000.jpg`
@@ -96,18 +101,20 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 │   ├── src/main
 │   │   ├── assets/web              <-- Código Fuente Frontend (Vue)
 │   │   │   ├── js
-│   │   │   │   ├── components
-│   │   │   │   │   ├── FormEncuestaCatastral.js
-│   │   │   │   │   ├── FormPropietarioNatural.js
-│   │   │   │   │   ├── FormFamiliares.js
-│   │   │   │   ├── app.js              <-- Punto de entrada Vue
-│   │   │   │   ├── vue.global.prod.js  <-- Librería Vue 3 (Core)
-│   │   │   │   └── proj4.min.js        <-- Librería Proyecciones Geográficas
-│   │   │   ├── css                     <-- Estilos
-│   │   │   └── index.html              
+│   │   │   │   ├── app.js          <-- Orquestador Vue (Composition API)
+│   │   │   │   ├── syncService.js   <-- Capa de Persistencia y Metadatos
+│   │   │   │   ├── photoService.js  <-- Gestión de Archivos de Imagen
+│   │   │   │   ├── displayService.js <-- Helpers de Visualización
+│   │   │   │   └── clonadorService.js <-- Lógica de Clonación
 │   │   ├── java/com/cadicsa/inventario
-│   │   │   ├── MainActivity.kt         <-- Menú Principal / Mapa
-│   │   │   └── FormActivity.kt         <-- Contenedor del Formulario / Cámara
+│   │   │   ├── MainActivity.kt         <-- Orquestador Principal
+│   │   │   ├── FormActivity.kt         <-- Orquestador de Formulario (Slim)
+│   │   │   ├── AndroidBridge.kt        <-- Interfaz JS (Persistencia/Hardware)
+│   │   │   └── utils
+│   │   │       ├── FormImageHelper.kt  <-- Cámara y Multimedia
+│   │   │       ├── FormWebViewHelper.kt <-- Configuración WebView
+│   │   │       ├── MapHelper.kt        <-- Lógica de Mapa
+│   │   │       └── SpatialNormalizer.kt <-- Fix de Locale (Punto/Coma)
 │   │   └── res/layout                  <-- Interfaces Nativas (XML)
 │   └── build.gradle.kts                <-- Configuración de Build
 ├── docs                                <-- Esta documentación
@@ -116,11 +123,42 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 
 ---
 
-## 6. Notas de Mantenimiento
+## 9. Arquitectura de Servicios Frontend (Vue.js)
+
+Para reducir la complejidad del controlador principal (`app.js`) y mejorar la mantenibilidad, se ha implementado una capa de servicios en JavaScript que abstrae las operaciones críticas:
+
+### 9.1 Servicios del Sistema
+*   **`syncService.js` (Persistencia)**: 
+    - Orquesta el guardado (`saveData`) y borrado (`deleteData`) de registros.
+    - **Enriquecimiento**: Inyecta automáticamente metadatos de auditoría (`Fecha`, `Encuestador`) y espaciales (`LatLng`, `LocalProj`, `Localizacion`) antes de enviar el JSON a Android.
+    - **Corrección UTM**: Asegura que las coordenadas `East` (x) y `North` (y) lleguen con los nombres de propiedad correctos esperados por el backend C#.
+
+*   **`photoService.js` (Multimedia)**:
+    - Centraliza la carga de miniaturas (`loadPhotosFromDisk`) convirtiendo nombres de archivo a Base64 mediante el Bridge.
+    - Gestiona el borrado físico de archivos en el almacenamiento del dispositivo.
+
+*   **`displayService.js` (UI Helpers)**:
+    - Encapsula la lógica de etiquetas (`getShortName`) y la construcción de strings informativos para la lista de registros (`getDisplayInfo`).
+
+*   **`clonadorService.js` (Reglas de Negocio)**:
+    - Define los campos comunes compartidos entre `PropietarioNatural` y `Entrevistado`.
+    - Realiza la clonación de datos y metadatos de forma atómica.
+
+### 9.2 Fábrica Contextual (`modelsFactory.js`)
+Los modelos ya no se crean de forma aislada. La fábrica ahora utiliza un **Objeto de Contexto (`ctx`)** que contiene la ubicación y auditoría actual del mapa. Esto garantiza que todos los formularios nazcan con su contexto geográfico completo:
+```javascript
+const ctx = { lat, lng, x, y, loc, fecha, enc, idObject };
+const nuevoModel = ModelsFactory.createEncuestaCatastral(ctx);
+```
+
+---
+
+## 10. Notas de Mantenimiento Final
 
 *   **Java Version**: El proyecto requiere **JDK 17** para compilar debido a las versiones recientes de Gradle/Android Plugin. Se ha configurado `gradle.properties` localmente para forzar esta versión sin afectar el `JAVA_HOME` del sistema.
 *   **Splash Screen**: Implementado mediante un "About Dialog" en `MainActivity` que se muestra por 4 segundos al inicio, reemplazando la antigua pantalla de carga.
 *   **Versionamiento Automático**: El `versionName` y `versionCode` se generan automáticamente basándose en timestamp de compilación.
+*   **Cache-Busting**: Se utiliza una estrategia de sufijo en el cargado del WebView para asegurar que los cambios en los archivos `.js` se reflejen inmediatamente sin intervención del usuario.
 
 ---
 

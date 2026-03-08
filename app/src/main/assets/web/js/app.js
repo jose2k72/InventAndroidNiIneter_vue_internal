@@ -71,30 +71,39 @@ const app = createApp({
             // Obtener datos desde Android
             if (typeof Android !== 'undefined') {
                 try {
+                    // 1. CAPTURA DE DATOS BÁSICOS (Síncrona)
                     latLng.lat = Math.round(Android.getLat() * 1000000) / 1000000;
                     latLng.lng = Math.round(Android.getLng() * 1000000) / 1000000;
+                    localizacion.value = Android.getLocalizacion ? Android.getLocalizacion() : '';
+                    encuestador.value = Android.getEncuestador ? Android.getEncuestador() : '';
+                    fechaActual.value = Android.getFecha ? Android.getFecha() : '';
+                    idObject.value = Android.getIdObject ? Android.getIdObject() : 0;
+                    areaCalculada.value = Android.getAreaCalculada ? Android.getAreaCalculada() : 0;
+                    municipioInterceptado.value = Android.getMunicipioInterceptado ? Android.getMunicipioInterceptado() : '';
+                    sectorInterceptado.value = Android.getSectorInterceptado ? Android.getSectorInterceptado() : '';
 
-                    // Reproyectar a UTM 16N
+                    console.log('📍 Datos capturados de Android:', {
+                        lat: latLng.lat,
+                        lng: latLng.lng,
+                        loc: localizacion.value,
+                        muni: municipioInterceptado.value,
+                        sec: sectorInterceptado.value
+                    });
+
+                    // 2. REPROYECCIÓN A UTM 16N (Para visualización y formularios legacy)
                     if (typeof proj4 !== 'undefined') {
+                        // WGS84 a UTM 16N (EPSG:32616)
                         const projected = proj4("EPSG:4326", "EPSG:32616", [latLng.lng, latLng.lat]);
                         localProj.x = Math.round(projected[0] * 100) / 100;
                         localProj.y = Math.round(projected[1] * 100) / 100;
                     }
 
-                    localizacion.value = Android.getLocalizacion();
-                    encuestador.value = Android.getEncuestador();
-                    fechaActual.value = Android.getFecha();
-                    idObject.value = Android.getIdObject();
-                    areaCalculada.value = Android.getAreaCalculada ? Android.getAreaCalculada() : 0;
-                    municipioInterceptado.value = Android.getMunicipioInterceptado ? Android.getMunicipioInterceptado() : '';
-                    sectorInterceptado.value = Android.getSectorInterceptado ? Android.getSectorInterceptado() : '';
-
-                    // Cargar datos existentes
+                    // 3. CARGA DE DATOS EXISTENTES
                     const jsonData = Android.getData();
                     listData.value = JSON.parse(jsonData);
 
                 } catch (error) {
-                    console.error('Error inicializando datos Android:', error);
+                    console.error('❌ Error inicializando datos Android:', error);
                 }
             } else {
                 // Modo desarrollo (navegador)
@@ -102,317 +111,13 @@ const app = createApp({
                 latLng.lng = -84.0628;
                 localProj.x = 500000;
                 localProj.y = 1300000;
-                localizacion.value = 'Desarrollo - Sin conexión Android';
+                localizacion.value = 'Desarrollo - Localización de Prueba';
                 encuestador.value = 'Developer';
                 fechaActual.value = new Date().toLocaleDateString('es-CR');
                 idObject.value = Date.now();
+                municipioInterceptado.value = '6065';
+                sectorInterceptado.value = '001';
             }
-        };
-
-        // Generar UUID v4
-        const generateUUID = () => {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        };
-
-        // Crear modelo vacío de Acera (FORMATO LEGACY - NO MODIFICAR)
-        const createAceraModel = () => ({
-            Type: 'Acera',
-            Distrito: '',
-
-            CodigoCamino: '',
-            NumBoleta: 'GEN-' + Date.now(),
-            Longitud: 0,
-            Ancho: 0,
-            Area: 0,
-
-            // Evaluación Estructural
-            EstructGrietas: '',
-            EstructHuecos: '',
-            EstructDesnud: '',
-            EstructEscalon: '',
-            EstructDrenaje: '',
-            TotalEstruct: 0,
-
-            // Evaluación Funcional
-            FuncPendTransv: '',
-            FuncPendLong: '',
-            FuncAnchoLibre: '',
-            FuncObstrucion: '',
-            FuncAccesibilidad: '',
-            FuncRejillas: '',
-            TotalFunc: 0,
-
-            // Factor de Actividad
-            ActividadProxEscuelas: '',
-            ActividadProxServGob: '',
-            ActividadProxTerminalBus: '',
-            ActividadProxCentroRecreacion: '',
-            ActividadProxHospital: '',
-            ActividadProxGenTransito: '',
-            ActividadProxAltaPoblacion: '',
-            TotalActividad: 0,
-
-            IndiceCondicionAceras: 0,
-            ClasificacionVial: '',
-            Observaciones: '',
-
-            // Coordenadas - PascalCase para compatibilidad con legacy
-            LatLng: {
-                Lat: latLng.lat,
-                Lng: latLng.lng
-            },
-            LocalProj: {
-                East: localProj.east,
-                North: localProj.north
-            },
-
-            CondicionMeteorol: '',
-
-            // Metadatos
-            Fecha: null,
-            Encuestador: null,
-            Imagenes: '',
-            IdObject: 0,
-            Localizacion: ''
-        });
-
-        // Crear modelo vacío de Costo (FORMATO LEGACY COMPLETO - NO MODIFICAR)
-        const createCostoModel = () => ({
-            Type: 'Costo',
-            Distrito: '',
-
-            CodigoCamino: '',
-            NumBoleta: 'GEN-' + Date.now(),
-            NumProcesoCobro: '',
-
-            // Preliminares (4 items)
-            Preliminares: createPayLines([
-                { descr: 'Preliminares-trazado', unidad: 'ml', precio: 13520 },
-                { descr: 'Demoliciones estructuras existentes', unidad: 'm3', precio: 26500 },
-                { descr: 'Conformacion de terreno', unidad: 'm3', precio: 28500 },
-                { descr: 'Excavaciones Maquinaria', unidad: 'm3', precio: 9895 }
-            ]),
-            PreliminaresObservaciones: null,
-
-            // Tuberias (10 items)
-            Tuberias: createPayLines([
-                { descr: 'Encamado', unidad: 'm3', precio: 13520 },
-                { descr: 'Tuberia 300mm diametro', unidad: 'ml', precio: 189500 },
-                { descr: 'Tuberia 400mm diametro', unidad: 'ml', precio: 220000 },
-                { descr: 'Tuberia 600mm diametro', unidad: 'ml', precio: 245114 },
-                { descr: 'Tuberia 650mm diametro', unidad: 'ml', precio: 295666 },
-                { descr: 'Tuberia 750mm diametro', unidad: 'ml', precio: 325600 },
-                { descr: 'Tuberia 800mm diametro', unidad: 'ml', precio: 398500 },
-                { descr: 'Rellenos y compactacion zona de tubo', unidad: 'm3', precio: 27500 },
-                { descr: 'Reposicion de base de material selecto', unidad: 'm3', precio: 35600 },
-                { descr: 'Diseño de espacios urbanos', unidad: 'm2', precio: 41250 }
-            ]),
-            TuberiasObservaciones: null,
-
-            // Tragantes (4 items)
-            Tragantes: createPayLines([
-                { descr: 'Construccion de tragante H=2m', unidad: 'unidad', precio: 1895665 },
-                { descr: 'Construccion de tragante H=1', unidad: 'unidad', precio: 1025554 },
-                { descr: 'Colocacion de loseta tactil en aceras en buen estado', unidad: 'ml', precio: 11450 },
-                { descr: 'Construccion de rejilla-Tragante', unidad: 'ml', precio: 125422 }
-            ]),
-            TragantesObservaciones: null,
-
-            // Acera (9 items)
-            Acera: createPayLines([
-                { descr: 'Acera concreto sin loseta tactil', unidad: 'm2', precio: 29500 },
-                { descr: 'Acera concreto con loseta tactil', unidad: 'm2', precio: 33500 },
-                { descr: 'Acera concreto sin loseta tactil con acero de refuerzo (malla eletrosoldada #2)', unidad: 'm2', precio: 33925 },
-                { descr: 'Acera concreto con loseta tactil con acero de refuerzo (malla eletrosoldada #2)', unidad: 'm2', precio: 38525 },
-                { descr: 'Acera concreto sin loseta tactil con acero de refuerzo malla de varilla #3@15cm', unidad: 'm2', precio: 39014 },
-                { descr: 'Acera concreto con loseta tactil con acero de refuerzo malla de varilla #3@15cm', unidad: 'm2', precio: 46230 },
-                { descr: 'Rampas en cruces de calle con loseta tactil', unidad: 'm2', precio: 76500 },
-                { descr: 'Pasamanos de seguridad', unidad: 'ml', precio: 66520 },
-                { descr: 'Colocacion de Bolardos', unidad: 'unidad', precio: 56422 }
-            ]),
-            AceraObservaciones: null,
-
-            // Cordon (4 items)
-            Cordon: createPayLines([
-                { descr: 'Construcción de cordón de caño (acceso vehicular)', unidad: 'ml', precio: 33422 },
-                { descr: 'Construcción de cordón de caño sencillo', unidad: 'ml', precio: 35422 },
-                { descr: 'Colocación de cuneta D=300mm', unidad: 'ml', precio: 23000 },
-                { descr: 'Colocación de cuneta D=400mm', unidad: 'ml', precio: 26400 }
-            ]),
-            CordonObservaciones: null,
-
-            // Complementarias (7 items)
-            Complementarias: createPayLines([
-                { descr: 'Reubicación de medidores de agua', unidad: 'unidad', precio: 66522 },
-                { descr: 'Reconstrucción de cajas de registro', unidad: 'unidad', precio: 74500 },
-                { descr: 'Construcción de muros pequeños máximo 1,0 metros de alto', unidad: 'm2', precio: 114200 },
-                { descr: 'Corte taludes', unidad: 'm3', precio: 9895 },
-                { descr: 'Construcción de drenajes y desagües pluviales domésticos', unidad: 'ml', precio: 94500 },
-                { descr: 'Reparación de previstas domiciliarias afectadas (potable, negras)', unidad: 'unidad', precio: 114500 },
-                { descr: 'Construcción de rampas ley 7600', unidad: 'm2', precio: 115420 }
-            ]),
-            ComplementariasObservaciones: null,
-
-            // Coordenadas - PascalCase para compatibilidad con legacy
-            LatLng: {
-                Lat: latLng.lat,
-                Lng: latLng.lng
-            },
-            LocalProj: {
-                East: localProj.east,
-                North: localProj.north
-            },
-
-            CondicionMeteorol: null,
-
-            // Metadatos
-            Fecha: null,
-            Encuestador: null,
-            Imagenes: '',
-            IdObject: 0,
-            Localizacion: '',
-            CodigoCamino: null
-        });
-
-        const createEncuestaCatastralModel = () => ({
-            Type: 'EncuestaCatastral',
-            NoEncuesta: '',
-            Consecutivo: 0,
-            IdPropiedad: generateUUID(),
-            MunicipioCatalog: null,
-            IdSector: '',
-            ParcelaCatastrada: '',
-            ParcelaSegregada: '',
-            TipoEncuestaCatalog: null,
-            NombreFinca: '',
-            OrigenTierraCatalog: null,
-            OrigenTierraOtroText: '',
-            ResenaHistorica: '',
-            Direccion: '',
-            Cacerio: '',
-            Barrio: '',
-            Manzana: '',
-            NumeroLote: '',
-            TipoUsoCatalog: null,
-            Descripcion: '',
-            AreaEstimada: null,
-            UnidadMedidaAreaEstimadaCatalog: null,
-            ServidumbreAguaCatalog: null,
-            ServidumbreAguaOtroText: '',
-            ServidumbrePaseCatalog: null,
-            ServidumbrePaseOtroText: '',
-            ServidumbreOtroCatalog: null,
-            ServidumbreOtroOtroText: '',
-            DerehoParcelaCatalog: null,
-            NoPersonasSimilarDerecho: 0,
-            PresentaDocumentos: false,
-            Documentos: [],
-            AreaTitulada: null,
-            UnidadMedidaAreaTituladaCatalog: null,
-            EsAFavorDe: false,
-            AFavorDe: '',
-            RelacionConPoseedorCatalog: null,
-            _isFromMap: false,
-            _CodDepto: '',
-            _DeptoNombre: '',
-            _MuniNombre: '',
-            TieneDatosRegistrales: false,
-            FechaAdquisicion: null,
-            FechaRegistro: null,
-            NoFinca: '',
-            Tomo: '',
-            Folio: '',
-            Asiento: '',
-            ClaseConflictoCatalog: null,
-            TieneConflicto: false,
-            ClaseConflictoOtroText: '',
-            TieneGestionConflicto: false,
-            GestionConflictoCatalog: null,
-            GestionConflictoOtroText: '',
-            Localizacion: '',
-            // Helpers UI
-            _MuniNombre: '', _DeptoNombre: '', _CodDepto: '',
-            _ParentescoName: '', _ConflictoName: '', _GestionConflictoName: ''
-        });
-
-        const createPropietarioNaturalModel = () => ({
-            Type: 'PropietarioNatural',
-            // Person fields
-            FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
-            TipoIdentificacionCatalog: null,
-            Identificacion: '',
-            GenderCatalog: null,
-            Age: null,
-            CivilStateCatalog: null,
-            ProfessionCatalog: 0,
-            ProfessionOtroText: '',
-            PerfilPropietarioCatalog: null,
-            PerfilPropietarioOtroText: '',
-            PerfilPropietarioCarnet: '',
-            ResidenceMunicipioCatalog: '',  // CodMuni completo ej: '5525'
-            ResidenceDireccion: '',
-            ResidenceDepartamento: '',
-            ResidenceComarca: '',
-            ResidenceBarrio: ''
-        });
-
-        const createPropietarioJuridicaModel = () => ({
-            Type: 'PropietarioJuridica',
-            RazonSocial: '',
-            RegistradaEn: '',
-            FechaRegistro: null,
-            TipoPersonaJuridica: null, // null para forzar selección
-            NroSocios: 0,
-            NroSocias: 0,
-            Colectivo: '',
-            Denominacion: '',
-            NroMiembros: 0
-        });
-
-        const createEntrevistadoModel = () => ({
-            Type: 'Entrevistado',
-            // Person fields
-            FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
-            TipoIdentificacionCatalog: null,
-            Identificacion: '',
-            GenderCatalog: null, // null para forzar selección
-            Age: null, // null para forzar entrada
-            CivilStateCatalog: null, // null para forzar selección
-            ProfessionCatalog: 0,
-            ProfessionOtroText: '',
-            ResidenceDireccion: '',
-            ResidenceDepartamento: '',
-            ResidenceComarca: '',
-            ResidenceBarrio: '',
-
-            // Entrevistado fields
-            RelacionConParcelaCatalog: null, // null para forzar selección
-            RelacionConParcelaOtroText: '',
-            RelacionInformantePropietarioCatalog: 0
-        });
-
-        const createFamiliaresModel = () => ({
-            Type: 'Familiares',
-            Familiares: []
-        });
-
-        // Crear líneas de pago
-        const createPayLines = (items) => {
-            return items.map((item, index) => ({
-                Id: index,
-                Descr: item.descr,
-                Unidad: item.unidad,
-                Precio: item.precio,
-                Cantidad: 0,
-                Monto: 0,
-                Longitud: 0,
-                Ancho: 0,
-                Area: 0,
-                Volumen: 0
-            }));
         };
 
         // Reset formulario (nuevo registro)
@@ -431,44 +136,45 @@ const app = createApp({
                 formData.value = { ...pendingCopyData.value };
                 pendingCopyData.value = null; // Consumir los datos
             } else {
-                if (type === 'Acera') {
-                    formData.value = createAceraModel();
-                } else if (type === 'Costo') {
-                    formData.value = createCostoModel();
-                } else if (type === 'EncuestaCatastral') {
-                    formData.value = createEncuestaCatastralModel();
+                // Contexto compartido para la creación de modelos
+                const ctx = {
+                    lat: latLng.lat,
+                    lng: latLng.lng,
+                    x: localProj.x,
+                    y: localProj.y,
+                    loc: localizacion.value,
+                    fecha: fechaActual.value,
+                    enc: encuestador.value,
+                    idObject: idObject.value
+                };
 
-                    // Siempre marcar como bloqueado y asignar área/unidad si viene del mapa
+                if (type === 'Acera') {
+                    formData.value = ModelsFactory.createAcera(ctx.lat, ctx.lng, ctx.x, ctx.y);
+                } else if (type === 'Costo') {
+                    formData.value = ModelsFactory.createCosto(ctx.lat, ctx.lng, ctx.x, ctx.y);
+                } else if (type === 'EncuestaCatastral') {
+                    formData.value = ModelsFactory.createEncuestaCatastral(ctx);
+
+                    // Inicialización específica de Encuesta (Valores interceptados)
                     formData.value._isFromMap = true;
                     formData.value.AreaEstimada = areaCalculada.value;
                     formData.value.UnidadMedidaAreaEstimadaCatalog = 3; // Metros Cuadrados
 
                     if (municipioInterceptado.value) {
                         const muniId = parseInt(municipioInterceptado.value);
-                        if (!isNaN(muniId)) {
-                            formData.value.MunicipioCatalog = muniId;
-                        }
+                        if (!isNaN(muniId)) formData.value.MunicipioCatalog = muniId;
                     }
-
                     if (sectorInterceptado.value) {
                         formData.value.IdSector = sectorInterceptado.value;
                     }
                 } else if (type === 'PropietarioNatural') {
-                    formData.value = createPropietarioNaturalModel();
+                    formData.value = ModelsFactory.createPropietarioNatural(ctx);
                 } else if (type === 'PropietarioJuridica') {
-                    formData.value = createPropietarioJuridicaModel();
+                    formData.value = ModelsFactory.createPropietarioJuridica(ctx);
                 } else if (type === 'Entrevistado') {
-                    formData.value = createEntrevistadoModel();
+                    formData.value = ModelsFactory.createEntrevistado(ctx);
                 } else if (type === 'Familiares') {
-                    formData.value = createFamiliaresModel();
-                }
-
-                // Asegurar que el objeto inicial tenga coordenadas para cálculos locales (como el consecutivo)
-                if (formData.value && !formData.value.LatLng) {
-                    formData.value.LatLng = { Lat: latLng.lat, Lng: latLng.lng };
-                }
-                if (formData.value && !formData.value.Localizacion) {
-                    formData.value.Localizacion = localizacion.value;
+                    formData.value = ModelsFactory.createFamiliares(ctx);
                 }
             }
 
@@ -496,27 +202,13 @@ const app = createApp({
             fotosNuevas.value = [];
             fotosMarcadasBorrar.value = [];
 
-            // Cargar fotos si existen
+            // Cargar fotos usando el servicio central
             if (item.Data.Imagenes) {
-                const nombres = item.Data.Imagenes.split(',').filter(f => f.trim());
-
-                // Cargar cada foto desde el disco
-                const fotosData = nombres.map(nombre => {
-                    const base64 = typeof Android !== 'undefined' && typeof Android.loadPhotoAsBase64 === 'function'
-                        ? Android.loadPhotoAsBase64(nombre.trim())
-                        : '';
-
-                    return {
-                        name: nombre.trim(),
-                        data: base64 ? `data:image/jpeg;base64,${base64}` : null
-                    };
-                });
-
+                const fotosData = PhotoService.loadPhotosFromDisk(item.Data.Imagenes);
                 fotos.value = fotosData;
                 // Guardar snapshot de fotos originales (copia profunda)
                 fotosOriginales.value = fotosData.map(f => ({ ...f }));
-
-                console.log(`📸 Cargadas ${fotos.value.length} fotos para edición (originales guardadas)`);
+                console.log(`📸 Cargadas ${fotos.value.length} fotos con PhotoService`);
             } else {
                 fotos.value = [];
                 fotosOriginales.value = [];
@@ -553,60 +245,34 @@ const app = createApp({
 
         // Guardar datos (CONFIRMAR - sincronizar fotos)
         const sendData = (data) => {
-            // 1. Eliminar físicamente las fotos MARCADAS para borrar
-            if (fotosMarcadasBorrar.value.length > 0) {
-                console.log(`🗑️ Eliminando ${fotosMarcadasBorrar.value.length} fotos marcadas para borrar...`);
-                for (const foto of fotosMarcadasBorrar.value) {
-                    if (typeof Android !== 'undefined' && typeof Android.deletePhotoFile === 'function') {
-                        Android.deletePhotoFile(foto.name);
-                    }
-                }
-            }
+            // 1. Limpieza física de fotos marcadas
+            PhotoService.deletePhotosFromDisk(fotosMarcadasBorrar.value);
 
-            // 2. Las fotos NUEVAS ya están en disco, se quedan
-            if (fotosNuevas.value.length > 0) {
-                console.log(`✅ Conservando ${fotosNuevas.value.length} fotos nuevas`);
-            }
-
-            // 3. Agregar metadatos
-            data.Fecha = fechaActual.value;
-            data.Encuestador = encuestador.value;
-            data.IdObject = idObject.value;
-            data.Localizacion = localizacion.value;
-
-            // Coordenadas con PascalCase para compatibilidad legacy
-            data.LatLng = {
-                Lat: latLng.lat,
-                Lng: latLng.lng
-            };
-            data.LocalProj = {
-                East: localProj.east,
-                North: localProj.north
+            // 2. Preparar contexto para el servicio de guardado
+            const context = {
+                fechaActual: fechaActual.value,
+                encuestador: encuestador.value,
+                idObject: idObject.value,
+                localizacion: localizacion.value,
+                latLng: latLng,
+                localProj: localProj
             };
 
-            // 4. Enviar a Android
-            if (typeof Android !== 'undefined') {
-                try {
-                    const jsonData = JSON.stringify(data);
-                    console.log('JSON a guardar:', jsonData);
-                    const savedId = Android.sendData(currentId.value, jsonData);
-                    currentId.value = savedId;
-                    console.log('Datos guardados con ID:', savedId);
-                } catch (error) {
-                    console.error('Error guardando datos:', error);
-                }
-            } else {
-                console.log('Datos guardados (modo desarrollo):', data);
+            // 3. Ejecutar guardado mediante SyncService
+            const savedId = SyncService.saveData(data, currentId.value, context);
+
+            if (savedId !== null) {
+                currentId.value = savedId;
+
+                // 4. Reset de tracking de fotos tras éxito
+                fotosOriginales.value = [];
+                fotosNuevas.value = [];
+                fotosMarcadasBorrar.value = [];
+
+                // Volver a lista y recargar
+                volver();
+                init();
             }
-
-            // 5. Limpiar listas de tracking
-            fotosOriginales.value = [];
-            fotosNuevas.value = [];
-            fotosMarcadasBorrar.value = [];
-
-            // Volver a lista
-            volver();
-            init(); // Recargar lista
         };
 
         // Eliminar registro con modal visual
@@ -617,61 +283,42 @@ const app = createApp({
             const type = itemToDelete.Data?.Type;
             const hasEncuesta = listData.value.some(item => item.Data?.Type === 'EncuestaCatastral');
 
-            // 1. Validar si se puede borrar
-            if (hasEncuesta) {
-                if (type === 'Entrevistado') {
-                    showConfirmModal({
-                        icon: '⚠️',
-                        title: 'Acción impedida',
-                        message: 'No puede eliminar al Entrevistado porque existe una Encuesta Catastral vinculada. Debe eliminar la Encuesta primero.',
-                        confirmText: 'Entendido',
-                        cancelText: '',
-                        onConfirm: () => { }
-                    });
-                    return;
-                }
-
-                // La restricción de propietarios fue removida a petición del usuario
-
+            // 1. Validar reglas de negocio
+            if (hasEncuesta && type === 'Entrevistado') {
+                showConfirmModal({
+                    icon: '⚠️', title: 'Acción impedida',
+                    message: 'No puede eliminar al Entrevistado porque existe una Encuesta Catastral vinculada.',
+                    confirmText: 'Entendido', cancelText: ''
+                });
+                return;
             }
 
-            // 2. Proceder con la confirmación de borrado
+            // 2. Confirmación de borrado
             showConfirmModal({
-                icon: '🗑️',
-                title: '¿Eliminar registro?',
-                message: 'Esta acción eliminará el registro y todas sus fotos asociadas. Esta acción no se puede deshacer.',
-                confirmText: 'Sí, eliminar',
-                cancelText: 'Cancelar',
+                icon: '🗑️', title: '¿Eliminar registro?',
+                message: 'Esta acción eliminará el registro y todas sus fotos asociadas.',
+                confirmText: 'Sí, eliminar', cancelText: 'Cancelar',
                 onConfirm: () => {
-                    // 1. Llamar a Android primero
-                    if (typeof Android !== 'undefined') {
-                        Android.deleteData(id);
-                    } else {
-                        console.log('Borrado simulado (modo desarrollo) ID:', id);
-                    }
+                    // Sincronizar con backend
+                    SyncService.deleteData(id);
 
-                    // 2. Buscar el índice REAL en listData usando el ID
+                    // Buscar el índice REAL para actualizar UI
                     const realIndex = listData.value.findIndex(item => item.Id === id);
-
                     if (realIndex !== -1) {
-                        console.log(`🗑️ Eliminando de Vue: ID ${id} en índice real ${realIndex}`);
                         listData.value.splice(realIndex, 1);
 
-                        // Si se elimina el último propietario natural, se elimina la familia automáticamente
+                        // Lógica de borrado en cascada (Familiares depende de Propietario Natural)
                         if (type === 'PropietarioNatural') {
                             const stillHasNatural = listData.value.some(x => x.Data?.Type === 'PropietarioNatural');
                             if (!stillHasNatural) {
                                 const famIdx = listData.value.findIndex(x => x.Data?.Type === 'Familiares');
                                 if (famIdx !== -1) {
-                                    const famId = listData.value[famIdx].Id;
-                                    if (typeof Android !== 'undefined') Android.deleteData(famId);
+                                    SyncService.deleteData(listData.value[famIdx].Id);
                                     listData.value.splice(famIdx, 1);
-                                    console.log('🗑️ Eliminada Composición Familiar automáticamente por falta de Propietario Natural');
+                                    console.log('🗑️ Eliminada Composición Familiar por falta de Propietario Natural');
                                 }
                             }
                         }
-                    } else {
-                        console.warn(`⚠️ No se encontró el ID ${id} en listData para actualizar la UI`);
                     }
                 }
             });
@@ -687,52 +334,25 @@ const app = createApp({
             const propietarioObj = listData.value.find(item => item.Id === propietarioId);
             if (!propietarioObj || !propietarioObj.Data) return;
 
-            const propData = propietarioObj.Data;
-
             showConfirmModal({
                 icon: '🎤',
                 title: 'Crear Entrevistado',
                 message: '¿Desea crear un Entrevistado automáticamente con los datos de este Propietario Natural?',
                 confirmText: 'Sí, crear',
-                cancelText: 'Cancelar',
                 onConfirm: () => {
-                    const nuevoEntrevistado = createEntrevistadoModel();
+                    const nuevo = ModelsFactory.createEntrevistado();
 
-                    // Copiar campos comunes
-                    const camposComunes = [
-                        'TipoIdentificacionCatalog', 'Identificacion',
-                        'FirstName', 'SecondName', 'FirstSurName', 'SecondSurName',
-                        'GenderCatalog', 'Age', 'CivilStateCatalog', 'ProfessionCatalog',
-                        'ResidenceMunicipioCatalog', 'ResidenceComarca', 'ResidenceBarrio', 'ResidenceDireccion',
-                        '_ProfessionName', '_CodDepto', '_DeptoNombre', '_MuniNombre'
-                    ];
+                    // 1. Clonar datos personales y de residencia
+                    ClonadorService.clonarDatos(propietarioObj.Data, nuevo, ClonadorService.CAMPOS_COMUNES_PROPIETARIO_ENTREVISTADO);
 
-                    camposComunes.forEach(campo => {
-                        if (propData[campo] !== undefined) {
-                            nuevoEntrevistado[campo] = propData[campo];
-                        }
-                    });
+                    // 2. Ajustes específicos de Entrevistado
+                    nuevo.RelacionConParcelaCatalog = 1; // Propietario
 
-                    // Setear campos obligatorios de entrevistado
-                    nuevoEntrevistado.RelacionConParcelaCatalog = 1; // Propietario
-                    nuevoEntrevistado.RelacionInformantePropietarioCatalog = 0; // null/0 basically
+                    // 3. Ejecutar guardado silencioso (-1 para nuevo)
+                    const context = { fechaActual: fechaActual.value, encuestador: encuestador.value, idObject: idObject.value, localizacion: localizacion.value, latLng, localProj };
+                    SyncService.saveData(nuevo, -1, context);
 
-                    // Set metadatos del registro clonado
-                    nuevoEntrevistado.Fecha = fechaActual.value;
-                    nuevoEntrevistado.Encuestador = encuestador.value;
-                    nuevoEntrevistado.IdObject = idObject.value;
-                    nuevoEntrevistado.Localizacion = localizacion.value;
-                    nuevoEntrevistado.LatLng = { Lat: latLng.lat, Lng: latLng.lng };
-                    nuevoEntrevistado.LocalProj = { East: localProj.east, North: localProj.north };
-
-                    // Guardar silenciosamente enviando -1 como ID para crear registro nuevo
-                    if (typeof Android !== 'undefined') {
-                        Android.sendData(-1, JSON.stringify(nuevoEntrevistado));
-                        // Recargar lista desde SQLite para asegurar sync
-                        init();
-                    } else {
-                        console.log('Modo desarrollo: Entrevistado creado', nuevoEntrevistado);
-                    }
+                    init(); // Recargar lista
                 }
             });
         };
@@ -742,48 +362,22 @@ const app = createApp({
             const entrevistadoObj = listData.value.find(item => item.Id === entrevistadoId);
             if (!entrevistadoObj || !entrevistadoObj.Data) return;
 
-            const entreData = entrevistadoObj.Data;
-
             showConfirmModal({
                 icon: '👤',
                 title: 'Crear Propietario Natural',
                 message: '¿Desea crear un Propietario Natural automáticamente con los datos de este Entrevistado?',
                 confirmText: 'Sí, crear',
-                cancelText: 'Cancelar',
                 onConfirm: () => {
-                    const nuevoPropietario = createPropietarioNaturalModel();
+                    const nuevo = ModelsFactory.createPropietarioNatural();
 
-                    // Copiar campos comunes
-                    const camposComunes = [
-                        'TipoIdentificacionCatalog', 'Identificacion',
-                        'FirstName', 'SecondName', 'FirstSurName', 'SecondSurName',
-                        'GenderCatalog', 'Age', 'CivilStateCatalog', 'ProfessionCatalog',
-                        'ResidenceMunicipioCatalog', 'ResidenceComarca', 'ResidenceBarrio', 'ResidenceDireccion',
-                        '_ProfessionName', '_CodDepto', '_DeptoNombre', '_MuniNombre'
-                    ];
+                    // 1. Clonar datos personales y de residencia
+                    ClonadorService.clonarDatos(entrevistadoObj.Data, nuevo, ClonadorService.CAMPOS_COMUNES_PROPIETARIO_ENTREVISTADO);
 
-                    camposComunes.forEach(campo => {
-                        if (entreData[campo] !== undefined) {
-                            nuevoPropietario[campo] = entreData[campo];
-                        }
-                    });
+                    // 2. Ejecutar guardado silencioso (-1 para nuevo)
+                    const context = { fechaActual: fechaActual.value, encuestador: encuestador.value, idObject: idObject.value, localizacion: localizacion.value, latLng, localProj };
+                    SyncService.saveData(nuevo, -1, context);
 
-                    // Set metadatos del registro clonado
-                    nuevoPropietario.Fecha = fechaActual.value;
-                    nuevoPropietario.Encuestador = encuestador.value;
-                    nuevoPropietario.IdObject = idObject.value;
-                    nuevoPropietario.Localizacion = localizacion.value;
-                    nuevoPropietario.LatLng = { Lat: latLng.lat, Lng: latLng.lng };
-                    nuevoPropietario.LocalProj = { East: localProj.east, North: localProj.north };
-
-                    // Guardar silenciosamente enviando -1 como ID para crear registro nuevo
-                    if (typeof Android !== 'undefined') {
-                        Android.sendData(-1, JSON.stringify(nuevoPropietario));
-                        // Recargar lista desde SQLite para asegurar sync
-                        init();
-                    } else {
-                        console.log('Modo desarrollo: Propietario Natural creado', nuevoPropietario);
-                    }
+                    init(); // Recargar lista
                 }
             });
         };
@@ -976,42 +570,9 @@ const app = createApp({
             });
         });
 
-        const getDisplayName = (type) => {
-            const names = {
-                'EncuestaCatastral': 'ENCUESTA',
-                'PropietarioNatural': 'PROP. NAT.',
-                'PropietarioJuridica': 'PROP. JUR.',
-                'Entrevistado': 'ENTREVIST.',
-                'Familiares': 'FAMILIA'
-            };
-            return names[type] || type;
-        };
+        const getDisplayName = (type) => DisplayService.getShortName(type);
 
-        const getDisplayInfo = (item) => {
-            const data = item.Data;
-            if (!data) return '-';
-
-            if (data.Type === 'EncuestaCatastral') {
-                return data.NombreFinca || localizacion.value || '-';
-            }
-
-            if (data.Type === 'Familiares') {
-                return `Integrantes: ${data.Familiares?.length || 0}`;
-            }
-
-            if (data.Type === 'PropietarioJuridica') {
-                return data.RazonSocial || '-';
-            }
-
-            if (data.Type === 'PropietarioNatural' || data.Type === 'Entrevistado') {
-                const first = data.FirstName || '';
-                const second = data.SecondName ? data.SecondName.charAt(0).toUpperCase() + '.' : '';
-                const last = data.FirstSurName || '';
-                return `${first} ${second} ${last}`.trim();
-            }
-
-            return data.CodigoCamino || '-';
-        };
+        const getDisplayInfo = (item) => DisplayService.getDisplayInfo(item, localizacion.value);
 
         // --- GESTIÓN DE CATÁLOGOS GLOBALES A PANTALLA COMPLETA ---
         const catalogParams = ref(null); // Contendrá las opciones (name, targetVar...)
@@ -1093,32 +654,20 @@ let vueAppContext = null;
 // Función global para agregar foto desde Android
 window.addPhoto = function (filename, base64Data) {
     console.log('📷 Foto capturada:', filename);
-
-    if (!vueAppContext) {
-        console.error('❌ Vue app context no disponible');
-        return;
-    }
+    if (!vueAppContext) return;
 
     try {
-        // Agregar foto al array como objeto {name, data}
         const fotoObj = {
             name: filename,
             data: base64Data ? `data:image/jpeg;base64,${base64Data}` : null
         };
 
-        // Añadir a fotos visibles
+        // Actualizar estado Vue
         vueAppContext.fotos.value.push(fotoObj);
-
-        // TRACKING: Registrar como foto NUEVA (ya guardada en disco por la cámara)
         vueAppContext.fotosNuevas.value.push({ ...fotoObj });
 
-        // Actualizar campo Imagenes con solo los nombres (CSV)
-        const nombres = vueAppContext.fotos.value.map(f => f.name).join(',');
-        vueAppContext.formData.value.Imagenes = nombres;
-
-        console.log('✅ Foto agregado (nueva):', filename);
-        console.log('✅ Total fotos visibles:', vueAppContext.fotos.value.length);
-        console.log('✅ Total fotos nuevas:', vueAppContext.fotosNuevas.value.length);
+        // Sincronizar campo Imagenes en el modelo
+        vueAppContext.formData.value.Imagenes = vueAppContext.fotos.value.map(f => f.name).join(',');
     } catch (error) {
         console.error('❌ Error agregando foto:', error);
     }
@@ -1126,50 +675,28 @@ window.addPhoto = function (filename, base64Data) {
 
 // Función global para eliminar foto (lógica transaccional)
 window.deletePhoto = function (filename) {
-    console.log('🗑️ Marcando foto para eliminar:', filename);
-
-    if (!vueAppContext) {
-        console.error('❌ Vue app context no disponible');
-        return;
-    }
+    if (!vueAppContext) return;
 
     try {
-        // Determinar si es foto ORIGINAL o NUEVA
         const esNueva = vueAppContext.fotosNuevas.value.some(f => f.name === filename);
         const esOriginal = vueAppContext.fotosOriginales.value.some(f => f.name === filename);
 
         if (esNueva) {
-            // FOTO NUEVA: Eliminar físicamente AHORA (no tiene sentido conservarla)
-            console.log('🗑️ Foto nueva - eliminando físicamente...');
-            if (typeof Android !== 'undefined' && typeof Android.deletePhotoFile === 'function') {
-                Android.deletePhotoFile(filename);
-            }
-            // Quitar de fotosNuevas
-            const idxNueva = vueAppContext.fotosNuevas.value.findIndex(f => f.name === filename);
-            if (idxNueva > -1) {
-                vueAppContext.fotosNuevas.value.splice(idxNueva, 1);
-            }
+            // Borrado físico inmediato para fotos nuevas
+            PhotoService.deletePhotosFromDisk([{ name: filename }]);
+            const idx = vueAppContext.fotosNuevas.value.findIndex(f => f.name === filename);
+            if (idx > -1) vueAppContext.fotosNuevas.value.splice(idx, 1);
         } else if (esOriginal) {
-            // FOTO ORIGINAL: Solo MARCAR para borrar (no eliminar físicamente aún)
-            console.log('⏸️ Foto original - marcando para borrar...');
-            const fotoOriginal = vueAppContext.fotosOriginales.value.find(f => f.name === filename);
-            if (fotoOriginal) {
-                vueAppContext.fotosMarcadasBorrar.value.push({ ...fotoOriginal });
-            }
+            // Marcado de borrado diferido para fotos que ya estaban en BD
+            const foto = vueAppContext.fotosOriginales.value.find(f => f.name === filename);
+            if (foto) vueAppContext.fotosMarcadasBorrar.value.push({ ...foto });
         }
 
-        // Quitar de fotos visibles (UI)
-        const index = vueAppContext.fotos.value.findIndex(f => f.name === filename);
-        if (index > -1) {
-            vueAppContext.fotos.value.splice(index, 1);
-
-            // Actualizar campo Imagenes con solo los nombres
-            const nombres = vueAppContext.fotos.value.map(f => f.name).join(',');
-            vueAppContext.formData.value.Imagenes = nombres;
-
-            console.log('✅ Foto quitada de UI');
-            console.log('✅ Fotos visibles restantes:', vueAppContext.fotos.value.length);
-            console.log('✅ Fotos marcadas para borrar:', vueAppContext.fotosMarcadasBorrar.value.length);
+        // Quitar de UI y actualizar modelo
+        const idxUI = vueAppContext.fotos.value.findIndex(f => f.name === filename);
+        if (idxUI > -1) {
+            vueAppContext.fotos.value.splice(idxUI, 1);
+            vueAppContext.formData.value.Imagenes = vueAppContext.fotos.value.map(f => f.name).join(',');
         }
     } catch (error) {
         console.error('❌ Error eliminando foto:', error);
@@ -1281,66 +808,4 @@ window.loadExistingData = function (id, jsonData) {
     }
 };
 
-// Función global para mostrar modal de confirmación visual
-function showConfirmModal(options) {
-    const {
-        icon = '⚠️',
-        title = '¿Está seguro?',
-        message = '',
-        confirmText = 'Confirmar',
-        cancelText = 'Cancelar',
-        onConfirm = () => { },
-        onCancel = () => { }
-    } = options;
-
-    // Crear overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-modal-overlay';
-
-    // Conditionally create cancel button
-    const cancelButtonBg = cancelText ? `<button class="confirm-btn confirm-btn-cancel" id="modal-cancel">${cancelText}</button>` : '';
-
-    // Crear modal
-    overlay.innerHTML = `
-        <div class="confirm-modal">
-            <div class="confirm-modal-icon">${icon}</div>
-            <div class="confirm-modal-title">${title}</div>
-            <div class="confirm-modal-message">${message}</div>
-            <div class="confirm-modal-buttons">
-                ${cancelButtonBg}
-                <button class="confirm-btn confirm-btn-danger" id="modal-confirm">${confirmText}</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    // Event listeners
-    const closeModal = () => {
-        overlay.style.animation = 'fadeIn 0.2s ease reverse';
-        setTimeout(() => overlay.remove(), 150);
-    };
-
-    if (cancelText) {
-        overlay.querySelector('#modal-cancel').addEventListener('click', () => {
-            closeModal();
-            onCancel();
-        });
-    }
-
-    overlay.querySelector('#modal-confirm').addEventListener('click', () => {
-        closeModal();
-        onConfirm();
-    });
-
-    // Cerrar con click en overlay (fuera del modal)
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            closeModal();
-            onCancel();
-        }
-    });
-}
-
-// Hacer disponible globalmente para uso desde componentes
-window.showConfirmModal = showConfirmModal;
+// La función showConfirmModal ahora reside en utils.js

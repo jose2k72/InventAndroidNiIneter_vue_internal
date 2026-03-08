@@ -1,5 +1,63 @@
 # Changelog - INETER CADIC (Encuesta Catastral)
 
+## [2026-03-07 - Final de Sesión] - Arquitectura de Servicios Frontend (Fase 4)
+
+### 🏗️ Reestructuración de la Capa Web (`app.js`)
+- **Desacoplamiento en Servicios**: Reducción masiva de la complejidad en `app.js` mediante la creación de una arquitectura orientada a servicios:
+    - `syncService.js`: Centraliza la persistencia (`saveData`/`deleteData`) y el enriquecimiento de metadatos espaciales y de auditoría.
+    - `photoService.js`: Gestiona el ciclo de vida de imágenes (carga de miniaturas y borrado físico en disco).
+    - `displayService.js`: Maneja la lógica de etiquetas y nombres visibles de los registros.
+    - `clonadorService.js`: Unifica las reglas de negocio para la clonación de identidades entre formularios.
+- **Optimización de Memoria y Rendimiento**: Se redujo el peso de `app.js` en cerca de 200 líneas, facilitando el mantenimiento y el procesamiento por asistentes de IA.
+
+### 🧬 Modelos Contextuales y Fábrica de Datos
+- **Fábrica Inteligente (`modelsFactory.js`)**: Los modelos ahora aceptan un objeto de contexto (`ctx`) que inyecta automáticamente Lat, Lng, UTM, Localización y datos de Auditoría en el momento de creación, eliminando redundancias en la UI.
+- **Corrección de Coordenadas UTM**: Se resolvió un bug crítico donde las coordenadas `East` y `North` se enviaban como `undefined` por inconsistencias en los nombres de variables internas.
+
+### 🧪 Integración y Despliegue
+- **Registro Global**: Actualización de `index.html` para incluir la nueva cadena de dependencias de servicios antes del arranque de Vue.
+- **Validación en Dispositivo**: Instalación exitosa y verificación de flujos de guardado y clonación en Active 8 Pro.
+
+---
+
+## [2026-03-07 - Horario Nocturno] - Propagación de Datos Geográficos y Validación Estricta
+
+### 🌍 Estabilización de la Localización y Geometría
+- **Corrección Crítica de Propagación**: Eliminación definitiva del error `SIN_LOC` en el ID de la Encuesta Catastral. Ahora la localización se inyecta directamente en el modelo de datos (`formData`) en el momento de su creación en `app.js`, eliminando la dependencia de *props* externas desincronizadas.
+- **Validación Estricta en Mapa (`MainActivity.kt`)**: Se implementó una lógica de "Programación Defensiva" que impide la apertura de cualquier formulario si no se intersectan correctamente los tres pilares de ubicación: **Municipio**, **Sector** y **Predio con Localización**. Se añadieron mensajes dinámicos (`Toast`) para informar al usuario de fallos en la BD espacial.
+- **Sincronización síncrona en `app.js`**: Reestructuración de la función `init()` para capturar de forma prioritaria y síncrona todos los datos del Bridge de Android (Lat, Lng, Localización, Muni, Sector) antes de renderizar la interfaz o permitir el reset de formularios.
+
+### 🧹 Limpieza y Consistencia de Modelos
+- **Eliminación de Campos Fantasma**: Se eliminó el campo `ResidenceDepartamento` de los modelos de JavaScript (`modelsFactory.js`) y de la lógica de clonación en `app.js`. Se confirmó que este dato se genera dinámicamente en la UI a partir del código de municipio y no es persistente en el Backend (DTO).
+- **Mejora en Clonación Bidireccional**: Restauración de la copia correcta del campo `ProfessionOtroText` entre Propietario Natural y Entrevistado, asegurando que los datos de profesiones personalizadas no se pierdan al convertir registros.
+- **Consistencia en Edición**: Se actualizó `openFormActivityForEdit` en Android para incluir los extras de localización y metadatos espaciales, garantizando que el "Vuelo de Regreso" a la interfaz web sea tan completo como la creación de uno nuevo.
+
+## [2026-03-07] - Refactorización Estructural y Optimización de Tokens
+
+### 🏗️ Arquitectura y Estabilidad (Core)
+
+#### 📱 Desacoplamiento de `FormActivity.kt`
+- **Reducción de Deuda Técnica**: El archivo principal se redujo de **~650 líneas a 151 líneas** (~77% de reducción).
+- **Extracción de Responsabilidades**:
+    - `FormImageHelper.kt`: Gestión delegada de cámara, permisos multimedia (soporte Android 11+ MANAGE_EXTERNAL_STORAGE) y procesamiento de imágenes a Base64.
+    - `AndroidBridge.kt`: Desacoplamiento de la interfaz JavaScript (`@JavascriptInterface`) usando `WeakReference` para evitar fugas de memoria.
+    - `FormWebViewHelper.kt`: Centralización de la configuración técnica, depuración de consola JS y estrategias de *cache-busting*.
+
+#### 🌍 Estabilización del Núcleo Espacial
+- **Normalización de Locale**: Implementación de `SpatialNormalizer` para forzar `Locale.US` (punto decimal `.`) en todas las consultas SQL, eliminando el error crítico de interceptación de parcelas en dispositivos con configuración regional en español.
+- **Optimización de Consultas**: Refactorización de `DatabaseHelper.kt` para delegar lógica espacial pesada, mejorando el rendimiento de respuesta en el mapa.
+
+#### 🗺️ Mejoras en `MainActivity.kt`
+- **Modularización de Componentes**: Extracción de `MapHelper.kt`, `MainDialogHelper.kt` y `PermissionHelper.kt`.
+- **Corrección de Ciclo de Vida**: Estabilización de la inicialización de `GoogleMap` y corrección del bucle infinito en el flujo de salida de la aplicación.
+- **Refactorización de `GeometryUtil.kt`**: Conversión a una **Fachada** simplificada, moviendo proyecciones a `ProjectionHelper.kt` y algoritmos de rutas a `RoutingHelper.kt`.
+
+### 🛠️ Mejoras Técnicas
+- **Inyección de Datos**: Optimización del flujo de edición (`injectExistingData`) asegurando la consistencia de datos entre el Intent nativo y el estado reactivo de Vue.
+- **Depuración**: Mejora en el sistema de logs de consola de WebView para facilitar el diagnóstico de errores en el frontend desde Logcat.
+
+---
+
 ## [2026-03-05] - Refactorización de Modelos y Nuevos Perfiles
 
 ### Nuevas Funcionalidades

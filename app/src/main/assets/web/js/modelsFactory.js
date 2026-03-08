@@ -1,0 +1,284 @@
+/**
+ * modelsFactory.js - Fábrica centralizada de modelos de datos para INETER CADIC
+ * Centraliza la estructura de los objetos JSON para asegurar consistencia con la BD.
+ */
+
+window.ModelsFactory = {
+
+    /**
+     * Crea un modelo vacío de Encuesta Catastral (Ficha)
+     */
+    createEncuestaCatastral: (ctx) => ({
+        Type: 'EncuestaCatastral',
+        NoEncuesta: '',
+        Consecutivo: 0,
+        IdPropiedad: window.generateUUID ? window.generateUUID() : '',
+        MunicipioCatalog: null,
+        IdSector: '',
+        ParcelaCatastrada: '',
+        ParcelaSegregada: '',
+        TipoEncuestaCatalog: null,
+        NombreFinca: '',
+        OrigenTierraCatalog: null,
+        OrigenTierraOtroText: '',
+        ResenaHistorica: '',
+        Direccion: '',
+        Cacerio: '',
+        Barrio: '',
+        Manzana: '',
+        NumeroLote: '',
+        TipoUsoCatalog: null,
+        Descripcion: '',
+        AreaEstimada: null,
+        UnidadMedidaAreaEstimadaCatalog: null,
+        ServidumbreAguaCatalog: null,
+        ServidumbreAguaOtroText: '',
+        ServidumbrePaseCatalog: null,
+        ServidumbrePaseOtroText: '',
+        ServidumbreOtroCatalog: null,
+        ServidumbreOtroOtroText: '',
+        DerehoParcelaCatalog: null,
+        NoPersonasSimilarDerecho: 0,
+        PresentaDocumentos: false,
+        Documentos: [],
+        AreaTitulada: null,
+        UnidadMedidaAreaTituladaCatalog: null,
+        EsAFavorDe: false,
+        AFavorDe: '',
+        RelacionConPoseedorCatalog: null,
+        _isFromMap: false,
+        TieneDatosRegistrales: false,
+        FechaAdquisicion: null,
+        FechaRegistro: null,
+        NoFinca: '',
+        Tomo: '',
+        Folio: '',
+        Asiento: '',
+        ClaseConflictoCatalog: null,
+        TieneConflicto: false,
+        ClaseConflictoOtroText: '',
+        TieneGestionConflicto: false,
+        GestionConflictoCatalog: null,
+        GestionConflictoOtroText: '',
+
+        // Contexto y Auditoría
+        Localizacion: ctx?.loc || '',
+        Fecha: ctx?.fecha || null,
+        Encuestador: ctx?.enc || null,
+        IdObject: ctx?.idObject || 0,
+        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        Imagenes: '',
+
+        // Helpers UI
+        _MuniNombre: '', _DeptoNombre: '', _CodDepto: '',
+        _ParentescoName: '', _ConflictoName: '', _GestionConflictoName: ''
+    }),
+
+    /**
+     * Crea un modelo de Propietario Natural
+     */
+    createPropietarioNatural: (ctx) => ({
+        Type: 'PropietarioNatural',
+        FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
+        TipoIdentificacionCatalog: null,
+        Identificacion: '',
+        GenderCatalog: null,
+        Age: null,
+        CivilStateCatalog: null,
+        ProfessionCatalog: 0,
+        ProfessionOtroText: '',
+        PerfilPropietarioCatalog: null,
+        PerfilPropietarioOtroText: '',
+        PerfilPropietarioCarnet: '',
+        ResidenceMunicipioCatalog: '',
+        ResidenceDireccion: '',
+        ResidenceComarca: '',
+        ResidenceBarrio: '',
+
+        // Contexto
+        Localizacion: ctx?.loc || '',
+        Fecha: ctx?.fecha || null,
+        Encuestador: ctx?.enc || null,
+        IdObject: ctx?.idObject || 0,
+        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        Imagenes: ''
+    }),
+
+    /**
+     * Crea un modelo de Propietario Jurídico
+     */
+    createPropietarioJuridica: (ctx) => ({
+        Type: 'PropietarioJuridica',
+        RazonSocial: '',
+        RegistradaEn: '',
+        FechaRegistro: null,
+        TipoPersonaJuridica: null,
+        NroSocios: 0,
+        NroSocias: 0,
+        Colectivo: '',
+        Denominacion: '',
+        NroMiembros: 0,
+
+        // Contexto
+        Localizacion: ctx?.loc || '',
+        Fecha: ctx?.fecha || null,
+        Encuestador: ctx?.enc || null,
+        IdObject: ctx?.idObject || 0,
+        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        Imagenes: ''
+    }),
+
+    /**
+     * Crea un modelo de Entrevistado
+     */
+    createEntrevistado: (ctx) => ({
+        Type: 'Entrevistado',
+        FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
+        TipoIdentificacionCatalog: null,
+        Identificacion: '',
+        GenderCatalog: null,
+        Age: null,
+        CivilStateCatalog: null,
+        ProfessionCatalog: 0,
+        ProfessionOtroText: '',
+        ResidenceDireccion: '',
+        ResidenceComarca: '',
+        ResidenceBarrio: '',
+        RelacionConParcelaCatalog: null,
+        RelacionConParcelaOtroText: '',
+        RelacionInformantePropietarioCatalog: 0,
+
+        // Contexto
+        Localizacion: ctx?.loc || '',
+        Fecha: ctx?.fecha || null,
+        Encuestador: ctx?.enc || null,
+        IdObject: ctx?.idObject || 0,
+        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        Imagenes: ''
+    }),
+
+    /**
+     * Crea un modelo de Composición Familiar
+     */
+    createFamiliares: (ctx) => ({
+        Type: 'Familiares',
+        Familiares: [],
+
+        // Contexto
+        Localizacion: ctx?.loc || '',
+        Fecha: ctx?.fecha || null,
+        Encuestador: ctx?.enc || null,
+        IdObject: ctx?.idObject || 0,
+        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        Imagenes: ''
+    }),
+
+    /**
+     * Crea un modelo de Acera (Legacy)
+     */
+    createAcera: (lat, lng, x, y) => ({
+        Type: 'Acera',
+        Distrito: '',
+        CodigoCamino: '',
+        NumBoleta: 'GEN-' + Date.now(),
+        Longitud: 0, Ancho: 0, Area: 0,
+        EstructGrietas: '', EstructHuecos: '', EstructDesnud: '', EstructEscalon: '', EstructDrenaje: '', TotalEstruct: 0,
+        FuncPendTransv: '', FuncPendLong: '', FuncAnchoLibre: '', FuncObstrucion: '', FuncAccesibilidad: '', FuncRejillas: '', TotalFunc: 0,
+        ActividadProxEscuelas: '', ActividadProxServGob: '', ActividadProxTerminalBus: '', ActividadProxCentroRecreacion: '', ActividadProxHospital: '', ActividadProxGenTransito: '', ActividadProxAltaPoblacion: '', TotalActividad: 0,
+        IndiceCondicionAceras: 0,
+        ClasificacionVial: '',
+        Observaciones: '',
+        LatLng: { Lat: lat, Lng: lng },
+        LocalProj: { East: x, North: y },
+        CondicionMeteorol: '',
+        Fecha: null, Encuestador: null, Imagenes: '', IdObject: 0, Localizacion: ''
+    }),
+
+    /**
+     * Crea un modelo de Costo (Legacy)
+     */
+    createCosto: (lat, lng, x, y) => ({
+        Type: 'Costo',
+        Distrito: '',
+        CodigoCamino: '',
+        NumBoleta: 'GEN-' + Date.now(),
+        NumProcesoCobro: '',
+        Preliminares: window.ModelsFactory.createPayLines([
+            { descr: 'Preliminares-trazado', unidad: 'ml', precio: 13520 },
+            { descr: 'Demoliciones estructuras existentes', unidad: 'm3', precio: 26500 },
+            { descr: 'Conformacion de terreno', unidad: 'm3', precio: 28500 },
+            { descr: 'Excavaciones Maquinaria', unidad: 'm3', precio: 9895 }
+        ]),
+        PreliminaresObservaciones: null,
+        Tuberias: window.ModelsFactory.createPayLines([
+            { descr: 'Encamado', unidad: 'm3', precio: 13520 },
+            { descr: 'Tuberia 300mm diametro', unidad: 'ml', precio: 189500 },
+            { descr: 'Tuberia 400mm diametro', unidad: 'ml', precio: 220000 },
+            { descr: 'Tuberia 600mm diametro', unidad: 'ml', precio: 245114 },
+            { descr: 'Tuberia 650mm diametro', unidad: 'ml', precio: 295666 },
+            { descr: 'Tuberia 750mm diametro', unidad: 'ml', precio: 325600 },
+            { descr: 'Tuberia 800mm diametro', unidad: 'ml', precio: 398500 },
+            { descr: 'Rellenos y compactacion zona de tubo', unidad: 'm3', precio: 27500 },
+            { descr: 'Reposicion de base de material selecto', unidad: 'm3', precio: 35600 },
+            { descr: 'Diseño de espacios urbanos', unidad: 'm2', precio: 41250 }
+        ]),
+        TuberiasObservaciones: null,
+        Tragantes: window.ModelsFactory.createPayLines([
+            { descr: 'Construccion de tragante H=2m', unidad: 'unidad', precio: 1895665 },
+            { descr: 'Construccion de tragante H=1', unidad: 'unidad', precio: 1025554 },
+            { descr: 'Colocacion de loseta tactil en aceras en buen estado', unidad: 'ml', precio: 11450 },
+            { descr: 'Construccion de rejilla-Tragante', unidad: 'ml', precio: 125422 }
+        ]),
+        Acera: window.ModelsFactory.createPayLines([
+            { descr: 'Acera concreto sin loseta tactil', unidad: 'm2', precio: 29500 },
+            { descr: 'Acera concreto con loseta tactil', unidad: 'm2', precio: 33500 },
+            { descr: 'Acera concreto sin loseta tactil con acero de refuerzo (malla eletrosoldada #2)', unidad: 'm2', precio: 33925 },
+            { descr: 'Acera concreto con loseta tactil con acero de refuerzo (malla eletrosoldada #2)', unidad: 'm2', precio: 38525 },
+            { descr: 'Acera concreto sin loseta tactil con acero de refuerzo malla de varilla #3@15cm', unidad: 'm2', precio: 39014 },
+            { descr: 'Acera concreto con loseta tactil con acero de refuerzo malla de varilla #3@15cm', unidad: 'm2', precio: 46230 },
+            { descr: 'Rampas en cruces de calle con loseta tactil', unidad: 'm2', precio: 76500 },
+            { descr: 'Pasamanos de seguridad', unidad: 'ml', precio: 66520 },
+            { descr: 'Colocacion de Bolardos', unidad: 'unidad', precio: 56422 }
+        ]),
+        AceraObservaciones: null,
+        Cordon: window.ModelsFactory.createPayLines([
+            { descr: 'Construcción de cordón de caño (acceso vehicular)', unidad: 'ml', precio: 33422 },
+            { descr: 'Construcción de cordón de caño sencillo', unidad: 'ml', precio: 35422 },
+            { descr: 'Colocación de cuneta D=300mm', unidad: 'ml', precio: 23000 },
+            { descr: 'Colocación de cuneta D=400mm', unidad: 'ml', precio: 26400 }
+        ]),
+        CordonObservaciones: null,
+        Complementarias: window.ModelsFactory.createPayLines([
+            { descr: 'Reubicación de medidores de agua', unidad: 'unidad', precio: 66522 },
+            { descr: 'Reconstrucción de cajas de registro', unidad: 'unidad', precio: 74500 },
+            { descr: 'Construcción de muros pequeños máximo 1,0 metros de alto', unidad: 'm2', precio: 114200 },
+            { descr: 'Corte taludes', unidad: 'm3', precio: 9895 },
+            { descr: 'Construcción de drenajes y desagües pluviales domésticos', unidad: 'ml', precio: 94500 },
+            { descr: 'Reparación de previstas domiciliarias afectadas (potable, negras)', unidad: 'unidad', precio: 114500 },
+            { descr: 'Construcción de rampas ley 7600', unidad: 'm2', precio: 115420 }
+        ]),
+        ComplementariasObservaciones: null,
+        LatLng: { Lat: lat, Lng: lng },
+        LocalProj: { East: x, North: y },
+        CondicionMeteorol: null,
+        Fecha: null, Encuestador: null, Imagenes: '', IdObject: 0, Localizacion: '', CodigoCamino: null
+    }),
+
+    /**
+     * Auxiliar para crear líneas de detalles de costos
+     */
+    createPayLines: (items) => {
+        return items.map((item, index) => ({
+            Id: index,
+            Descr: item.descr,
+            Unidad: item.unidad,
+            Precio: item.precio,
+            Cantidad: 0, Monto: 0, Longitud: 0, Ancho: 0, Area: 0, Volumen: 0
+        }));
+    }
+};
