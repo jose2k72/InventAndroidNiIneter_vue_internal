@@ -115,7 +115,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.addTileOverlay(com.google.android.gms.maps.model.TileOverlayOptions().tileProvider(OfflineTileProvider(this)))
 
         enableMyLocation()
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, defaultZoom))
+
+        // 🟢 VALIDACIÓN ESTRICTA: Cargar ubicación inicial desde Map.db -> config
+        val dbHelper = DatabaseHelper.getInstance(this)
+        val initLat = dbHelper.getInitLat().toDouble()
+        val initLng = dbHelper.getInitLng().toDouble()
+        val initZoom = dbHelper.getInitZoom().toFloat()
+
+        if (initLat == 0.0 || initLng == 0.0) {
+            dialogHelper.showFatalErrorDialog("Errores en los datos de carga de la app (Coordenadas de inicio no encontradas)")
+            return
+        }
+
+        val startLocation = LatLng(initLat, initLng)
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startLocation, initZoom))
         
         mMap.setOnMapClickListener { latLng ->
             val dbHelper = DatabaseHelper.getInstance(this)

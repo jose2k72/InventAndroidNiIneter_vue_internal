@@ -269,6 +269,18 @@ class MainDialogHelper(private val activity: AppCompatActivity) {
         } else {
             builder.setNegativeButton("No", null)
         }
-        builder.show()
+    /**
+     * Diálogo de error fatal - Cierra la aplicación por completo
+     */
+    fun showFatalErrorDialog(message: String) {
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle("Error Crítico")
+            .setMessage(message)
+            .setCancelable(false)
+            .setPositiveButton("OK") { _, _ ->
+                activity.finishAffinity()
+                System.exit(0)
+            }
+            .show()
     }
 }
