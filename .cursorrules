@@ -2,6 +2,14 @@
 
 Este archivo establece las reglas de estandarización para el desarrollo, refactorización y mantenimiento del proyecto. Estas reglas deben seguirse estrictamente en cada interacción.
 
+## 🤝 Protocolo de Interacción
+
+1.  **Planificación Previa**:
+    *   **Antes de realizar cualquier acción** (edición de archivos, ejecución de comandos, creación de recursos), se debe discutir el plan de acción inmediato con el usuario.
+    *   **Esperar aprobación** explícita del usuario antes de proceder con el plan propuesto.
+    *   *Objetivo*: Asegurar la alineación con las expectativas del usuario y evitar cambios no deseados o innecesarios.
+
+
 ## 🌍 Reglas de Localización (Locale)
 
 1.  **Identificadores y Texto Interno**:
@@ -48,3 +56,8 @@ Este archivo establece las reglas de estandarización para el desarrollo, refact
 3.  **Refactorización**:
     *   Dividir archivos grandes de forma **incremental**.
     *   Compilar y probar la funcionalidad específica después de cada extracción de método o clase.
+
+4.  **Principios de Ingeniería**:
+    *   Siempre que sea posible, en la creación o refactorización de clases, aplicar los principios de ingeniería de software **DRY** (Don't Repeat Yourself) y **SOLID**.
+    *   *Objetivo*: Mantener la mantenibilidad, escalabilidad y legibilidad del sistema a largo plazo.
+
