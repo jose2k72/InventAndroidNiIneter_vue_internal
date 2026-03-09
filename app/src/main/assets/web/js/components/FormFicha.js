@@ -189,26 +189,7 @@ const FormFicha = {
                 </div>
             </div>
 
-            <!-- SECCIÓN 4: DERECHO -->
-            <div class="section">
-                <h3>⚖️ Derecho sobre la Parcela</h3>
-                
-                <div class="coords-grid">
-                    <div class="form-group">
-                        <label :style="{color: errors.DerehoParcelaCatalog ? 'red' : 'inherit', fontWeight: errors.DerehoParcelaCatalog ? 'bold' : 'normal'}">Derecho Parcelario *</label>
-                        <select v-model.number="formData.DerehoParcelaCatalog">
-                            <option :value="null" disabled selected>Seleccione...</option>
-                            <option v-for="opt in catalogos.TipoDerecho" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label :style="{color: errors.NoPersonasSimilarDerecho ? 'red' : 'inherit', fontWeight: errors.NoPersonasSimilarDerecho ? 'bold' : 'normal'}">Número de personas derecho similar *</label>
-                        <input type="number" v-model.number="formData.NoPersonasSimilarDerecho" min="1" :style="{borderColor: errors.NoPersonasSimilarDerecho ? 'red' : '#ccc'}">
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCIÓN 5: DATOS REGISTRALES -->
+            <!-- SECCIÓN 4: DATOS REGISTRALES -->
             <div class="section">
                 <h3>📜 Datos Registrales</h3>
                 <div class="form-group checkbox-group">
@@ -252,7 +233,7 @@ const FormFicha = {
                 </div>
             </div>
 
-            <!-- SECCIÓN 6: DOCUMENTOS -->
+            <!-- SECCIÓN 5: DOCUMENTOS -->
             <div class="section">
                 <h3>📂 Documentos</h3>
                 
@@ -316,33 +297,7 @@ const FormFicha = {
                 </div>
             </div>
 
-            <!-- SECCIÓN 7: A FAVOR DE -->
-            <div class="section">
-                <h3>🤝 A Favor De (Terceros)</h3>
-                <div class="form-group checkbox-group">
-                    <label class="checkbox-container">
-                        <input type="checkbox" v-model="formData.EsAFavorDe">
-                        <span class="checkmark"></span>
-                        ¿Es a favor de un tercero?
-                    </label>
-                </div>
-                <div v-if="formData.EsAFavorDe">
-                    <div class="form-group">
-                        <label :style="{color: errors.AFavorDe ? 'red' : 'inherit', fontWeight: errors.AFavorDe ? 'bold' : 'normal'}">Nombre del Tercero *</label>
-                        <input type="text" v-model="formData.AFavorDe">
-                    </div>
-                    <div class="form-group">
-                        <label :style="{color: errors.RelacionConPoseedorCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionConPoseedorCatalog ? 'bold' : 'normal'}">Parentesco / Relación *</label>
-                        <div class="selector-display" @click="pedirParentescoGlobal" :style="{borderColor: errors.RelacionConPoseedorCatalog ? '#d32f2f' : '#ccc'}">
-                            <span v-if="parentescoName" style="color: #1565C0; font-weight: 600;">{{ parentescoName }}</span>
-                            <span v-else style="color: #757575;">Seleccione parentesco...</span>
-                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- SECCIÓN 8: CONFLICTOS -->
+            <!-- SECCIÓN 6: CONFLICTOS -->
             <div class="section">
                 <h3>⚠️ Conflictos</h3>
                 <div class="form-group checkbox-group">
@@ -567,21 +522,10 @@ const FormFicha = {
             }
         });
 
-        // Limpiar "A Favor De"
-        Vue.watch(() => formData.EsAFavorDe, (newVal) => {
-            if (!newVal) {
-                formData.AFavorDe = '';
-                formData.RelacionConPoseedorCatalog = 0;
-                formData._ParentescoName = '';
-                parentescoName.value = '';
-                delete errors.AFavorDe;
-                delete errors.RelacionConPoseedorCatalog;
-            }
-        });
+
 
         // Watchers para errores
-        Vue.watch(() => formData.AFavorDe, (val) => { if (val?.trim()) delete errors.AFavorDe; });
-        Vue.watch(() => formData.RelacionConPoseedorCatalog, (val) => { if (val) delete errors.RelacionConPoseedorCatalog; });
+
         Vue.watch(() => formData.FechaAdquisicion, (val) => { if (val) delete errors.FechaAdquisicion; });
         Vue.watch(() => formData.FechaRegistro, (val) => { if (val) delete errors.FechaRegistro; });
         Vue.watch(() => formData.NoFinca, (val) => { if (val?.trim()) delete errors.NoFinca; });
@@ -669,7 +613,6 @@ const FormFicha = {
                 { id: 3, nombre: 'Metros Cuadrados' }, { id: 4, nombre: 'Manzanas' },
                 { id: 5, nombre: 'Sin Datos' }, { id: 6, nombre: 'Varas Cuadradas' }
             ],
-            TipoDerecho: [{ id: 1, nombre: 'Propietario' }, { id: 2, nombre: 'Poseedor' }],
             Servidumbre: [
                 { id: 1, nombre: 'Acuerdo Verbal' },
                 { id: 2, nombre: 'Escritura Publica' },
@@ -692,19 +635,7 @@ const FormFicha = {
             }
         };
 
-        const pedirParentescoGlobal = () => {
-            if (typeof vueAppContext !== 'undefined') {
-                vueAppContext.openCatalog({
-                    catalogName: 'Parentesco',
-                    label: 'Buscar Parentesco...',
-                    onSelect: (val) => {
-                        formData.RelacionConPoseedorCatalog = parseInt(val.id);
-                        formData._ParentescoName = val.name;
-                        parentescoName.value = val.name;
-                    }
-                });
-            }
-        };
+
 
         const pedirClaseConflictoGlobal = () => {
             if (typeof vueAppContext !== 'undefined') {
@@ -799,7 +730,6 @@ const FormFicha = {
             if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
-            if (!formData.DerehoParcelaCatalog) { errors.DerehoParcelaCatalog = true; isValid = false; }
 
             if (formData.PresentaDocumentos) {
                 if (!formData.Documentos || formData.Documentos.length === 0) {
@@ -825,10 +755,7 @@ const FormFicha = {
                 if (!formData.Asiento?.trim()) { errors.Asiento = true; isValid = false; }
             }
 
-            if (formData.EsAFavorDe) {
-                if (!formData.AFavorDe?.trim()) { errors.AFavorDe = true; isValid = false; }
-                if (!formData.RelacionConPoseedorCatalog) { errors.RelacionConPoseedorCatalog = true; isValid = false; }
-            }
+
 
             if (formData.TieneConflicto) {
                 if (!formData.ClaseConflictoCatalog) { errors.ClaseConflictoCatalog = true; isValid = false; }
@@ -866,12 +793,7 @@ const FormFicha = {
             muniDisplay,
             deptoDisplay,
             areaDisplay,
-            parentescoName,
-            conflictoName,
-            origenTierraName,
-            gestionConflictoName,
             pedirMunicipioGlobal,
-            pedirParentescoGlobal,
             pedirClaseConflictoGlobal,
             pedirOrigenTierraGlobal,
             pedirGestionConflictoGlobal,

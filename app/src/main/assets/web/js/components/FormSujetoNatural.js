@@ -113,6 +113,34 @@ const FormSujetoNatural = {
             </div>
 
             <div class="section">
+                <h3>⚖️ Derecho sobre la Parcela</h3>
+                
+                <div class="coords-grid">
+                    <div class="form-group">
+                        <label :style="{color: errors.DerehoParcelaCatalog ? 'red' : 'inherit', fontWeight: errors.DerehoParcelaCatalog ? 'bold' : 'normal'}">Derecho Parcelario *</label>
+                        <select v-model.number="formData.DerehoParcelaCatalog">
+                             <option :value="null" disabled selected>Seleccione...</option>
+                             <option v-for="opt in catalogos.TipoDerecho" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label :style="{color: errors.NoPersonasSimilarDerecho ? 'red' : 'inherit', fontWeight: errors.NoPersonasSimilarDerecho ? 'bold' : 'normal'}">Número de personas con derecho similar *</label>
+                        <input type="number" v-model.number="formData.NoPersonasSimilarDerecho" min="1">
+                    </div>
+                </div>
+
+                <!-- Vínculo con Propietario (Se muestra si NO es Propietario ID 1) -->
+                <div v-if="formData.DerehoParcelaCatalog && formData.DerehoParcelaCatalog !== 1" class="form-group sub-section" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+                    <label :style="{color: errors.RelacionConPropietarioCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionConPropietarioCatalog ? 'bold' : 'normal'}">Relación / Vínculo con el Propietario *</label>
+                    <div class="selector-display" @click="pedirRelacionPropietarioGlobal">
+                        <span v-if="relacionPropietarioName" style="color: #1565C0; font-weight: 600;">{{ relacionPropietarioName }}</span>
+                        <span v-else style="color: #757575;">Defina el vínculo (Inquilino, Hijo, etc.)...</span>
+                        <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
                 <h3>🏠 Residencia</h3>
 
                 <!-- Municipio: selector visual de dos niveles -->
@@ -210,6 +238,7 @@ const FormSujetoNatural = {
         // Nombre visual de profesión y perfil (helpers UI)
         const profesionName = Vue.ref(formData._ProfessionName || '');
         const perfilPropietarioName = Vue.ref(formData._PerfilPropietarioName || '');
+        const relacionPropietarioName = Vue.ref(formData._RelacionPropietarioName || '');
 
         // Llamada a la app global usando el contexto global asegurado vueAppContext
         const catalogos = {
@@ -229,6 +258,13 @@ const FormSujetoNatural = {
                 { id: 1, nombre: 'Soltero(a)' },
                 { id: 2, nombre: 'Casado(a)' },
                 { id: 3, nombre: 'Union de Hecho' }
+            ],
+            TipoDerecho: [
+                { id: 1, nombre: 'Propietario (Dominio Pleno)' },
+                { id: 2, nombre: 'Poseedor (Derecho de Hecho)' },
+                { id: 3, nombre: 'Ocupante / Arrendatario' },
+                { id: 4, nombre: 'Usufructuario' },
+                { id: 5, nombre: 'Otro' }
             ]
         };
 
@@ -247,6 +283,20 @@ const FormSujetoNatural = {
                 });
             } else {
                 console.error("❌ Contexto global vueAppContext.openCatalog no encontrado.");
+            }
+        };
+
+        const pedirRelacionPropietarioGlobal = () => {
+            if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
+                vueAppContext.openCatalog({
+                    catalogName: 'RelacionInformantePropietario',
+                    label: 'Relación con el Propietario...',
+                    onSelect: (val) => {
+                        formData.RelacionConPropietarioCatalog = val.id;
+                        formData._RelacionPropietarioName = val.name;
+                        relacionPropietarioName.value = val.name;
+                    }
+                });
             }
         };
 
@@ -271,6 +321,16 @@ const FormSujetoNatural = {
             if (newVal != 26) {
                 formData.ProfessionOtroText = '';
                 delete errors.ProfessionOtroText;
+            }
+        });
+
+        // Limpiar relación si el derecho cambia a Propietario (ID 1)
+        Vue.watch(() => formData.DerehoParcelaCatalog, (newVal) => {
+            if (newVal === 1) {
+                formData.RelacionConPropietarioCatalog = 0;
+                formData._RelacionPropietarioName = '';
+                relacionPropietarioName.value = '';
+                delete errors.RelacionConPropietarioCatalog;
             }
         });
 
@@ -360,6 +420,22 @@ const FormSujetoNatural = {
                 errorList.push('Dirección');
             }
 
+            // Validaciones de Derecho y Tenencia
+            if (!formData.DerehoParcelaCatalog) {
+                errors.DerehoParcelaCatalog = true;
+                errorList.push('Derecho Parcelario');
+            }
+            if (!formData.NoPersonasSimilarDerecho || formData.NoPersonasSimilarDerecho <= 0) {
+                errors.NoPersonasSimilarDerecho = true;
+                errorList.push('Número de personas con derecho similar');
+            }
+            if (formData.DerehoParcelaCatalog && formData.DerehoParcelaCatalog !== 1) {
+                if (!formData.RelacionConPropietarioCatalog || formData.RelacionConPropietarioCatalog == 0) {
+                    errors.RelacionConPropietarioCatalog = true;
+                    errorList.push('Relación con el Propietario');
+                }
+            }
+
             if (errorList.length > 0) {
                 const msg = '⚠️ Faltan datos obligatorios. Por favor, revise los campos marcados en rojo.';
                 if (typeof Android !== 'undefined' && Android.showAlert) {
@@ -384,6 +460,8 @@ const FormSujetoNatural = {
             deptoDisplay,
             muniDisplay,
             pedirMunicipioGlobal,
+            relacionPropietarioName,
+            pedirRelacionPropietarioGlobal,
             save
         };
     }

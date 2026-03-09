@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS DATOS (
 | `ID` | INTEGER | Identificador único del registro (autoincremental) |
 | `IDOBJECT` | INTEGER | Referencia al objeto geométrico asociado (FK lógica a `objects.id`) |
 | `DATOS` | TEXT | **JSON completo del formulario** (ver sección siguiente) |
-| `FECHA` | DATETIME | Fecha y hora de captura (formato: `dd/MM/yyyy HH:mm:ss`) |
+| `FECHA` | DATETIME | Fecha y hora de captura (formato ISO 8601: `yyyy-MM-dd HH:mm:ss`) |
 | `SINCRONIZADO` | BOOLEAN | Flag de sincronización con servidor (0=pendiente, 1=sincronizado) |
 | `IMEI` | TEXT | IMEI del dispositivo |
 | `ANDROID_ID` | TEXT | Android ID del dispositivo |
@@ -135,24 +135,25 @@ CREATE TABLE IF NOT EXISTS DATOS (
 
 El campo `DATOS` almacena todo el formulario serializado como JSON. La estructura depende del tipo de formulario:
 
-**Ejemplo para FormEncuestaCatastral:**
+**Ejemplo para Ficha:**
 ```json
 {
-  "NumBoleta": "001",
-  "Sector": "1",
-  "Bloque": "2",
-  "Predio": "3",
+  "Type": "Ficha",
+  "NoEncuesta": "001",
+  "IdSector": "1",
   "Localizacion": "Barrio Central",
-  "CodigoCamino": "01",
-  "LocalProj_East": 492500.25,
-  "LocalProj_North": 1095800.50,
-  "LatLng_Lat": 9.9281,
-  "LatLng_Lng": -84.0907,
+  "LocalProj": {
+    "x": 492500.25,
+    "y": 1095800.50
+  },
+  "LatLng": {
+    "Lat": 9.9281,
+    "Lng": -84.0907
+  },
   "Identificacion": "001-123456-0000A",
-  "Nombres": "JUAN",
-  "Apellidos": "PEREZ",
-  "OcupacionCatalog": "Ingeniero",
-  "ResidenceMunicipioCatalog": "5525"
+  "NombreFinca": "LA ESPERANZA",
+  "Encuestador": "JB",
+  "Fecha": "2026-03-08"
 }
 ```
 

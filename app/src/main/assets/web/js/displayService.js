@@ -37,6 +37,19 @@ window.DisplayService = {
                 return data.RazonSocial || '-';
 
             case 'SujetoNatural':
+                const fn = data.FirstName || '';
+                const sn = data.SecondName ? data.SecondName.charAt(0).toUpperCase() + '.' : '';
+                const ln = data.FirstSurName || '';
+                let name = `${fn} ${sn} ${ln}`.trim() || '-';
+
+                // Mostrar Derecho o Relación
+                if (data.DerehoParcelaCatalog === 1) {
+                    name += ' - [PROP.]';
+                } else if (data._RelacionPropietarioName) {
+                    name += ` - [${data._RelacionPropietarioName.toUpperCase()}]`;
+                }
+                return name;
+
             case 'Entrevistado':
                 const first = data.FirstName || '';
                 const second = data.SecondName ? data.SecondName.charAt(0).toUpperCase() + '.' : '';

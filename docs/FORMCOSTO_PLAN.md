@@ -75,7 +75,7 @@ Cada item tiene:
     
     // Campos automáticos (igual que Acera)
     LatLng: { Lat, Lng },
-    LocalProj: { East, North },
+    LocalProj: { x, y },
     Fecha: string,
     Encuestador: string,
     Imagenes: string (CSV),

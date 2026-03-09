@@ -1,5 +1,47 @@
 # Changelog - INETER CADIC (Encuesta Catastral)
 
+## [2026-03-08 - Noche] - Modelo de Derecho Parcelario Centrado en el Sujeto
+
+### ⚖️ Migración de Tenencia y Derechos
+- **Desacoplamiento Predial**: Se eliminó la sección de "Derecho sobre la Parcela" y "A Favor de Terceros" del formulario de **Ficha**, trasladando toda la lógica de tenencia a las personas.
+- **SujetoNatural Empoderado**: El modelo `SujetoNatural` ahora porta el derecho legal sobre el predio mediante los campos:
+    - `DerehoParcelaCatalog` (Tipo de derecho).
+    - `NoPersonasSimilarDerecho` (Cuantificación de titulares).
+    - `RelacionConPropietarioCatalog` (Vínculo con el dueño legal).
+- **Eliminación de Redundancia**: Se suprimió el campo booleano `TieneRelacionConPropietario`, ya que el sistema ahora infiere la necesidad de relación basándose en el tipo de derecho de forma dinámica.
+
+### 🎨 Mejoras en la Interfaz y Experiencia (UI/UX)
+- **Visualización de Roles en Listas**: El `DisplayService.js` fue actualizado para mostrar el rol o vínculo del sujeto junto a su nombre en las listas de registros (ej: `[PROP.]`, `[Hijo(a)]`, `[Inquilino]`).
+- **Lógica Condicional en FormSujetoNatural**: Implementación de un selector de relación que solo aparece cuando el derecho seleccionado NO es "Propietario (Dominio Pleno)".
+- **Limpieza de Ficha**: Simplificación drástica del formulario de encuesta física, renumerando las secciones restantes (Uso, Documentos, Conflictos, etc.).
+
+### 🛠️ Backend y Persistencia
+- **Sincronización de DTOs**: Actualización de `SujetoNatural.cs` y `Ficha.cs` en el Core de C# para alineación total con el nuevo paradigma.
+- **Validación de Datos**: Los modelos en `modelsFactory.js` fueron actualizados para asegurar que la persistencia JSON coincida con los nuevos requerimientos del backend.
+
+---
+
+## [2026-03-08 - Tarde] - Refactorización Estructural de Modelos y Estandarización Técnica
+
+### 🏗️ Renombramiento de Modelos (Sujeto y Ficha)
+- **Unificación Semántica**: Renombrado de todas las capas de `PropietarioNatural` a **`SujetoNatural`** y de `PropietarioJuridico` a **`SujetoJuridico`**.
+- **Identidad de Ficha**: El término técnico `EncuestaCatastral` ha sido reemplazado por **`Ficha`** en archivos y lógica interna, manteniendo el nombre visual para el usuario.
+- **Sincronización de Componentes**: Renombrado de archivos físicos (`FormSujetoNatural.js`, `FormSujetoJuridico.js`, `FormFicha.js`) y sus etiquetas de registro en Vue.
+
+### 📅 Estandarización de Datos Operativos (JSON)
+- **Fechas ISO 8601**: Implementación de captura y persistencia estrictamente en formato `YYYY-MM-DD`, con utilidades de conversión para visualización local.
+- **Auditoría Minimalista**: El campo `Encuestador` ahora almacena automáticamente solo las iniciales del usuario (ej: "JB").
+- **Coordenadas Cartesianas**: Estandarización de `LocalProj` usando claves **`x`** e **`y`** en minúsculas, alineándose con estándares de geometría.
+
+### 🛠️ Mejoras en el Backend (C#)
+- **Alineación de DTOs**: Las clases C# fueron renombradas y sincronizadas con el frontend.
+- **Nulabilidad Segura**: Se hizo nullable el campo `FechaRegistro` en `SujetoJuridico.cs` para evitar errores de deserialización.
+- **Mapeo Perfecto**: Se corrigió el nombre de `TipoPersonaJuridicaCatalog` para coincidir perfectamente con el DTO.
+
+### 📄 Documentación y Normativa
+- **.cursorrules**: Creación de la sección de estándares de auditoría y geometría para garantizar la consistencia en futuras refactorizaciones.
+- **Actualización de Manuales**: Sincronización de `ARQUITECTURA_TECNICA.md`, `DATABASE_MAP_DB.md` y `MODELO_Y_PROCESO.md`.
+
 ## [2026-03-07 - Final de Sesión] - Arquitectura de Servicios Frontend (Fase 4)
 
 ### 🏗️ Reestructuración de la Capa Web (`app.js`)

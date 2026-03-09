@@ -31,9 +31,10 @@ La aplicación se transformó desde su prototipo de inventario georreferenciado 
 
 ### 2.1 Módulos Principales de la Encuesta
 
-*   **Propietario Natural** (`FormPropietarioNatural.js`): Controla datos personales, estado civil, y dirección de residencia detallada a nivel jerárquico.
+*   **Sujeto Natural** (`FormSujetoNatural.js`): Controla datos personales, estado civil, y dirección de residencia detallada a nivel jerárquico.
 *   **Encuestado/Entrevistado** (`FormEntrevistado.js`): Mapeado directamente o autocreado silenciosamente del Propietario.
 *   **Composición Familiar** (`FormFamiliares.js`): Captura iterativa de múltiples integrantes aserando dependencia del propietario bajo el mismo predio.
+*   **Ficha (Encuesta Catastral)** (`FormFicha.js`): Formulario núcleo que orquesta la información del predio.
 *   **Catálogos UI** (`CatalogoSelectorGrande`, `CatalogoSelectorTwoLevels`): Interfaces hechas en Vue (sin depender de WebView/Selects nativos problemáticos) para listas extensas como profesiones y selección Departamento->Municipio.
 
 > ⚠️ **Nota**: Los formularios heredados del prototipo original de inventario (`FormAcera.js`, `FormCosto.js`) aún están disponibles en el código fuente exclusivamente por motivos de análisis de persistencia o referencia estructural; sin embargo, no forman parte de las reglas del negocio de INETER CADIC.
@@ -131,7 +132,7 @@ Para reducir la complejidad del controlador principal (`app.js`) y mejorar la ma
 *   **`syncService.js` (Persistencia)**: 
     - Orquesta el guardado (`saveData`) y borrado (`deleteData`) de registros.
     - **Enriquecimiento**: Inyecta automáticamente metadatos de auditoría (`Fecha`, `Encuestador`) y espaciales (`LatLng`, `LocalProj`, `Localizacion`) antes de enviar el JSON a Android.
-    - **Corrección UTM**: Asegura que las coordenadas `East` (x) y `North` (y) lleguen con los nombres de propiedad correctos esperados por el backend C#.
+    - **Estandarización**: Asegura que las coordenadas UTM se envíen como `x` e `y` y las fechas en formato ISO conforme a .cursorrules.
 
 *   **`photoService.js` (Multimedia)**:
     - Centraliza la carga de miniaturas (`loadPhotosFromDisk`) convirtiendo nombres de archivo a Base64 mediante el Bridge.
@@ -148,7 +149,7 @@ Para reducir la complejidad del controlador principal (`app.js`) y mejorar la ma
 Los modelos ya no se crean de forma aislada. La fábrica ahora utiliza un **Objeto de Contexto (`ctx`)** que contiene la ubicación y auditoría actual del mapa. Esto garantiza que todos los formularios nazcan con su contexto geográfico completo:
 ```javascript
 const ctx = { lat, lng, x, y, loc, fecha, enc, idObject };
-const nuevoModel = ModelsFactory.createEncuestaCatastral(ctx);
+const nuevoModel = ModelsFactory.createFicha(ctx);
 ```
 
 ---

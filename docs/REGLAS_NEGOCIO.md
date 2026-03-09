@@ -12,21 +12,26 @@ La "Ficha" o Encuesta Catastral es el eje central de la recolección. Para garan
 - **Auto-relleno**: Si se inició la encuesta desde un predio del mapa, se hereda automáticamente el área y el catálogo de municipio interceptado.
 
 ### 1.2 Jerarquía de Datos
-- **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único "Propietario Natural", el sistema mantiene la encuesta ya que ahora la dependencia fuerte es con el "Entrevistado".
+- **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único **"Sujeto Natural"**, el sistema mantiene la encuesta ya que ahora la dependencia fuerte es con el "Entrevistado".
 - **Relación Entrevistado-Propietario**: Si el entrevistado es el mismo propietario, el sistema permite una creación silenciosa para evitar doble entrada de datos.
 
 ---
 
 ## 2. Validaciones Específicas de Formularios
 
-### 2.1 Formulario: Encuesta Catastral
-- **Número de personas con derecho similar**: Debe ser estrictamente **mayor que 0**. Esta es una validación de bloqueo; el sistema no permitirá guardar el formulario si el valor es 0 o nulo.
+### 2.1 Formulario: Ficha (Encuesta Catastral)
 - **Área Estimada**: Se valida que sea un número positivo. Si viene del mapa, el campo se bloquea para evitar discrepancias con la topografía digital.
 - **Identificadores**: Se utiliza `IdPropiedad` (UUID) para la vinculación única del registro y `IdSector` para la generación del número de encuesta.
+- **Contenido Físico**: Se centra en datos de uso, cultivos, instalaciones y documentación del predio. No contiene datos de tenencia.
 
-### 2.2 Formulario: Personas (Propietario / Entrevistado)
-- **Edad**: Debe ser **>= 0**.
-- **No. Identificación**: Campo obligatorio. Se eliminaron los placeholders de ejemplo para evitar que el usuario asuma formatos rígidos que no corresponden a todos los tipos de documentos (Cédula, RUC, Pasaporte).
+### 2.2 Formulario: Sujeto Natural (Persona)
+- **Derecho Parcelario e Identificación**:
+    - **Número de personas con derecho similar**: Debe ser estrictamente **mayor que 1** (o igual si es único). Validado para evitar nulos.
+    - **Edad**: Debe ser **>= 0**.
+    - **No. Identificación**: Campo obligatorio.
+- **Vínculo con el Propietario (Regla de Exclusión)**:
+    - Si `Derecho Parcelario` != **"Propietario (Dominio Pleno)"** (ID: 1), es **obligatorio** seleccionar un vínculo en el catálogo de relaciones.
+    - Si se cambia a "Propietario", cualquier vínculo previo se limpia automáticamente para mantener la integridad.
 - **Perfil y Carnet**: Si se selecciona un Perfil del Propietario (Desmovilizado, Retirado, etc.), el campo **Carnet del Perfil** se vuelve obligatorio. Si el perfil es "Otro", la descripción también es obligatoria.
 
 ---

@@ -51,22 +51,19 @@ La relación entre el **DTO y el modelo JS** ya no es 1:1 estricta, sino que se 
 *   **Campos de Negocio (Persistentes)**: Debe existir una correspondencia exacta en nombre y tipo entre el JS y el C# para asegurar que los datos se guarden en la base de datos final.
 *   **Campos Operativos/Temporales (Inyectados)**: Se permite la inclusión de propiedades adicionales en el JSON (como metadatos de auditoría `Encuestador`, `Fecha`, datos espaciales `LatLng`, o flags de UI `_isFromMap`). 
 *   **Recepción en C#**: Aunque estos campos operativos no se persistan directamente en las tablas de la base de datos de destino, el código C# debe ser capaz de recibirlos dentro del BLOB JSON para tomar decisiones de flujo, validaciones de auditoría o transformaciones en caliente.
-54: 
-54.1: ### 3.2 Estándares de Datos Operativos (JSON)
-54.2: Para asegurar la consistencia y ligereza del intercambio de datos, se aplican las siguientes reglas obligatorias:
-54.3: 1. **Fechas**: Siempre en formato **ISO 8601** (`YYYY-MM-DD`). La conversión a formato local para visualización debe ocurrir solo en la capa de UI.
-54.4: 2. **Encuestador**: Se deben almacenar únicamente las **iniciales** (ej: "JB").
-54.5: 3. **Coordenadas Proyectadas**: El objeto `LocalProj` debe usar estrictamente las claves **`x`** e **`y`** (minúsculas).
+### 3.2 Estándares de Datos Operativos (JSON)
+Para asegurar la consistencia y ligereza del intercambio de datos, se aplican las siguientes reglas obligatorias:
+1. **Fechas**: Siempre en formato **ISO 8601** (`YYYY-MM-DD`). La conversión a formato local para visualización debe ocurrir solo en la capa de UI.
+2. **Encuestador**: Se deben almacenar únicamente las **iniciales** (ej: "JB").
+3. **Coordenadas Proyectadas**: El objeto `LocalProj` debe usar estrictamente las claves **`x`** e **`y`** (minúsculas).
 
 ### 3.2 Tabla de Mapeo de Clases
 
-| Modelo JS (`Type` en Android) | Clase C# (DTO en `NI.INETER.Core`) | Propósito |
-| :--- | :--- | :--- |
-| `Ficha` | `Ficha.cs` | Datos núcleo del levantamiento catastral. |
-| `SujetoNatural` | `SujetoNatural.cs` | Datos de la persona natural (propietaria, poseedora o con vínculo). |
-| `SujetoJuridico` | `SujetoJuridico.cs` | Datos de empresas o entidades legales. |
+| `Ficha` | `Ficha.cs` | Datos físicos del predio (uso del suelo, área e infraestructura). |
+| `SujetoNatural` | `SujetoNatural.cs` | Datos del titular o poseedor; incluye derechos y tenencia parcelaria. |
+| `SujetoJuridico` | `SujetoJuridico.cs` | Datos de empresas o entidades legales propietarias. |
 | `Entrevistado` | `Entrevistado.cs` | Datos del informante del predio. |
-| `Familiares` | `Familiar.cs` (Colección) | Listado de composición familiar. |
+| `Familiares` | `Familiar.cs` (Colección) | Composición del núcleo familiar residente. |
 
 ### 3.3 Flujo de Implementación de Nuevos Campos
 1.  Identificar la característica en la **Documentación Original** (`DOCS\ANALISIS`).
@@ -99,6 +96,7 @@ Existen campos en el modelo JavaScript que NO persisten en columnas individuales
 | `_DeptoNombre` | UI Helper | Nombre del departamento (solo para visualización en el selector). |
 | `_MuniNombre` | UI Helper | Nombre del municipio (solo para visualización en el selector). |
 | `_ParentescoName`| UI Helper | Etiqueta del ID de parentesco para mostrar en la lista de registros. |
+| `_RelacionPropietarioName`| UI Helper | Nombre visual (etiqueta) de la relación con el propietario. |
 
 ### 4.3 Diferencias y Similitudes Clave (JS vs C#)
 *   **Similitud Estricta**: Campos como `NoEncuesta`, `NombreFinca`, `AreaEstimada`, `UnidadMedidaAreaEstimadaCatalog` deben ser idénticos en nombre (Case Sensitive) para el mapeo automático.
@@ -106,15 +104,17 @@ Existen campos en el modelo JavaScript que NO persisten en columnas individuales
     *   En JS, `Documentos` es un array de objetos con `_DocumentoName` (auxiliar).
     *   En C#, se espera una `List<DocumentoFicha>` donde los campos coincidan con los del objeto JS del array.
 *   **Fechas**: En JS se manejan como strings (`YYYY-MM-DD`), en C# el DTO debe usar `DateTime?` para permitir nulos sin romper el mapeo.
+*   **Tenencia**: La Ficha ya **NO** contiene campos de derecho parcelario. Estos han sido movidos a `SujetoNatural`.
 
 ---
 
 ## 5. Tareas Pendientes y Deuda Técnica
 
 ### 5.1 Pendiente Inmediato (Refactorización)
-*   [ ] **Alineación de PropietarioNatural**: Aplicar la misma unificación de tipos (evitar discrepancias como `EncuestaCatastral/Ficha`).
-*   [ ] **Campo Imágenes**: Se identificó la necesidad de añadir una lista de fotos (`Imagenes`) al DTO de C# para recibir las rutas/nombres de archivos capturados por la App.
-*   [ ] **Sincronización de Catálogos**: Verificar que el ID `1` en `OrigenTierra.json` realmente represente "Otros" en todos los entornos.
+*   [x] **Alineación de SujetoNatural**: Se unificaron los tipos y se integró la sección de Derecho Parcelario.
+*   [x] **Campo Imágenes**: Ya integrado en el DTO de C# (`Ficha.cs`) y JS.
+*   [x] **Derecho sobre Parcela**: Movido de Ficha a SujetoNatural.
+*   [ ] **Sincronización de Catálogos**: Verificar que el ID `1` en `OrigenTierra.json` realmente represente "Otros".
 
 ### 5.2 Deuda Técnica
 *   **Ortografía**: El campo `DerehoParcelaCatalog` (falta la "c") se mantiene por compatibilidad histórica entre capas.

@@ -37,15 +37,10 @@ window.ModelsFactory = {
         ServidumbrePaseOtroText: '',
         ServidumbreOtroCatalog: null,
         ServidumbreOtroOtroText: '',
-        DerehoParcelaCatalog: null,
-        NoPersonasSimilarDerecho: 0,
         PresentaDocumentos: false,
         Documentos: [],
         AreaTitulada: null,
         UnidadMedidaAreaTituladaCatalog: null,
-        EsAFavorDe: false,
-        AFavorDe: '',
-        RelacionConPoseedorCatalog: null,
         _isFromMap: false,
         TieneDatosRegistrales: false,
         FechaAdquisicion: null,
@@ -95,6 +90,11 @@ window.ModelsFactory = {
         ResidenceDireccion: '',
         ResidenceComarca: '',
         ResidenceBarrio: '',
+
+        // Derecho sobre la parcela
+        DerehoParcelaCatalog: null,
+        NoPersonasSimilarDerecho: 0,
+        RelacionConPropietarioCatalog: 0,
 
         // Contexto
         Localizacion: ctx?.loc || '',
