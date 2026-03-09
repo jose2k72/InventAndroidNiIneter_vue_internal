@@ -7,14 +7,16 @@ window.ModelsFactory = {
 
     /**
      * Crea un modelo vacío de Ficha (Encuesta Catastral)
+     * @param {Object} ctx - Contexto de auditoría
+     * @param {Object} mapData - Opcional. Datos interceptados del mapa {area, muni, sector}
      */
-    createFicha: (ctx) => ({
+    createFicha: (ctx, mapData) => ({
         Type: 'Ficha',
         NoEncuesta: '',
         Consecutivo: 0,
         IdPropiedad: window.generateUUID ? window.generateUUID() : '',
-        MunicipioCatalog: null,
-        IdSector: '',
+        MunicipioCatalog: mapData?.muni || null,
+        IdSector: mapData?.sector || '',
         ParcelaCatastrada: '',
         ParcelaSegregada: '',
         TipoEncuestaCatalog: null,
@@ -29,8 +31,8 @@ window.ModelsFactory = {
         NumeroLote: '',
         TipoUsoCatalog: null,
         Descripcion: '',
-        AreaEstimada: null,
-        UnidadMedidaAreaEstimadaCatalog: null,
+        AreaEstimada: mapData?.area || null,
+        UnidadMedidaAreaEstimadaCatalog: mapData?.area ? 3 : null, // 3 = Metros Cuadrados
         ServidumbreAguaCatalog: null,
         ServidumbreAguaOtroText: '',
         ServidumbrePaseCatalog: null,
@@ -41,7 +43,7 @@ window.ModelsFactory = {
         Documentos: [],
         AreaTitulada: null,
         UnidadMedidaAreaTituladaCatalog: null,
-        _isFromMap: false,
+        _isFromMap: !!mapData,
         TieneDatosRegistrales: false,
         FechaAdquisicion: null,
         FechaRegistro: null,
@@ -71,10 +73,10 @@ window.ModelsFactory = {
     }),
 
     /**
-     * Crea un modelo de Sujeto Natural (Persona Natural / Poseedor)
+     * Modelo base privado que representa Person.cs
+     * Compartido por SujetoNatural y Entrevistado
      */
-    createSujetoNatural: (ctx) => ({
-        Type: 'SujetoNatural',
+    _basePerson: (ctx) => ({
         FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
         TipoIdentificacionCatalog: null,
         TipoIdentificacionOtroText: '',
@@ -84,87 +86,93 @@ window.ModelsFactory = {
         CivilStateCatalog: null,
         ProfessionCatalog: 0,
         ProfessionOtroText: '',
-        PerfilPropietarioCatalog: null,
-        PerfilPropietarioOtroText: '',
-        PerfilPropietarioCarnet: '',
-        ResidenceMunicipioCatalog: '',
+        ResidenceMunicipioCatalog: '', // string en C# (Código compuesto)
         ResidenceDireccion: '',
         ResidenceComarca: '',
         ResidenceBarrio: '',
 
-        // Derecho sobre la parcela
-        DerehoParcelaCatalog: null,
-        DerehoParcelaOtroText: '',
-        NoPersonasSimilarDerecho: 0,
-        RelacionConPropietarioCatalog: 0,
-
-        // Contexto
+        // Contexto y Auditoría (ADN Común de App)
         Localizacion: ctx?.loc || '',
         Fecha: ctx?.fecha || null,
         Encuestador: ctx?.enc || null,
         IdObject: ctx?.idObject || 0,
         LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
         LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
-        Imagenes: ''
+        Imagenes: '',
+
+        // Helpers UI (No viajan en DTO puro, pero mantienen la UI viva)
+        _ProfessionName: '', _DeptoNombre: '', _MuniNombre: '', _CodDepto: ''
     }),
 
     /**
-     * Crea un modelo de Sujeto Jurídico (Persona Jurídica)
+     * Crea un modelo de Sujeto Natural (Persona Natural / Poseedor)
+     * Basado en SujetoNatural.cs : Person
      */
-    createSujetoJuridico: (ctx) => ({
-        Type: 'SujetoJuridico',
-        Identificacion: '',
-        RazonSocial: '',
-        RegistradaEn: '',
-        FechaRegistro: null,
-        TipoPersonaJuridicaCatalog: null,
-        TipoPersonaJuridicaOtroText: '',
-        NroSocios: 0,
-        NroSocias: 0,
-        Colectivo: '',
-        Denominacion: '',
-        NroMiembros: 0,
-
-        // Contexto
-        Localizacion: ctx?.loc || '',
-        Fecha: ctx?.fecha || null,
-        Encuestador: ctx?.enc || null,
-        IdObject: ctx?.idObject || 0,
-        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
-        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
-        Imagenes: ''
-    }),
+    createSujetoNatural: function (ctx) {
+        return {
+            ...this._basePerson(ctx),
+            Type: 'SujetoNatural',
+            // Específicos de SujetoNatural.cs
+            PerfilPropietarioCatalog: null,
+            PerfilPropietarioOtroText: '',
+            PerfilPropietarioCarnet: '',
+            DerehoParcelaCatalog: null, // Nota: typo 'Dereho' heredado del DTO
+            DerehoParcelaOtroText: '',
+            NoPersonasSimilarDerecho: 0,
+            RelacionConPropietarioCatalog: 0,
+            _RelacionPropietarioName: '',
+            _PerfilPropietarioName: ''
+        };
+    },
 
     /**
      * Crea un modelo de Entrevistado
+     * Basado en Entrevistado.cs : Person
      */
-    createEntrevistado: (ctx) => ({
-        Type: 'Entrevistado',
-        FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
-        TipoIdentificacionCatalog: null,
-        TipoIdentificacionOtroText: '',
-        Identificacion: '',
-        GenderCatalog: null,
-        Age: null,
-        CivilStateCatalog: null,
-        ProfessionCatalog: 0,
-        ProfessionOtroText: '',
-        ResidenceDireccion: '',
-        ResidenceComarca: '',
-        ResidenceBarrio: '',
-        RelacionConParcelaCatalog: null,
-        RelacionConParcelaOtroText: '',
-        RelacionInformantePropietarioCatalog: 0,
+    createEntrevistado: function (ctx) {
+        return {
+            ...this._basePerson(ctx),
+            Type: 'Entrevistado',
+            // Específicos de Entrevistado.cs
+            RelacionConParcelaCatalog: null,
+            RelacionConParcelaOtroText: '',
+            RelacionInformantePropietarioCatalog: 0,
+            _RelacionPropietarioName: ''
+        };
+    },
 
-        // Contexto
-        Localizacion: ctx?.loc || '',
-        Fecha: ctx?.fecha || null,
-        Encuestador: ctx?.enc || null,
-        IdObject: ctx?.idObject || 0,
-        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
-        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
-        Imagenes: ''
-    }),
+    /**
+     * Crea un modelo de Sujeto Jurídico (Empresa / Institución)
+     * Basado en SujetoJuridico.cs
+     */
+    createSujetoJuridico: function (ctx) {
+        return {
+            Type: 'SujetoJuridico',
+            Identificacion: '',
+            RazonSocial: '',
+            RegistradaEn: '',
+            FechaRegistro: null,
+            TipoPersonaJuridicaCatalog: null,
+            TipoPersonaJuridicaOtroText: '',
+            NroSocios: 0,
+            NroSocias: 0,
+            Colectivo: '',
+            Denominacion: '',
+            NroMiembros: 0,
+
+            // Contexto y Auditoría
+            Localizacion: ctx?.loc || '',
+            Fecha: ctx?.fecha || null,
+            Encuestador: ctx?.enc || null,
+            IdObject: ctx?.idObject || 0,
+            LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+            LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
+            Imagenes: '',
+
+            // Helpers UI
+            _TipoPersonaJuridicaName: ''
+        };
+    },
 
     /**
      * Crea un modelo de Composición Familiar

@@ -386,19 +386,6 @@
                 </table>
             </div>
 
-            <!--
-            <div class="info-row">
-                <label>Rutas Adyacentes:</label>
-                <ul class="rutas-list" v-if="rutasAdyacentes && rutasAdyacentes.length > 0">
-                    <li v-for="(ruta, idx) in rutasAdyacentes" :key="idx" class="ruta-item">
-                        <span class="ruta-badge" :class="ruta.tipo">{{ ruta.localizacion }}</span>
-                        <span class="ruta-info">({{ ruta.tipo }}, {{ ruta.direccion }}, {{ ruta.distancia }}m)</span>
-                    </li>
-                </ul>
-                <span v-else class="no-rutas">Ninguna detectada</span>
-            </div>
-            -->
-
             <h3>Registros dentro del predio</h3>
             <table class="data-table" v-if="sortedListData.length > 0">
                 <thead>
@@ -476,22 +463,6 @@
         </div>
     </div>
 
-    <!-- Modal Selección de Ruta (Template) -->
-    <div id="route-selection-modal" class="confirm-modal-overlay" style="display: none;">
-        <div class="confirm-modal route-modal">
-            <div class="confirm-modal-icon">🛣️</div>
-            <div class="confirm-modal-title">Seleccione una Ruta</div>
-            <div class="confirm-modal-message">Se han detectado múltiples rutas cercanas. Por favor seleccione a cuál
-                pertenece este registro:</div>
-            <div id="route-list" class="route-selection-list">
-                <!-- Se llenará dinámicamente con JS -->
-            </div>
-            <div class="confirm-modal-buttons">
-                <button class="confirm-btn confirm-btn-cancel" onclick="closeRouteModal()">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Utilidades y Servicios -->
     <script src="js/utils.js"></script>
     <script src="js/modelsFactory.js"></script>
@@ -499,6 +470,8 @@
     <script src="js/photoService.js"></script>
     <script src="js/displayService.js"></script>
     <script src="js/clonadorService.js"></script>
+    <script src="js/workflowService.js"></script>
+    <script src="js/conversionService.js"></script>
 
     <!-- App principal (crea la app Vue) -->
     <script src="js/app.js"></script>

@@ -56,5 +56,42 @@ window.SyncService = {
             console.log('💻 Modo Desarrollo: Registro eliminado ID:', id);
             return true;
         }
+    },
+
+    /**
+     * Manejador global para cargar datos existentes (modo edición desde marcador)
+     * @param {Number} id - ID del registro
+     * @param {String} jsonData - Datos en formato JSON string
+     * @param {Object} ctx - Contexto reactivo de la app
+     */
+    handleLoadData: function (id, jsonData, ctx) {
+        console.log('📝 Procesando carga de datos en SyncService - ID:', id);
+        if (!ctx) return;
+
+        try {
+            const data = JSON.parse(jsonData);
+
+            // Agregar a listData si no existe
+            const existingIndex = ctx.listData.value.findIndex(item => item.Id === id);
+
+            if (existingIndex === -1) {
+                ctx.listData.value.push({
+                    Id: id,
+                    Data: data
+                });
+            }
+
+            // Determinar el índice final para la edición
+            const index = existingIndex !== -1 ? existingIndex : ctx.listData.value.length - 1;
+
+            // Ejecutar actualización de vista con un pequeño delay para asegurar reactividad
+            setTimeout(() => {
+                if (typeof ctx.updateData === 'function') {
+                    ctx.updateData(index);
+                }
+            }, 100);
+        } catch (error) {
+            console.error('❌ Error procesando carga de datos en SyncService:', error);
+        }
     }
 };

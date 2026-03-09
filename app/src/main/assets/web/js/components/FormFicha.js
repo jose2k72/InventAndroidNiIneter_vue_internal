@@ -371,45 +371,41 @@ const FormFicha = {
         const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
 
-        Vue.onMounted(async () => {
-            // Solo calcular si es un registro NUEVO (sin NoEncuesta)
-            if (!formData.NoEncuesta) {
-                console.log('🏗️ Calculando ID de Ficha exclusivo...');
-                try {
-                    if (typeof Android !== 'undefined' && Android.getSiguienteConsecutivo) {
-                        const lat = formData.LatLng?.Lat || 0;
-                        const lng = formData.LatLng?.Lng || 0;
+        // --- Lógica de Generación de ID (NoEncuesta) ---
+        const generarNoEncuesta = () => {
+            try {
+                if (typeof Android !== 'undefined' && Android.getSiguienteConsecutivo) {
+                    const lat = formData.LatLng?.Lat || 0;
+                    const lng = formData.LatLng?.Lng || 0;
+                    const next = formData.Consecutivo || Android.getSiguienteConsecutivo(lat, lng);
+                    formData.Consecutivo = next;
 
-                        // Llamada al Bridge para obtener el consecutivo geográfico
-                        const next = Android.getSiguienteConsecutivo(lat, lng);
-                        formData.Consecutivo = next;
+                    const muni = String(formData.MunicipioCatalog || '0000').padStart(4, '0');
+                    const sector = String(formData.IdSector || '000').padStart(3, '0');
+                    const loc = (formData.Localizacion || 'SIN_LOC').replace(/\s+/g, '_').toUpperCase();
+                    const cons = String(next).padStart(3, '0');
 
-                        // Formatear el ID: Muni(4)_Sector(3)_Localizacion_Consecutivo(3)
-                        const muni = String(formData.MunicipioCatalog || '0000').padStart(4, '0');
-                        const sector = String(formData.IdSector || '000').padStart(3, '0');
-                        const loc = formData.Localizacion || 'SIN_LOC';
-                        const cons = String(next).padStart(3, '0');
-
-                        // El campo NoEncuesta es inmutable una vez generado aquí
-                        formData.NoEncuesta = `${muni}_${sector}_${loc}_${cons}`;
-                        console.log('✅ ID Generado:', formData.NoEncuesta);
-                    }
-                } catch (e) {
-                    console.error('❌ Error al generar NoEncuesta:', e);
+                    formData.NoEncuesta = `${muni}_${sector}_${loc}_${cons}`;
+                    console.log('🆔 ID Ficha actualizado:', formData.NoEncuesta);
                 }
-            }
+            } catch (e) { console.error('❌ Error al generar NoEncuesta:', e); }
+        };
+
+        Vue.onMounted(async () => {
+            if (!formData.NoEncuesta) generarNoEncuesta();
         });
 
-        // Inicializar lista de documentos si no existe
-        if (!formData.Documentos) {
-            formData.Documentos = [];
-        }
+        // Autorecalculo si cambian datos base en registro nuevo
+        Vue.watch(() => [formData.MunicipioCatalog, formData.IdSector, formData.Localizacion], () => {
+            if (formData.Consecutivo) generarNoEncuesta();
+        });
 
-        // --- Helpers Visuales ---
+        // --- inicialización ---
+        if (!formData.Documentos) formData.Documentos = [];
+
+        // --- Helpers Visuales (Computed) ---
         const deptoDisplay = Vue.computed(() => {
-            if (formData._DeptoNombre) {
-                return { cod: formData._CodDepto || '', nombre: formData._DeptoNombre };
-            }
+            if (formData._DeptoNombre) return { cod: formData._CodDepto || '', nombre: formData._DeptoNombre };
             if (formData.MunicipioCatalog) {
                 const codDepto = String(formData.MunicipioCatalog).padStart(4, '0').slice(0, 2);
                 return { cod: codDepto, nombre: '...' };
@@ -434,22 +430,16 @@ const FormFicha = {
             get: () => {
                 const val = formData.AreaEstimada;
                 if (val === null || val === undefined || val === '') return '';
-                if (formData._isFromMap) {
-                    return parseFloat(val).toFixed(2);
-                }
-                return val;
+                return formData._isFromMap ? parseFloat(val).toFixed(2) : val;
             },
-            set: (val) => {
-                formData.AreaEstimada = val;
-            }
+            set: (val) => { formData.AreaEstimada = val; }
         });
 
-        // Resolución automática de nombres al cambiar el ID
+        // Resolución automática de nombres al cambiar el ID del Municipio
         Vue.watch(() => formData.MunicipioCatalog, (newVal) => {
             if (newVal) {
                 const idStr = String(newVal).padStart(4, '0');
                 const filename = 'DepartamentosMunicipios.json';
-
                 const processData = (data) => {
                     for (const depto of data) {
                         const muni = depto.Municipios.find(m => m.CodMuni === idStr);
@@ -461,173 +451,72 @@ const FormFicha = {
                         }
                     }
                 };
-
                 if (window.Android && window.Android.loadCatalogJson) {
                     try {
                         const jsonStr = window.Android.loadCatalogJson(filename);
-                        if (jsonStr) {
-                            processData(JSON.parse(jsonStr));
-                            return;
-                        }
+                        if (jsonStr) { processData(JSON.parse(jsonStr)); return; }
                     } catch (e) { console.error('Error Bridge:', e); }
                 }
-
-                fetch(`data/${filename}`)
-                    .then(r => r.json())
-                    .then(processData)
-                    .catch(err => console.error('Error Fetch:', err));
+                fetch(`data/${filename}`).then(r => r.json()).then(processData).catch(err => console.error('Error Fetch:', err));
             }
         }, { immediate: true });
 
-        // Limpiar documentos al desmarcar
+        // --- Manejo de Limpieza (Watchers) ---
         Vue.watch(() => formData.PresentaDocumentos, (newVal) => {
             if (!newVal) {
                 formData.Documentos = [];
                 formData.AreaTitulada = null;
                 formData.UnidadMedidaAreaTituladaCatalog = null;
-                delete errors.Documentos;
-                delete errors.AreaTitulada;
-                delete errors.UnidadMedidaAreaTituladaCatalog;
-                Object.keys(errors).forEach(k => {
-                    if (k.startsWith('Doc')) delete errors[k];
-                });
+                Object.keys(errors).forEach(k => { if (k.startsWith('Doc') || k.includes('AreaTitulada')) delete errors[k]; });
             }
         });
 
-        // Limpiar datos registrales
         Vue.watch(() => formData.TieneDatosRegistrales, (newVal) => {
             if (!newVal) {
-                formData.FechaAdquisicion = null;
-                formData.FechaRegistro = null;
-                formData.NoFinca = '';
-                formData.Tomo = '';
-                formData.Folio = '';
-                formData.Asiento = '';
-                delete errors.FechaAdquisicion;
-                delete errors.FechaRegistro;
-                delete errors.NoFinca;
-                delete errors.Tomo;
-                delete errors.Folio;
-                delete errors.Asiento;
+                formData.FechaAdquisicion = null; formData.FechaRegistro = null;
+                formData.NoFinca = ''; formData.Tomo = ''; formData.Folio = ''; formData.Asiento = '';
+                ['FechaAdquisicion', 'FechaRegistro', 'NoFinca', 'Tomo', 'Folio', 'Asiento'].forEach(k => delete errors[k]);
             }
         });
 
-
-
-        // Watchers para errores
-
-        Vue.watch(() => formData.FechaAdquisicion, (val) => { if (val) delete errors.FechaAdquisicion; });
-        Vue.watch(() => formData.FechaRegistro, (val) => { if (val) delete errors.FechaRegistro; });
-        Vue.watch(() => formData.NoFinca, (val) => { if (val?.trim()) delete errors.NoFinca; });
-        Vue.watch(() => formData.Tomo, (val) => { if (val?.trim()) delete errors.Tomo; });
-        Vue.watch(() => formData.Folio, (val) => { if (val?.trim()) delete errors.Folio; });
-        Vue.watch(() => formData.Asiento, (val) => { if (val?.trim()) delete errors.Asiento; });
-
-        Vue.watch(() => formData.ClaseConflictoCatalog, (val) => {
-            if (val) delete errors.ClaseConflictoCatalog;
-            if (val !== 13) {
-                formData.ClaseConflictoOtroText = '';
-                delete errors.ClaseConflictoOtroText;
-            }
-        });
-        Vue.watch(() => formData.ClaseConflictoOtroText, (val) => { if (val?.trim()) delete errors.ClaseConflictoOtroText; });
-
-        Vue.watch(() => formData.OrigenTierraCatalog, (val) => {
-            if (val) delete errors.OrigenTierraCatalog;
-            if (val !== 1) {
-                formData.OrigenTierraOtroText = '';
-                delete errors.OrigenTierraOtroText;
-            }
-        });
-        Vue.watch(() => formData.OrigenTierraOtroText, (val) => { if (val?.trim()) delete errors.OrigenTierraOtroText; });
-
-        // Limpiar conflictos al desmarcar
         Vue.watch(() => formData.TieneConflicto, (newVal) => {
             if (!newVal) {
-                formData.ClaseConflictoCatalog = null;
-                formData.ClaseConflictoOtroText = '';
-                formData._ConflictoName = '';
-                conflictoName.value = '';
-                formData.GestionConflictoCatalog = null;
-                formData.GestionConflictoOtroText = '';
-                formData._GestionConflictoName = '';
-                gestionConflictoName.value = '';
-                delete errors.ClaseConflictoCatalog;
-                delete errors.ClaseConflictoOtroText;
-                delete errors.GestionConflictoCatalog;
-                delete errors.GestionConflictoOtroText;
+                formData.ClaseConflictoCatalog = null; formData.ClaseConflictoOtroText = '';
+                formData.GestionConflictoCatalog = null; formData.GestionConflictoOtroText = '';
+                ['ClaseConflictoCatalog', 'ClaseConflictoOtroText', 'GestionConflictoCatalog', 'GestionConflictoOtroText'].forEach(k => delete errors[k]);
             }
         });
 
-        Vue.watch(() => formData.GestionConflictoCatalog, (val) => {
-            if (val) delete errors.GestionConflictoCatalog;
-            if (val !== 6) {
-                formData.GestionConflictoOtroText = '';
-                delete errors.GestionConflictoOtroText;
-            }
-        });
-        Vue.watch(() => formData.GestionConflictoOtroText, (val) => { if (val?.trim()) delete errors.GestionConflictoOtroText; });
+        // Limpieza de campos "Otro"
+        Vue.watch(() => formData.OrigenTierraCatalog, (val) => { if (val !== 1) formData.OrigenTierraOtroText = ''; });
+        Vue.watch(() => formData.ClaseConflictoCatalog, (val) => { if (val !== 13) formData.ClaseConflictoOtroText = ''; });
+        Vue.watch(() => formData.GestionConflictoCatalog, (val) => { if (val !== 6) formData.GestionConflictoOtroText = ''; });
+        Vue.watch(() => formData.ServidumbreAguaCatalog, (val) => { if (val !== 4) formData.ServidumbreAguaOtroText = ''; });
+        Vue.watch(() => formData.ServidumbrePaseCatalog, (val) => { if (val !== 4) formData.ServidumbrePaseOtroText = ''; });
+        Vue.watch(() => formData.ServidumbreOtroCatalog, (val) => { if (val !== 4) formData.ServidumbreOtroOtroText = ''; });
 
-        // --- PATRÓN OTRO PARA SERVIDUMBRES (ID 4) ---
-        Vue.watch(() => formData.ServidumbreAguaCatalog, (val) => {
-            if (val !== 4) {
-                formData.ServidumbreAguaOtroText = '';
-            }
-        });
-        Vue.watch(() => formData.ServidumbrePaseCatalog, (val) => {
-            if (val !== 4) {
-                formData.ServidumbrePaseOtroText = '';
-            }
-        });
-        Vue.watch(() => formData.ServidumbreOtroCatalog, (val) => {
-            if (val !== 4) {
-                formData.ServidumbreOtroOtroText = '';
-            }
-        });
-
-        const parentescoName = Vue.ref(formData._ParentescoName || '');
         const conflictoName = Vue.ref(formData._ConflictoName || '');
         const origenTierraName = Vue.ref(formData._OrigenTierraName || '');
         const gestionConflictoName = Vue.ref(formData._GestionConflictoName || '');
 
-        // Recuperar nombres visuales si el registro ya tiene IDs (al cargar de BD)
-        Vue.onMounted(async () => {
-            if (formData.OrigenTierraCatalog && !origenTierraName.value) {
-                // Resolver nombre desde catálogo OrigenTierra...
-            }
-        });
-
-        // Normalizar fechas
-        formData.Documentos.forEach(doc => {
-            if (doc.FechaDocumento) doc.FechaDocumento = doc.FechaDocumento.split('T')[0];
-        });
+        // Normalización de fechas para inputs HTML5
         const dateFields = ['FechaAdquisicion', 'FechaRegistro'];
-        dateFields.forEach(f => {
-            if (formData[f]) formData[f] = formData[f].split('T')[0];
-        });
+        dateFields.forEach(f => { if (formData[f]) formData[f] = formData[f].split('T')[0]; });
+        formData.Documentos.forEach(doc => { if (doc.FechaDocumento) doc.FechaDocumento = doc.FechaDocumento.split('T')[0]; });
 
         const catalogos = {
             TipoEncuesta: [{ id: 1, nombre: 'Parcela Unificada' }, { id: 2, nombre: 'Parcela Horizontal' }],
             TipoUso: [{ id: 1, nombre: 'Privado' }, { id: 2, nombre: 'Público' }],
-            UnidadMedida: [
-                { id: 1, nombre: 'Caballerías' }, { id: 2, nombre: 'Hectáreas' },
-                { id: 3, nombre: 'Metros Cuadrados' }, { id: 4, nombre: 'Manzanas' },
-                { id: 5, nombre: 'Sin Datos' }, { id: 6, nombre: 'Varas Cuadradas' }
-            ],
-            Servidumbre: [
-                { id: 1, nombre: 'Acuerdo Verbal' },
-                { id: 2, nombre: 'Escritura Publica' },
-                { id: 3, nombre: 'Sentencia Judicial' },
-                { id: 4, nombre: 'Otro' }
-            ]
+            UnidadMedida: [{ id: 1, nombre: 'Caballerías' }, { id: 2, nombre: 'Hectáreas' }, { id: 3, nombre: 'Metros Cuadrados' }, { id: 4, nombre: 'Manzanas' }, { id: 5, nombre: 'Sin Datos' }, { id: 6, nombre: 'Varas Cuadradas' }],
+            Servidumbre: [{ id: 1, nombre: 'Acuerdo Verbal' }, { id: 2, nombre: 'Escritura Publica' }, { id: 3, nombre: 'Sentencia Judicial' }, { id: 4, nombre: 'Otro' }]
         };
 
-        // Selectores Globales
+        // --- Acciones de UI ---
         const pedirMunicipioGlobal = () => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openMunicipio({
                     onSelect: (res) => {
-                        formData.MunicipioCatalog = parseInt(res.codMuni);
+                        formData.MunicipioCatalog = res.codMuni; // String
                         formData._CodDepto = res.codDepto;
                         formData._DeptoNombre = res.departamento;
                         formData._MuniNombre = res.municipio;
@@ -636,23 +525,13 @@ const FormFicha = {
             }
         };
 
-
-
         const pedirClaseConflictoGlobal = () => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openCatalog({
-                    catalogName: 'ClaseConflicto',
-                    label: 'Clase de Conflicto...',
+                    catalogName: 'ClaseConflicto', label: 'Clase de Conflicto...',
                     onSelect: (val) => {
-                        const id = parseInt(val.id);
-                        formData.ClaseConflictoCatalog = id;
-                        formData._ConflictoName = val.name;
-                        conflictoName.value = val.name;
-
-                        if (id !== 13) {
-                            formData.ClaseConflictoOtroText = '';
-                            delete errors.ClaseConflictoOtroText;
-                        }
+                        formData.ClaseConflictoCatalog = parseInt(val.id);
+                        formData._ConflictoName = val.name; conflictoName.value = val.name;
                     }
                 });
             }
@@ -661,18 +540,10 @@ const FormFicha = {
         const pedirOrigenTierraGlobal = () => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openCatalog({
-                    catalogName: 'OrigenTierra',
-                    label: 'Origen de la Tierra...',
+                    catalogName: 'OrigenTierra', label: 'Origen de la Tierra...',
                     onSelect: (val) => {
-                        const id = parseInt(val.id);
-                        formData.OrigenTierraCatalog = id;
-                        formData._OrigenTierraName = val.name;
-                        origenTierraName.value = val.name;
-
-                        if (id !== 1) {
-                            formData.OrigenTierraOtroText = '';
-                            delete errors.OrigenTierraOtroText;
-                        }
+                        formData.OrigenTierraCatalog = parseInt(val.id);
+                        formData._OrigenTierraName = val.name; origenTierraName.value = val.name;
                     }
                 });
             }
@@ -681,18 +552,10 @@ const FormFicha = {
         const pedirGestionConflictoGlobal = () => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openCatalog({
-                    catalogName: 'GestionConflicto',
-                    label: 'Vía de Gestión de Conflictos...',
+                    catalogName: 'GestionConflicto', label: 'Vía de Gestión de Conflictos...',
                     onSelect: (val) => {
-                        const id = parseInt(val.id);
-                        formData.GestionConflictoCatalog = id;
-                        formData._GestionConflictoName = val.name;
-                        gestionConflictoName.value = val.name;
-
-                        if (id !== 6) {
-                            formData.GestionConflictoOtroText = '';
-                            delete errors.GestionConflictoOtroText;
-                        }
+                        formData.GestionConflictoCatalog = parseInt(val.id);
+                        formData._GestionConflictoName = val.name; gestionConflictoName.value = val.name;
                     }
                 });
             }
@@ -701,8 +564,7 @@ const FormFicha = {
         const pedirDocumentoGlobal = (index) => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openCatalog({
-                    catalogName: 'Documento',
-                    label: 'Tipo de Documento...',
+                    catalogName: 'Documento', label: 'Tipo de Documento...',
                     onSelect: (val) => {
                         formData.Documentos[index].DocumentoCatalog = parseInt(val.id);
                         formData.Documentos[index]._DocumentoName = val.name;
@@ -711,121 +573,59 @@ const FormFicha = {
             }
         };
 
-        const agregarDocumento = () => {
-            formData.Documentos.push({
-                DocumentoCatalog: 0,
-                AutorNotario: '',
-                FechaDocumento: null,
-                _DocumentoName: ''
-            });
-        };
-
-        const quitarDocumento = (index) => {
-            formData.Documentos.splice(index, 1);
-        };
-
-        const capturarFoto = () => {
-            emit('camera');
-        };
-
-        const verFoto = (foto) => {
-            if (typeof Android !== 'undefined' && Android.showPhoto) {
-                Android.showPhoto(foto.name);
-            }
-        };
-
-        const eliminarFoto = (filename) => {
-            if (window.deletePhoto) {
-                window.deletePhoto(filename);
-            }
-        };
+        const agregarDocumento = () => { formData.Documentos.push({ DocumentoCatalog: 0, AutorNotario: '', FechaDocumento: null, _DocumentoName: '' }); };
+        const quitarDocumento = (index) => { formData.Documentos.splice(index, 1); };
+        const capturarFoto = () => emit('camera');
+        const verFoto = (foto) => { if (typeof Android !== 'undefined' && Android.showPhoto) Android.showPhoto(foto.name); };
+        const eliminarFoto = (filename) => { if (window.deletePhoto) window.deletePhoto(filename); };
 
         const validate = () => {
-            let isValid = true;
             Object.keys(errors).forEach(k => delete errors[k]);
-
+            let isValid = true;
             if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; isValid = false; }
             if (!formData.NombreFinca?.trim()) { errors.NombreFinca = true; isValid = false; }
             if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
-
             if (formData.PresentaDocumentos) {
-                if (!formData.Documentos || formData.Documentos.length === 0) {
-                    errors.Documentos = true;
-                    isValid = false;
-                } else {
+                if (!formData.Documentos?.length) { errors.Documentos = true; isValid = false; }
+                else {
                     formData.Documentos.forEach((doc, idx) => {
-                        if (!doc.DocumentoCatalog) { errors['Doc' + idx + '_Catalog'] = true; isValid = false; }
-                        if (!doc.AutorNotario?.trim()) { errors['Doc' + idx + '_Autor'] = true; isValid = false; }
-                        if (!doc.FechaDocumento) { errors['Doc' + idx + '_Fecha'] = true; isValid = false; }
+                        if (!doc.DocumentoCatalog) errors['Doc' + idx + '_Catalog'] = true;
+                        if (!doc.AutorNotario?.trim()) errors['Doc' + idx + '_Autor'] = true;
+                        if (!doc.FechaDocumento) errors['Doc' + idx + '_Fecha'] = true;
                     });
+                    if (Object.keys(errors).some(k => k.startsWith('Doc'))) isValid = false;
                 }
                 if (!formData.AreaTitulada) { errors.AreaTitulada = true; isValid = false; }
                 if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; isValid = false; }
             }
-
             if (formData.TieneDatosRegistrales) {
-                if (!formData.FechaAdquisicion) { errors.FechaAdquisicion = true; isValid = false; }
-                if (!formData.FechaRegistro) { errors.FechaRegistro = true; isValid = false; }
-                if (!formData.NoFinca?.trim()) { errors.NoFinca = true; isValid = false; }
-                if (!formData.Tomo?.trim()) { errors.Tomo = true; isValid = false; }
-                if (!formData.Folio?.trim()) { errors.Folio = true; isValid = false; }
-                if (!formData.Asiento?.trim()) { errors.Asiento = true; isValid = false; }
+                ['FechaAdquisicion', 'FechaRegistro', 'NoFinca', 'Tomo', 'Folio', 'Asiento'].forEach(f => {
+                    if (!formData[f] || (typeof formData[f] === 'string' && !formData[f].trim())) { errors[f] = true; isValid = false; }
+                });
             }
-
-
-
             if (formData.TieneConflicto) {
                 if (!formData.ClaseConflictoCatalog) { errors.ClaseConflictoCatalog = true; isValid = false; }
-                if (formData.ClaseConflictoCatalog === 13 && !formData.ClaseConflictoOtroText?.trim()) {
-                    errors.ClaseConflictoOtroText = true;
-                    isValid = false;
-                }
-
-                // Vía de gestión es obligatoria si hay conflicto
+                if (formData.ClaseConflictoCatalog === 13 && !formData.ClaseConflictoOtroText?.trim()) { errors.ClaseConflictoOtroText = true; isValid = false; }
                 if (!formData.GestionConflictoCatalog) { errors.GestionConflictoCatalog = true; isValid = false; }
-                if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) {
-                    errors.GestionConflictoOtroText = true;
-                    isValid = false;
-                }
+                if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) { errors.GestionConflictoOtroText = true; isValid = false; }
             }
-
             return isValid;
         };
 
         const save = () => {
-            if (validate()) {
-                emit('save', JSON.parse(JSON.stringify(formData)));
-            } else {
-                if (typeof Android !== 'undefined' && Android.showToast) {
-                    Android.showToast('Por favor, complete los campos obligatorios marcados en rojo.');
-                }
+            if (validate()) emit('save', JSON.parse(JSON.stringify(formData)));
+            else {
+                if (typeof Android !== 'undefined' && Android.showToast) Android.showToast('⚠️ Faltan datos marcados en rojo.');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
 
         return {
-            formData,
-            errors,
-            catalogos,
-            muniDisplay,
-            deptoDisplay,
-            areaDisplay,
-            origenTierraName,
-            conflictoName,
-            gestionConflictoName,
-            pedirMunicipioGlobal,
-            pedirClaseConflictoGlobal,
-            pedirOrigenTierraGlobal,
-            pedirGestionConflictoGlobal,
-            pedirDocumentoGlobal,
-            agregarDocumento,
-            quitarDocumento,
-            capturarFoto,
-            verFoto,
-            eliminarFoto,
-            save
+            formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName,
+            pedirMunicipioGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
+            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save
         };
     }
 };

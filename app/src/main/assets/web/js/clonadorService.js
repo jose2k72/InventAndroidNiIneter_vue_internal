@@ -5,26 +5,31 @@
 window.ClonadorService = {
     /**
      * Campos comunes que se comparten entre Propietario Natural y Entrevistado
+     * (Opcional: Si se pasa vacío, el clonador usará inspección dinámica)
      */
-    CAMPOS_COMUNES_PROPIETARIO_ENTREVISTADO: [
-        'TipoIdentificacionCatalog', 'Identificacion',
-        'FirstName', 'SecondName', 'FirstSurName', 'SecondSurName',
-        'GenderCatalog', 'Age', 'CivilStateCatalog', 'ProfessionCatalog', 'ProfessionOtroText',
-        'ResidenceMunicipioCatalog', 'ResidenceComarca', 'ResidenceBarrio', 'ResidenceDireccion',
-        '_ProfessionName', '_CodDepto', '_DeptoNombre', '_MuniNombre'
-    ],
+    CAMPOS_COMUNES_PROPIETARIO_ENTREVISTADO: [],
 
     /**
      * Clona datos de un objeto de origen hacia un modelo de destino
+     * Si 'campos' está vacío, realiza una copia por intersección (estilo Reflection)
      * @param {Object} fromData - Datos de origen
      * @param {Object} toModel - Instancia del modelo de destino
-     * @param {Array} campos - Lista de campos a clonar
+     * @param {Array} campos - Opcional. Lista específica de campos a clonar.
      */
-    clonarDatos: function (fromData, toModel, campos) {
-        if (!fromData || !toModel || !campos) return;
+    clonarDatos: function (fromData, toModel, campos = []) {
+        if (!fromData || !toModel) return;
 
-        campos.forEach(campo => {
-            if (fromData[campo] !== undefined) {
+        // Si no se especifican campos, inspeccionamos las llaves del destino (Reflection)
+        const listaFinal = (campos.length > 0) ? campos : Object.keys(toModel);
+
+        // Exclusiones de sistema: Solo protegemos el Type para no cambiar la 
+        // identidad del DTO destino durante la clonación. Los metadatos de 
+        // auditoría (Fecha, IDs) se copian y pueden ser ajustados por el contexto final.
+        const exclusiones = ['Type'];
+
+        listaFinal.forEach(campo => {
+            if (!exclusiones.includes(campo) && fromData[campo] !== undefined) {
+                // Copia efectiva si el campo existe en el origen
                 toModel[campo] = fromData[campo];
             }
         });
@@ -46,7 +51,8 @@ window.ClonadorService = {
             toModel.LatLng = { Lat: meta.lat, Lng: meta.lng };
         }
         if (meta.x !== undefined && meta.y !== undefined) {
-            toModel.LocalProj = { East: meta.x, North: meta.y };
+            // Estandarización CADIC: Usar x/y (minúsculas)
+            toModel.LocalProj = { x: meta.x, y: meta.y };
         }
     }
 };

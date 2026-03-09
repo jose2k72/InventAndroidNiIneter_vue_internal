@@ -102,9 +102,10 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 │   ├── src/main
 │   │   ├── assets/web              <-- Código Fuente Frontend (Vue)
 │   │   │   ├── js
-│   │   │   │   ├── app.js          <-- Orquestador Vue (Composition API)
-│   │   │   │   ├── syncService.js   <-- Capa de Persistencia y Metadatos
-│   │   │   │   ├── photoService.js  <-- Gestión de Archivos de Imagen
+│   │   │   │   ├── app.js          <-- Orquestador Vue (Composition API) - Delgado/Slim
+│   │   │   │   ├── workflowService.js <-- Reglas de Negocio y Validación de Flujo (NUEVO)
+│   │   │   │   ├── syncService.js   <-- Capa de Persistencia y Recepción de Datos Android
+│   │   │   │   ├── photoService.js  <-- Gestión de Archivos y Recepción de Cámara Android
 │   │   │   │   ├── displayService.js <-- Helpers de Visualización
 │   │   │   │   └── clonadorService.js <-- Lógica de Clonación
 │   │   ├── java/com/cadicsa/inventario
@@ -129,21 +130,29 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 Para reducir la complejidad del controlador principal (`app.js`) y mejorar la mantenibilidad, se ha implementado una capa de servicios en JavaScript que abstrae las operaciones críticas:
 
 ### 9.1 Servicios del Sistema
-*   **`syncService.js` (Persistencia)**: 
-    - Orquesta el guardado (`saveData`) y borrado (`deleteData`) de registros.
-    - **Enriquecimiento**: Inyecta automáticamente metadatos de auditoría (`Fecha`, `Encuestador`) y espaciales (`LatLng`, `LocalProj`, `Localizacion`) antes de enviar el JSON a Android.
-    - **Estandarización**: Asegura que las coordenadas UTM se envíen como `x` e `y` y las fechas en formato ISO conforme a .cursorrules.
+*   **`workflowService.js` (Cerebro de Negocio)**:
+    - Centraliza las validaciones de "quién puede crear a quién".
+    - Gestiona los límites de registros (ej. un solo Entrevistado, una sola Ficha).
+    - Valida dependencias jerárquicas antes de iniciar la creación.
 
-*   **`photoService.js` (Multimedia)**:
-    - Centraliza la carga de miniaturas (`loadPhotosFromDisk`) convirtiendo nombres de archivo a Base64 mediante el Bridge.
-    - Gestiona el borrado físico de archivos en el almacenamiento del dispositivo.
+*   **`syncService.js` (Persistencia y Puentes)**:
+    - Orquesta el guardado (`saveData`) y borrado (`deleteData`).
+    - **Bridge Handler**: Maneja la carga de datos existentes (`handleLoadData`) inyectada desde el mapa de Android.
+    - **Enriquecimiento**: Inyecta automáticamente metadatos de auditoría y espaciales.
+
+*   **`photoService.js` (Multimedia y Eventos)**:
+    - **Bridge Handler**: Procesa las fotos recibidas de Android (`handleAndroidPhoto`) y sincroniza el estado reactivo de Vue.
+    - **Gestión Transaccional**: Implementa métodos `commit()` y `rollback()` para garantizar que los archivos en disco solo se mantengan si el registro se guarda exitosamente.
+
+*   **`conversionService.js` (Clonación de Identidades)**:
+    - Maneja la transformación de registros entre tipos (ej. Crear **Entrevistado** desde un **Sujeto Natural** existente).
+    - Automatiza la clonación de campos comunes y ajustes de catálogos específicos.
 
 *   **`displayService.js` (UI Helpers)**:
-    - Encapsula la lógica de etiquetas (`getShortName`) y la construcción de strings informativos para la lista de registros (`getDisplayInfo`).
+    - Encapsula la lógica de etiquetas y la construcción de strings informativos.
 
-*   **`clonadorService.js` (Reglas de Negocio)**:
-    - Define los campos comunes compartidos entre `PropietarioNatural` y `Entrevistado`.
-    - Realiza la clonación de datos y metadatos de forma atómica.
+*   **`clonadorService.js` (Utilidades de Clonación)**:
+    - Provee el motor de copia profunda de campos basado en diccionarios de mapeo.
 
 ### 9.2 Fábrica Contextual (`modelsFactory.js`)
 Los modelos ya no se crean de forma aislada. La fábrica ahora utiliza un **Objeto de Contexto (`ctx`)** que contiene la ubicación y auditoría actual del mapa. Esto garantiza que todos los formularios nazcan con su contexto geográfico completo:
@@ -177,6 +186,22 @@ Debido a la ausencia de extensiones SpatiaLite nativas en algunos entornos y par
 
 ### 8.2 Reglas de Validación y Creación
 1.  **Creación de Encuesta**: Para iniciar una "Encuesta Catastral", el sistema solo requiere que exista al menos un **Entrevistado** registrado en el predio. La obligatoriedad de un Propietario fue eliminada para permitir mayor flexibilidad en campo.
+- **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único **"Sujeto Natural"**, el sistema ejecuta un borrado en cascada automático de su composición familiar vinculada.
+- **Validación de Borrado**: No se permite eliminar al **Entrevistado** si ya existe una **Ficha** (Encuesta) vinculada, protegiendo la integridad referencial.
+- **Relación Entrevistado-Propietario**: Si el entrevistado es el mismo propietario, el sistema permite una creación silenciosa para evitar doble entrada de datos mediante el `ConversionService`.
+
+---
+
+## 2. Gestión Transaccional de Archivos
+
+El ciclo de vida de las fotografías está estrictamente controlado por las acciones del usuario:
+
+- **Rollback (Cancelar)**: Si el usuario toma fotos pero decide **CANCELAR** el formulario, el sistema purga inmediatamente los archivos físicos del disco de Android.
+- **Commit (Guardar)**: Solo al presionar **GUARDAR**, el sistema confirma las fotos nuevas y ejecuta el borrado físico de aquellas fotos que el usuario marcó para eliminar de la galería.
+
+---
+
+## 3. Validaciones Específicas de Formularios
 2.  **Validación de Derecho Similar**: El campo "No Personas Similar Derecho" debe ser estrictamente **mayor que 0** para permitir el guardado de la encuesta.
 3.  **Identificadores Técnicos**:
     - `IdPropiedad` (UUID): Generado automáticamente para cada nueva encuesta.

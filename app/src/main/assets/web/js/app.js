@@ -58,11 +58,18 @@ const app = createApp({
         const fotosNuevas = ref([]);          // Fotos tomadas en esta sesión (ya en disco)
         const fotosMarcadasBorrar = ref([]);  // Fotos originales "eliminadas" (aún en disco)
 
-        // Rutas adyacentes al predio
-        const rutasAdyacentes = ref([]);
-
         // Referencia para copia de datos
         const pendingCopyData = ref(null);
+
+        // Helper para obtener el contexto de auditoria y ubicación
+        const getContext = () => ({
+            fechaActual: fechaActual.value,
+            encuestador: encuestador.value,
+            idObject: idObject.value,
+            localizacion: localizacion.value,
+            latLng: latLng,
+            localProj: localProj
+        });
 
         // Inicialización
         const init = () => {
@@ -107,7 +114,7 @@ const app = createApp({
 
                     // 2. REPROYECCIÓN A UTM 16N (Para visualización y formularios legacy)
                     if (typeof proj4 !== 'undefined') {
-                        // WGS84 a UTM 16N (EPSG:32616)
+                        // WGS84 a UTM 16N (EPSG:4326)
                         const projected = proj4("EPSG:4326", "EPSG:32616", [latLng.lng, latLng.lat]);
                         localProj.x = Math.round(projected[0] * 100) / 100;
                         localProj.y = Math.round(projected[1] * 100) / 100;
@@ -163,25 +170,13 @@ const app = createApp({
                     idObject: idObject.value
                 };
 
-                if (type === 'Acera') {
-                    formData.value = ModelsFactory.createAcera(ctx.lat, ctx.lng, ctx.x, ctx.y);
-                } else if (type === 'Costo') {
-                    formData.value = ModelsFactory.createCosto(ctx.lat, ctx.lng, ctx.x, ctx.y);
-                } else if (type === 'Ficha') {
-                    formData.value = ModelsFactory.createFicha(ctx);
-
-                    // Inicialización específica de Encuesta (Valores interceptados)
-                    formData.value._isFromMap = true;
-                    formData.value.AreaEstimada = areaCalculada.value;
-                    formData.value.UnidadMedidaAreaEstimadaCatalog = 3; // Metros Cuadrados
-
-                    if (municipioInterceptado.value) {
-                        const muniId = parseInt(municipioInterceptado.value);
-                        if (!isNaN(muniId)) formData.value.MunicipioCatalog = muniId;
-                    }
-                    if (sectorInterceptado.value) {
-                        formData.value.IdSector = sectorInterceptado.value;
-                    }
+                if (type === 'Ficha') {
+                    // Se inyectan los datos interceptados del mapa directamente al factory
+                    formData.value = ModelsFactory.createFicha(ctx, {
+                        area: areaCalculada.value,
+                        muni: municipioInterceptado.value, // Se pasa como string
+                        sector: sectorInterceptado.value
+                    });
                 } else if (type === 'SujetoNatural') {
                     formData.value = ModelsFactory.createSujetoNatural(ctx);
                 } else if (type === 'SujetoJuridico') {
@@ -234,57 +229,26 @@ const app = createApp({
 
         // Volver a lista (CANCELAR - revertir cambios de fotos)
         const volver = () => {
-            // 1. Eliminar físicamente las fotos NUEVAS (no guardadas)
-            if (fotosNuevas.value.length > 0) {
-                console.log(`🗑️ Eliminando ${fotosNuevas.value.length} fotos nuevas no guardadas...`);
-                for (const foto of fotosNuevas.value) {
-                    if (typeof Android !== 'undefined' && typeof Android.deletePhotoFile === 'function') {
-                        Android.deletePhotoFile(foto.name);
-                    }
-                }
-            }
+            // 1. Revertir cambios físicos de fotos y estado reactivo
+            PhotoService.rollback(vueAppContext);
 
-            // 2. Las fotos marcadas para borrar SE RESTAURAN (ya están en disco, no hacer nada)
-            if (fotosMarcadasBorrar.value.length > 0) {
-                console.log(`↩️ Restaurando ${fotosMarcadasBorrar.value.length} fotos marcadas para borrar`);
-            }
-
-            // 3. Limpiar estado
+            // 2. Limpiar estado de navegación
             operation.value = 'List';
             formData.value = {};
-            fotos.value = [];
-            fotosOriginales.value = [];
-            fotosNuevas.value = [];
-            fotosMarcadasBorrar.value = [];
         };
 
         // Guardar datos (CONFIRMAR - sincronizar fotos)
         const sendData = (data) => {
-            // 1. Limpieza física de fotos marcadas
-            PhotoService.deletePhotosFromDisk(fotosMarcadasBorrar.value);
-
-            // 2. Preparar contexto para el servicio de guardado
-            const context = {
-                fechaActual: fechaActual.value,
-                encuestador: encuestador.value,
-                idObject: idObject.value,
-                localizacion: localizacion.value,
-                latLng: latLng,
-                localProj: localProj
-            };
-
-            // 3. Ejecutar guardado mediante SyncService
-            const savedId = SyncService.saveData(data, currentId.value, context);
+            // 1. Ejecutar guardado mediante SyncService
+            const savedId = SyncService.saveData(data, currentId.value, getContext());
 
             if (savedId !== null) {
                 currentId.value = savedId;
 
-                // 4. Reset de tracking de fotos tras éxito
-                fotosOriginales.value = [];
-                fotosNuevas.value = [];
-                fotosMarcadasBorrar.value = [];
+                // 2. Confirmar transacción de fotos (borrar marcadas, limpiar buffers)
+                PhotoService.commit(vueAppContext);
 
-                // Volver a lista y recargar
+                // 3. Volver a lista y recargar
                 volver();
                 init();
             }
@@ -295,14 +259,12 @@ const app = createApp({
             const itemToDelete = listData.value.find(item => item.Id === id);
             if (!itemToDelete) return;
 
-            const type = itemToDelete.Data?.Type;
-            const hasEncuesta = listData.value.some(item => item.Data?.Type === 'Ficha');
-
-            // 1. Validar reglas de negocio
-            if (hasEncuesta && type === 'Entrevistado') {
+            // 1. Validar reglas de negocio para borrado
+            const deletion = WorkflowService.validateDeletion(itemToDelete.Data?.Type, listData.value);
+            if (!deletion.allowed) {
                 showConfirmModal({
                     icon: '⚠️', title: 'Acción impedida',
-                    message: 'No puede eliminar al Entrevistado porque existe una Encuesta Catastral vinculada.',
+                    message: deletion.message,
                     confirmText: 'Entendido', cancelText: ''
                 });
                 return;
@@ -317,24 +279,11 @@ const app = createApp({
                     // Sincronizar con backend
                     SyncService.deleteData(id);
 
-                    // Buscar el índice REAL para actualizar UI
-                    const realIndex = listData.value.findIndex(item => item.Id === id);
-                    if (realIndex !== -1) {
-                        listData.value.splice(realIndex, 1);
+                    // 3. Ejecutar posibles borrados en cascada (reglas de negocio)
+                    const cascadeId = WorkflowService.executeCascadeDeletion(itemToDelete.Data?.Type, listData.value);
 
-                        // Lógica de borrado en cascada (Familiares depende de Propietario Natural)
-                        if (type === 'SujetoNatural') {
-                            const stillHasNatural = listData.value.some(x => x.Data?.Type === 'SujetoNatural');
-                            if (!stillHasNatural) {
-                                const famIdx = listData.value.findIndex(x => x.Data?.Type === 'Familiares');
-                                if (famIdx !== -1) {
-                                    SyncService.deleteData(listData.value[famIdx].Id);
-                                    listData.value.splice(famIdx, 1);
-                                    console.log('🗑️ Eliminada Composición Familiar por falta de Propietario Natural');
-                                }
-                            }
-                        }
-                    }
+                    // 4. Actualizar UI
+                    listData.value = listData.value.filter(item => item.Id !== id && item.Id !== cascadeId);
                 }
             });
         };
@@ -347,27 +296,13 @@ const app = createApp({
         // Función para crear automáticamente un entrevistado clonando datos de un propietario natural
         const crearEntrevistadoDesdePropietario = (propietarioId) => {
             const propietarioObj = listData.value.find(item => item.Id === propietarioId);
-            if (!propietarioObj || !propietarioObj.Data) return;
-
             showConfirmModal({
-                icon: '🎤',
-                title: 'Crear Entrevistado',
+                icon: '🎤', title: 'Crear Entrevistado',
                 message: '¿Desea crear un Entrevistado automáticamente con los datos de este Propietario Natural?',
                 confirmText: 'Sí, crear',
                 onConfirm: () => {
-                    const nuevo = ModelsFactory.createEntrevistado();
-
-                    // 1. Clonar datos personales y de residencia
-                    ClonadorService.clonarDatos(propietarioObj.Data, nuevo, ClonadorService.CAMPOS_COMUNES_PROPIETARIO_ENTREVISTADO);
-
-                    // 2. Ajustes específicos de Entrevistado
-                    nuevo.RelacionConParcelaCatalog = 1; // Propietario
-
-                    // 3. Ejecutar guardado silencioso (-1 para nuevo)
-                    const context = { fechaActual: fechaActual.value, encuestador: encuestador.value, idObject: idObject.value, localizacion: localizacion.value, latLng, localProj };
-                    SyncService.saveData(nuevo, -1, context);
-
-                    init(); // Recargar lista
+                    ConversionService.propietarioAEntrevistado(propietarioObj, getContext());
+                    init();
                 }
             });
         };
@@ -375,24 +310,13 @@ const app = createApp({
         // Función para crear automáticamente un propietario natural clonando datos de un entrevistado
         const crearPropietarioDesdeEntrevistado = (entrevistadoId) => {
             const entrevistadoObj = listData.value.find(item => item.Id === entrevistadoId);
-            if (!entrevistadoObj || !entrevistadoObj.Data) return;
-
             showConfirmModal({
-                icon: '👤',
-                title: 'Crear Propietario Natural',
+                icon: '👤', title: 'Crear Propietario Natural',
                 message: '¿Desea crear un Propietario Natural automáticamente con los datos de este Entrevistado?',
                 confirmText: 'Sí, crear',
                 onConfirm: () => {
-                    const nuevo = ModelsFactory.createSujetoNatural();
-
-                    // 1. Clonar datos personales y de residencia
-                    ClonadorService.clonarDatos(entrevistadoObj.Data, nuevo, ClonadorService.CAMPOS_COMUNES_PROPIETARIO_ENTREVISTADO);
-
-                    // 2. Ejecutar guardado silencioso (-1 para nuevo)
-                    const context = { fechaActual: fechaActual.value, encuestador: encuestador.value, idObject: idObject.value, localizacion: localizacion.value, latLng, localProj };
-                    SyncService.saveData(nuevo, -1, context);
-
-                    init(); // Recargar lista
+                    ConversionService.entrevistadoAPropietario(entrevistadoObj, getContext());
+                    init();
                 }
             });
         };
@@ -491,17 +415,13 @@ const app = createApp({
         const startCreate = (type) => {
             console.log('🏁 Iniciando creación:', type);
 
-            // 1. Validaciones de Exclusividad de Propietarios (REMOVIDO: Ahora se permite mezcla y multiplicidad)
-            const hasNatural = listData.value.some(item => item.Data?.Type === 'SujetoNatural');
-            const hasJuridico = listData.value.some(item => item.Data?.Type === 'SujetoJuridico');
-
-            // 2. Validación de Entrevistado Único
-            const hasEntrevistado = listData.value.some(item => item.Data?.Type === 'Entrevistado');
-            if (type === 'Entrevistado' && hasEntrevistado) {
+            // 1. Validar reglas de negocio con WorkflowService
+            const workflow = WorkflowService.validateCreation(type, listData.value);
+            if (!workflow.allowed) {
                 showConfirmModal({
-                    icon: '🚫',
-                    title: 'Límite alcanzado',
-                    message: 'Solo se puede registrar un (1) Entrevistado por predio.',
+                    icon: workflow.icon || '⚠️',
+                    title: workflow.title,
+                    message: workflow.message,
                     confirmText: 'Entendido',
                     cancelText: '',
                     onConfirm: () => { }
@@ -509,20 +429,8 @@ const app = createApp({
                 return;
             }
 
-            // 2.5 Validación de Familiares Único y Dependencia
+            // 2. Caso especial: Familiares (si ya existe, redirigir a edición en vez de crear nuevo)
             if (type === 'Familiares') {
-                if (!hasNatural) {
-                    showConfirmModal({
-                        icon: '⚠️',
-                        title: 'Acción requerida',
-                        message: 'Solo se pueden agregar integrantes familiares si existe al menos un Propietario Natural registrado.',
-                        confirmText: 'Entendido',
-                        cancelText: '',
-                        onConfirm: () => { }
-                    });
-                    return;
-                }
-
                 const existing = listData.value.find(item => item.Data?.Type === 'Familiares');
                 if (existing) {
                     editItem(existing);
@@ -530,40 +438,12 @@ const app = createApp({
                 }
             }
 
-            // 3. Validación de Encuesta Catastral
-            if (type === 'Ficha') {
-                const hasEncuesta = listData.value.some(item => item.Data?.Type === 'Ficha');
-                if (hasEncuesta) {
-                    showConfirmModal({
-                        icon: '🚫',
-                        title: 'Límite alcanzado',
-                        message: 'Solo se puede registrar una (1) Encuesta Catastral por predio.',
-                        confirmText: 'Entendido',
-                        cancelText: '',
-                        onConfirm: () => { }
-                    });
-                    return;
-                }
-
-                if (!hasEntrevistado) {
-                    showConfirmModal({
-                        icon: '⚠️',
-                        title: 'Faltan datos',
-                        message: 'Debe registrar primero un Entrevistado antes de realizar la encuesta.',
-                        confirmText: 'Entendido',
-                        cancelText: '',
-                        onConfirm: () => { }
-                    });
-                    return;
-                }
-            }
-
-            // 4. Lógica de Copia (si aplica)
+            // 3. Garantizar limpieza de datos de copia si no existe
             if (!pendingCopyData.value) {
                 pendingCopyData.value = null;
             }
 
-            // 5. Proceder con el reset y cambio de vista
+            // 4. Proceder con el reset y cambio de vista
             resetForm(type);
             operation.value = 'Create';
         };
@@ -619,13 +499,15 @@ const app = createApp({
             latLng,
             localProj,
             localizacion,
-            rutasAdyacentes,
             listData,
             sortedListData,
             getDisplayName,
             getDisplayInfo,
             formData,
             fotos,
+            fotosOriginales,
+            fotosNuevas,
+            fotosMarcadasBorrar,
             encuestador,
 
             // Catálogo Global (un nivel - ej. Profesión)
@@ -652,7 +534,8 @@ const app = createApp({
             startCopy,
             hasEntrevistado,
             crearEntrevistadoDesdePropietario,
-            crearPropietarioDesdeEntrevistado
+            crearPropietarioDesdeEntrevistado,
+            getContext
         };
     }
 });
@@ -667,160 +550,12 @@ window.app = app;
 let vueAppContext = null;
 
 // Función global para agregar foto desde Android
-window.addPhoto = function (filename, base64Data) {
-    console.log('📷 Foto capturada:', filename);
-    if (!vueAppContext) return;
+window.addPhoto = (filename, base64Data) => PhotoService.handleAndroidPhoto(filename, base64Data, vueAppContext);
 
-    try {
-        const fotoObj = {
-            name: filename,
-            data: base64Data ? `data:image/jpeg;base64,${base64Data}` : null
-        };
-
-        // Actualizar estado Vue
-        vueAppContext.fotos.value.push(fotoObj);
-        vueAppContext.fotosNuevas.value.push({ ...fotoObj });
-
-        // Sincronizar campo Imagenes en el modelo
-        vueAppContext.formData.value.Imagenes = vueAppContext.fotos.value.map(f => f.name).join(',');
-    } catch (error) {
-        console.error('❌ Error agregando foto:', error);
-    }
-};
-
-// Función global para eliminar foto (lógica transaccional)
-window.deletePhoto = function (filename) {
-    if (!vueAppContext) return;
-
-    try {
-        const esNueva = vueAppContext.fotosNuevas.value.some(f => f.name === filename);
-        const esOriginal = vueAppContext.fotosOriginales.value.some(f => f.name === filename);
-
-        if (esNueva) {
-            // Borrado físico inmediato para fotos nuevas
-            PhotoService.deletePhotosFromDisk([{ name: filename }]);
-            const idx = vueAppContext.fotosNuevas.value.findIndex(f => f.name === filename);
-            if (idx > -1) vueAppContext.fotosNuevas.value.splice(idx, 1);
-        } else if (esOriginal) {
-            // Marcado de borrado diferido para fotos que ya estaban en BD
-            const foto = vueAppContext.fotosOriginales.value.find(f => f.name === filename);
-            if (foto) vueAppContext.fotosMarcadasBorrar.value.push({ ...foto });
-        }
-
-        // Quitar de UI y actualizar modelo
-        const idxUI = vueAppContext.fotos.value.findIndex(f => f.name === filename);
-        if (idxUI > -1) {
-            vueAppContext.fotos.value.splice(idxUI, 1);
-            vueAppContext.formData.value.Imagenes = vueAppContext.fotos.value.map(f => f.name).join(',');
-        }
-    } catch (error) {
-        console.error('❌ Error eliminando foto:', error);
-    }
-};
-
-// Variables globales para el modal de rutas
-let routeSelectionCallback = null;
-
-window.openRouteModal = function (rutas, callback) {
-    const modal = document.getElementById('route-selection-modal');
-    const listContainer = document.getElementById('route-list');
-
-    if (!modal || !listContainer) return;
-
-    // Guardar callback
-    routeSelectionCallback = callback;
-
-    // Limpiar lista
-    listContainer.innerHTML = '';
-
-    // Crear botones
-    rutas.forEach(ruta => {
-        const btn = document.createElement('div');
-        btn.className = 'route-btn';
-        btn.innerHTML = `
-            <div>
-                <div class="route-btn-code">${ruta.localizacion}</div>
-                <div class="route-btn-details">${ruta.tipo} • ${ruta.direccion || '?'}</div>
-            </div>
-            <div class="route-btn-dist">${ruta.distancia}m</div>
-        `;
-
-        btn.onclick = () => {
-            selectRoute(ruta);
-        };
-
-        listContainer.appendChild(btn);
-    });
-
-    // Mostrar modal
-    modal.style.display = 'flex';
-    requestAnimationFrame(() => {
-        modal.classList.add('visible');
-    });
-};
-
-window.closeRouteModal = function () {
-    const modal = document.getElementById('route-selection-modal');
-    if (modal) {
-        modal.classList.remove('visible');
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
-    routeSelectionCallback = null;
-};
-
-function selectRoute(ruta) {
-    console.log('✅ Ruta seleccionada:', ruta);
-    // Guardar referencia local porque closeRouteModal limpia la global
-    const callback = routeSelectionCallback;
-
-    window.closeRouteModal();
-
-    if (callback) {
-        callback(ruta);
-    }
-}
+// Función global para eliminar foto
+window.deletePhoto = (filename) => PhotoService.handleAndroidDelete(filename, vueAppContext);
 
 // Función global para cargar datos existentes (modo edición desde marcador)
-window.loadExistingData = function (id, jsonData) {
-    console.log('📝 Cargando datos existentes - ID:', id);
-
-    if (!vueAppContext) {
-        console.error('❌ Vue app context no disponible');
-        return;
-    }
-
-    try {
-        const data = JSON.parse(jsonData);
-
-
-
-        // Agregar a listData si no existe
-        const existingIndex = vueAppContext.listData.value.findIndex(item => item.Id === id);
-
-        if (existingIndex === -1) {
-            // Agregar a la lista
-            vueAppContext.listData.value.push({
-                Id: id,
-                Data: data
-            });
-        }
-
-        // Llamar updateData con el índice
-        const index = existingIndex !== -1 ? existingIndex : vueAppContext.listData.value.length - 1;
-
-        // Ejecutar después de un tick para asegurar que Vue haya procesado los cambios
-        setTimeout(() => {
-            if (typeof vueAppContext.updateData === 'function') {
-                vueAppContext.updateData(index);
-                console.log('✅ Datos cargados para edición');
-            }
-        }, 100);
-
-    } catch (error) {
-        console.error('❌ Error cargando datos existentes:', error);
-    }
-};
+window.loadExistingData = (id, jsonData) => SyncService.handleLoadData(id, jsonData, vueAppContext);
 
 // La función showConfirmModal ahora reside en utils.js
