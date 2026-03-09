@@ -6,10 +6,10 @@
 window.ModelsFactory = {
 
     /**
-     * Crea un modelo vacío de Encuesta Catastral (Ficha)
+     * Crea un modelo vacío de Ficha (Encuesta Catastral)
      */
-    createEncuestaCatastral: (ctx) => ({
-        Type: 'EncuestaCatastral',
+    createFicha: (ctx) => ({
+        Type: 'Ficha',
         NoEncuesta: '',
         Consecutivo: 0,
         IdPropiedad: window.generateUUID ? window.generateUUID() : '',
@@ -67,7 +67,7 @@ window.ModelsFactory = {
         Encuestador: ctx?.enc || null,
         IdObject: ctx?.idObject || 0,
         LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
-        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
         Imagenes: '',
 
         // Helpers UI
@@ -76,10 +76,10 @@ window.ModelsFactory = {
     }),
 
     /**
-     * Crea un modelo de Propietario Natural
+     * Crea un modelo de Sujeto Natural (Persona Natural / Poseedor)
      */
-    createPropietarioNatural: (ctx) => ({
-        Type: 'PropietarioNatural',
+    createSujetoNatural: (ctx) => ({
+        Type: 'SujetoNatural',
         FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
         TipoIdentificacionCatalog: null,
         Identificacion: '',
@@ -102,19 +102,20 @@ window.ModelsFactory = {
         Encuestador: ctx?.enc || null,
         IdObject: ctx?.idObject || 0,
         LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
-        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
         Imagenes: ''
     }),
 
     /**
-     * Crea un modelo de Propietario Jurídico
+     * Crea un modelo de Sujeto Jurídico (Persona Jurídica)
      */
-    createPropietarioJuridica: (ctx) => ({
-        Type: 'PropietarioJuridica',
+    createSujetoJuridico: (ctx) => ({
+        Type: 'SujetoJuridico',
+        Identificacion: '',
         RazonSocial: '',
         RegistradaEn: '',
         FechaRegistro: null,
-        TipoPersonaJuridica: null,
+        TipoPersonaJuridicaCatalog: null,
         NroSocios: 0,
         NroSocias: 0,
         Colectivo: '',
@@ -127,7 +128,7 @@ window.ModelsFactory = {
         Encuestador: ctx?.enc || null,
         IdObject: ctx?.idObject || 0,
         LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
-        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
         Imagenes: ''
     }),
 
@@ -157,7 +158,7 @@ window.ModelsFactory = {
         Encuestador: ctx?.enc || null,
         IdObject: ctx?.idObject || 0,
         LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
-        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
         Imagenes: ''
     }),
 
@@ -174,7 +175,7 @@ window.ModelsFactory = {
         Encuestador: ctx?.enc || null,
         IdObject: ctx?.idObject || 0,
         LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
-        LocalProj: { East: ctx?.x || 0, North: ctx?.y || 0 },
+        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
         Imagenes: ''
     }),
 
@@ -194,7 +195,7 @@ window.ModelsFactory = {
         ClasificacionVial: '',
         Observaciones: '',
         LatLng: { Lat: lat, Lng: lng },
-        LocalProj: { East: x, North: y },
+        LocalProj: { x: x, y: y },
         CondicionMeteorol: '',
         Fecha: null, Encuestador: null, Imagenes: '', IdObject: 0, Localizacion: ''
     }),
@@ -264,7 +265,7 @@ window.ModelsFactory = {
         ]),
         ComplementariasObservaciones: null,
         LatLng: { Lat: lat, Lng: lng },
-        LocalProj: { East: x, North: y },
+        LocalProj: { x: x, y: y },
         CondicionMeteorol: null,
         Fecha: null, Encuestador: null, Imagenes: '', IdObject: 0, Localizacion: '', CodigoCamino: null
     }),

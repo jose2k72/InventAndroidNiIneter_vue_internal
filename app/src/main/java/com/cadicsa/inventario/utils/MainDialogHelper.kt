@@ -269,6 +269,9 @@ class MainDialogHelper(private val activity: AppCompatActivity) {
         } else {
             builder.setNegativeButton("No", null)
         }
+        builder.show()
+    }
+
     /**
      * Diálogo de error fatal - Cierra la aplicación por completo
      */

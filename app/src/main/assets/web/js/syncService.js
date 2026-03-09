@@ -22,10 +22,10 @@ window.SyncService = {
             Lng: context.latLng.lng
         };
 
-        // CORRECCIÓN: Usar x e y del objeto reactivo localProj correctamente
+        // CORRECCIÓN: Usar x e y del objeto reactivo localProj correctamente (Estandarización CADIC)
         data.LocalProj = {
-            East: context.localProj.x,
-            North: context.localProj.y
+            x: context.localProj.x,
+            y: context.localProj.y
         };
 
         if (typeof Android !== 'undefined') {

@@ -328,15 +328,15 @@
         <!-- Vista Lista -->
         <div v-if="operation === 'List'" class="container">
             <nav class="navbar">
-                <button class="nav-btn" @click="startCreate('EncuestaCatastral')">
-                    <img src="images/survey.svg" alt="Encuesta">
-                    <span>ENCUESTA</span>
+                <button class="nav-btn" @click="startCreate('Ficha')">
+                    <img src="images/survey.svg" alt="Ficha">
+                    <span>ENCUESTA CATASTRAL</span>
                 </button>
-                <button class="nav-btn" @click="startCreate('PropietarioNatural')">
+                <button class="nav-btn" @click="startCreate('SujetoNatural')">
                     <img src="images/person.svg" alt="Propietario">
-                    <span>PROPIETARIO NATURAL</span>
+                    <span>PROPIETARIO NATURAL / POSEEDOR</span>
                 </button>
-                <button class="nav-btn" @click="startCreate('PropietarioJuridica')">
+                <button class="nav-btn" @click="startCreate('SujetoJuridico')">
                     <img src="images/building.svg" alt="Propietario">
                     <span>PROPIETARIO JURÍDICO</span>
                 </button>
@@ -414,7 +414,7 @@
                         <td style="font-weight: bold; color: #1565C0;">{{ getDisplayName(item.Data?.Type) }}</td>
                         <td>{{ getDisplayInfo(item) }}</td>
                         <td>
-                            <button v-if="item.Data?.Type === 'PropietarioNatural' && !hasEntrevistado"
+                            <button v-if="item.Data?.Type === 'SujetoNatural' && !hasEntrevistado"
                                 class="btn-create-entrevistado"
                                 title="Toma los datos de este propietario y crea un entrevistado"
                                 @click.stop="crearEntrevistadoDesdePropietario(item.Id)">
@@ -450,13 +450,12 @@
                 @camera="openCamera"></form-costo>
 
             <!-- Formularios INETER -->
-            <form-encuesta-catastral v-if="formType === 'EncuestaCatastral'" :data="formData"
-                :localizacion="localizacion" :fotos="fotos" @save="sendData" @cancel="volver"
-                @camera="openCamera"></form-encuesta-catastral>
-            <form-propietario-natural v-if="formType === 'PropietarioNatural'" :data="formData" @save="sendData"
-                @cancel="volver" @camera="openCamera"></form-propietario-natural>
-            <form-propietario-juridica v-if="formType === 'PropietarioJuridica'" :data="formData" @save="sendData"
-                @cancel="volver" @camera="openCamera"></form-propietario-juridica>
+            <form-ficha v-if="formType === 'Ficha'" :data="formData" :localizacion="localizacion" :fotos="fotos"
+                @save="sendData" @cancel="volver" @camera="openCamera"></form-ficha>
+            <form-sujeto-natural v-if="formType === 'SujetoNatural'" :data="formData" @save="sendData" @cancel="volver"
+                @camera="openCamera"></form-sujeto-natural>
+            <form-sujeto-juridico v-if="formType === 'SujetoJuridico'" :data="formData" @save="sendData"
+                @cancel="volver" @camera="openCamera"></form-sujeto-juridico>
             <form-entrevistado v-if="formType === 'Entrevistado'" :data="formData" @save="sendData" @cancel="volver"
                 @camera="openCamera"></form-entrevistado>
             <form-familiares v-if="formType === 'Familiares'" :data="formData" @save="sendData"
@@ -510,9 +509,9 @@
     <script src="js/components/CatalogoSelectorTwoLevels.js"></script>
     <script src="js/components/FormAcera.js"></script>
     <script src="js/components/FormCosto.js"></script>
-    <script src="js/components/FormEncuestaCatastral.js"></script>
-    <script src="js/components/FormPropietarioNatural.js"></script>
-    <script src="js/components/FormPropietarioJuridica.js"></script>
+    <script src="js/components/FormFicha.js"></script>
+    <script src="js/components/FormSujetoNatural.js"></script>
+    <script src="js/components/FormSujetoJuridico.js"></script>
     <script src="js/components/FormEntrevistado.js"></script>
     <script src="js/components/FormFamiliares.js"></script>
 

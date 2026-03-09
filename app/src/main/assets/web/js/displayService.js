@@ -8,9 +8,9 @@ window.DisplayService = {
      */
     getShortName: function (type) {
         const names = {
-            'EncuestaCatastral': 'ENCUESTA',
-            'PropietarioNatural': 'PROP. NAT.',
-            'PropietarioJuridica': 'PROP. JUR.',
+            'Ficha': 'ENCUESTA',
+            'SujetoNatural': 'PROP. NATURAL',
+            'SujetoJuridico': 'PROP. JURÍDICA',
             'Entrevistado': 'ENTREVIST.',
             'Familiares': 'FAMILIA'
         };
@@ -27,16 +27,16 @@ window.DisplayService = {
         if (!data) return '-';
 
         switch (data.Type) {
-            case 'EncuestaCatastral':
+            case 'Ficha':
                 return data.NombreFinca || localizacionDefault || '-';
 
             case 'Familiares':
                 return `Integrantes: ${data.Familiares?.length || 0}`;
 
-            case 'PropietarioJuridica':
+            case 'SujetoJuridico':
                 return data.RazonSocial || '-';
 
-            case 'PropietarioNatural':
+            case 'SujetoNatural':
             case 'Entrevistado':
                 const first = data.FirstName || '';
                 const second = data.SecondName ? data.SecondName.charAt(0).toUpperCase() + '.' : '';

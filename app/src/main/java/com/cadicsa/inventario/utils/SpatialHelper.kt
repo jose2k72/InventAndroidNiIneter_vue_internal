@@ -267,7 +267,7 @@ object SpatialHelper {
             while (cursor.moveToNext()) {
                 if (GeometryUtil.isPointInPolygon(cursor.getDouble(1), cursor.getDouble(2), geomPredio)) {
                     val json = try { org.json.JSONObject(cursor.getString(0)) } catch (e: Exception) { null }
-                    if (json?.optString("Type") == "EncuestaCatastral") {
+                    if (json?.optString("Type") == "Ficha") {
                         val c = json.optInt("Consecutivo", 0)
                         if (c > maxObserved) maxObserved = c
                     }

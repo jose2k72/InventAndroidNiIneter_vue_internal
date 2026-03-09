@@ -3,11 +3,11 @@
  * Formulario para el Propietario (Persona Natural) basado en Person.cs de C#
  */
 
-const FormPropietarioNatural = {
+const FormSujetoNatural = {
     props: ['data'],
     template: `
         <div class="form-container">
-            <h2>👤 Propietario (Persona Natural)</h2>
+            <h2>👤 Propietario Natural / Poseedor</h2>
             
             <div class="section">
                 <h3>🆔 Identificación</h3>
@@ -390,4 +390,4 @@ const FormPropietarioNatural = {
 };
 
 // Registrar componente
-window.app.component('form-propietario-natural', FormPropietarioNatural);
+window.app.component('form-sujeto-natural', FormSujetoNatural);

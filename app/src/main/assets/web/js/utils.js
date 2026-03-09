@@ -74,3 +74,40 @@ window.showConfirmModal = function (options) {
         }
     });
 };
+
+/**
+ * Convierte una fecha a formato ISO (YYYY-MM-DD)
+ */
+window.formatDateToISO = function (date) {
+    if (!date) return null;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split('T')[0];
+};
+
+/**
+ * Convierte una fecha ISO a formato local (DD/MM/YYYY)
+ */
+window.formatISOToLocale = function (isoString) {
+    if (!isoString) return '';
+    try {
+        const [year, month, day] = isoString.split('-');
+        if (!year || !month || !day) return isoString;
+        return `${day}/${month}/${year}`;
+    } catch (e) {
+        return isoString;
+    }
+};
+
+/**
+ * Extrae las iniciales de un nombre completo
+ * @param {string} name - Nombre completo
+ */
+window.getInitials = function (name) {
+    if (!name) return '';
+    return name
+        .split(' ')
+        .filter(part => part.length > 0)
+        .map(part => part[0].toUpperCase())
+        .join('');
+};

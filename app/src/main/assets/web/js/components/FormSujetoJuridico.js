@@ -3,11 +3,11 @@
  * Formulario para el Propietario (Persona Jurídica) basado en PropietarioPersonaJuridica.cs
  */
 
-const FormPropietarioJuridica = {
+const FormSujetoJuridico = {
     props: ['data'],
     template: `
         <div class="form-container">
-            <h2>🏢 Propietario (Persona Jurídica)</h2>
+            <h2>🏢 Propietario Jurídico</h2>
             
             <div class="section">
                 <h3>🆔 Identificación y Razón Social</h3>
@@ -141,4 +141,4 @@ const FormPropietarioJuridica = {
 };
 
 // Registrar componente
-window.app.component('form-propietario-juridica', FormPropietarioJuridica);
+window.app.component('form-sujeto-juridico', FormSujetoJuridico);

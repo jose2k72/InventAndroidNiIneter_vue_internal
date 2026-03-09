@@ -21,6 +21,10 @@ Este archivo establece las reglas de estandarización para el desarrollo, refact
     *   *Ejemplo*: `String.format(java.util.Locale.US, "%.10f", latitud)`.
     *   *Objetivo*: Garantizar el punto decimal (`.`) independientemente de si el usuario tiene el sistema en español (donde se usaría coma `,`).
 
+3.  **Identidad del Encuestador (Auditoría)**:
+    *   El campo `Encuestador` en el JSON debe contener únicamente las **iniciales** del usuario (ej: "JB" para "Jose Blanco").
+    *   *Objetivo*: Reducir la verbosidad del JSON y estandarizar el registro de auditoría.
+
 ## 📅 Estándar de Fecha y Hora
 
 1.  **Persistencia e Intercambio**:
@@ -41,6 +45,11 @@ Este archivo establece las reglas de estandarización para el desarrollo, refact
 2.  **Precisión**:
     *   **Cálculos**: Mantener precisión total (`Double`).
     *   **UI**: Formatear a **2 decimales** para visualización del usuario final.
+
+3.  **Nomenclatura en JSON (LocalProj)**:
+    *   Las coordenadas proyectadas dentro del objeto `LocalProj` deben usar siempre las claves **`x`** e **`y`** (minúsculas).
+    *   *Prohibido*: El uso de `East`, `North`, `Easting` o `Northing`.
+    *   *Objetivo*: Mantener la consistencia con los estándares matemáticos y de desarrollo web (Canvas/SVG).
 
 ## 🛠️ Calidad de Código y Depuración
 

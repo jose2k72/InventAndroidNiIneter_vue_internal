@@ -75,8 +75,23 @@ const app = createApp({
                     latLng.lat = Math.round(Android.getLat() * 1000000) / 1000000;
                     latLng.lng = Math.round(Android.getLng() * 1000000) / 1000000;
                     localizacion.value = Android.getLocalizacion ? Android.getLocalizacion() : '';
-                    encuestador.value = Android.getEncuestador ? Android.getEncuestador() : '';
-                    fechaActual.value = Android.getFecha ? Android.getFecha() : '';
+                    const rawEnc = Android.getEncuestador ? Android.getEncuestador() : '';
+                    encuestador.value = getInitials(rawEnc);
+
+                    const rawFecha = Android.getFecha ? Android.getFecha() : '';
+                    // Si viene como DD/MM/YYYY o similar de Android, intentar normalizar
+                    if (rawFecha && rawFecha.includes('/')) {
+                        const parts = rawFecha.split('/');
+                        if (parts.length === 3) {
+                            // Asumiendo DD/MM/YYYY del equipo Android
+                            fechaActual.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                        } else {
+                            fechaActual.value = formatDateToISO(new Date());
+                        }
+                    } else {
+                        fechaActual.value = rawFecha || formatDateToISO(new Date());
+                    }
+
                     idObject.value = Android.getIdObject ? Android.getIdObject() : 0;
                     areaCalculada.value = Android.getAreaCalculada ? Android.getAreaCalculada() : 0;
                     municipioInterceptado.value = Android.getMunicipioInterceptado ? Android.getMunicipioInterceptado() : '';
@@ -112,8 +127,8 @@ const app = createApp({
                 localProj.x = 500000;
                 localProj.y = 1300000;
                 localizacion.value = 'Desarrollo - Localización de Prueba';
-                encuestador.value = 'Developer';
-                fechaActual.value = new Date().toLocaleDateString('es-CR');
+                encuestador.value = 'DEV';
+                fechaActual.value = formatDateToISO(new Date());
                 idObject.value = Date.now();
                 municipioInterceptado.value = '6065';
                 sectorInterceptado.value = '001';
@@ -152,8 +167,8 @@ const app = createApp({
                     formData.value = ModelsFactory.createAcera(ctx.lat, ctx.lng, ctx.x, ctx.y);
                 } else if (type === 'Costo') {
                     formData.value = ModelsFactory.createCosto(ctx.lat, ctx.lng, ctx.x, ctx.y);
-                } else if (type === 'EncuestaCatastral') {
-                    formData.value = ModelsFactory.createEncuestaCatastral(ctx);
+                } else if (type === 'Ficha') {
+                    formData.value = ModelsFactory.createFicha(ctx);
 
                     // Inicialización específica de Encuesta (Valores interceptados)
                     formData.value._isFromMap = true;
@@ -167,10 +182,10 @@ const app = createApp({
                     if (sectorInterceptado.value) {
                         formData.value.IdSector = sectorInterceptado.value;
                     }
-                } else if (type === 'PropietarioNatural') {
-                    formData.value = ModelsFactory.createPropietarioNatural(ctx);
-                } else if (type === 'PropietarioJuridica') {
-                    formData.value = ModelsFactory.createPropietarioJuridica(ctx);
+                } else if (type === 'SujetoNatural') {
+                    formData.value = ModelsFactory.createSujetoNatural(ctx);
+                } else if (type === 'SujetoJuridico') {
+                    formData.value = ModelsFactory.createSujetoJuridico(ctx);
                 } else if (type === 'Entrevistado') {
                     formData.value = ModelsFactory.createEntrevistado(ctx);
                 } else if (type === 'Familiares') {
@@ -281,7 +296,7 @@ const app = createApp({
             if (!itemToDelete) return;
 
             const type = itemToDelete.Data?.Type;
-            const hasEncuesta = listData.value.some(item => item.Data?.Type === 'EncuestaCatastral');
+            const hasEncuesta = listData.value.some(item => item.Data?.Type === 'Ficha');
 
             // 1. Validar reglas de negocio
             if (hasEncuesta && type === 'Entrevistado') {
@@ -308,8 +323,8 @@ const app = createApp({
                         listData.value.splice(realIndex, 1);
 
                         // Lógica de borrado en cascada (Familiares depende de Propietario Natural)
-                        if (type === 'PropietarioNatural') {
-                            const stillHasNatural = listData.value.some(x => x.Data?.Type === 'PropietarioNatural');
+                        if (type === 'SujetoNatural') {
+                            const stillHasNatural = listData.value.some(x => x.Data?.Type === 'SujetoNatural');
                             if (!stillHasNatural) {
                                 const famIdx = listData.value.findIndex(x => x.Data?.Type === 'Familiares');
                                 if (famIdx !== -1) {
@@ -368,7 +383,7 @@ const app = createApp({
                 message: '¿Desea crear un Propietario Natural automáticamente con los datos de este Entrevistado?',
                 confirmText: 'Sí, crear',
                 onConfirm: () => {
-                    const nuevo = ModelsFactory.createPropietarioNatural();
+                    const nuevo = ModelsFactory.createSujetoNatural();
 
                     // 1. Clonar datos personales y de residencia
                     ClonadorService.clonarDatos(entrevistadoObj.Data, nuevo, ClonadorService.CAMPOS_COMUNES_PROPIETARIO_ENTREVISTADO);
@@ -477,8 +492,8 @@ const app = createApp({
             console.log('🏁 Iniciando creación:', type);
 
             // 1. Validaciones de Exclusividad de Propietarios (REMOVIDO: Ahora se permite mezcla y multiplicidad)
-            const hasNatural = listData.value.some(item => item.Data?.Type === 'PropietarioNatural');
-            const hasJuridico = listData.value.some(item => item.Data?.Type === 'PropietarioJuridica');
+            const hasNatural = listData.value.some(item => item.Data?.Type === 'SujetoNatural');
+            const hasJuridico = listData.value.some(item => item.Data?.Type === 'SujetoJuridico');
 
             // 2. Validación de Entrevistado Único
             const hasEntrevistado = listData.value.some(item => item.Data?.Type === 'Entrevistado');
@@ -516,8 +531,8 @@ const app = createApp({
             }
 
             // 3. Validación de Encuesta Catastral
-            if (type === 'EncuestaCatastral') {
-                const hasEncuesta = listData.value.some(item => item.Data?.Type === 'EncuestaCatastral');
+            if (type === 'Ficha') {
+                const hasEncuesta = listData.value.some(item => item.Data?.Type === 'Ficha');
                 if (hasEncuesta) {
                     showConfirmModal({
                         icon: '🚫',
@@ -556,9 +571,9 @@ const app = createApp({
         // Ordenar y formatear lista para la tabla
         const sortedListData = Vue.computed(() => {
             const orderWeights = {
-                'EncuestaCatastral': 1,
-                'PropietarioNatural': 2,
-                'PropietarioJuridica': 2,
+                'Ficha': 1,
+                'SujetoNatural': 2,
+                'SujetoJuridico': 2,
                 'Entrevistado': 3,
                 'Familiares': 4
             };

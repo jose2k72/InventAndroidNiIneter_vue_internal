@@ -79,6 +79,10 @@ body {
 .nav-btn span {
     font-weight: 600;
     font-size: 12px;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 110px; /* Asegura que el texto rompa si es muy largo */
+    word-wrap: break-word;
 }
 
 /* ==========================================

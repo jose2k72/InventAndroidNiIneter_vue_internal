@@ -1,9 +1,9 @@
 /**
- * Componente FormEncuestaCatastral - Vue 3
+ * Componente FormFicha - Vue 3
  * Formulario para la Ficha (Encuesta Catastral) basado en Ficha.cs
  */
 
-const FormEncuestaCatastral = {
+const FormFicha = {
     props: ['data', 'fotos', 'localizacion'],
     template: `
         <div class="form-container">
@@ -18,7 +18,6 @@ const FormEncuestaCatastral = {
                     <span class="value">{{ formData.NoEncuesta }}</span>
                 </div>
                 
-                <!-- Municipio: esquema de FormPropietarioNatural -->
                 <!-- Municipio: esquema de FormPropietarioNatural -->
                 <div class="form-group">
                     <label :style="{color: errors.MunicipioCatalog ? 'red' : 'inherit', fontWeight: errors.MunicipioCatalog ? 'bold' : 'normal'}">Municipio *</label>
@@ -209,7 +208,7 @@ const FormEncuestaCatastral = {
                 </div>
             </div>
 
-            <!-- SECCIÓN 5: DATOS REGISTRALES (Movida) -->
+            <!-- SECCIÓN 5: DATOS REGISTRALES -->
             <div class="section">
                 <h3>📜 Datos Registrales</h3>
                 <div class="form-group checkbox-group">
@@ -342,6 +341,7 @@ const FormEncuestaCatastral = {
                     </div>
                 </div>
             </div>
+            
             <!-- SECCIÓN 8: CONFLICTOS -->
             <div class="section">
                 <h3>⚠️ Conflictos</h3>
@@ -368,7 +368,7 @@ const FormEncuestaCatastral = {
                         <input type="text" v-model="formData.ClaseConflictoOtroText" :style="{borderColor: errors.ClaseConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa el conflicto...">
                     </div>
 
-                    <!-- NUEVO: Vía de Gestión de Conflictos (Anidado) -->
+                    <!-- Vía de Gestión de Conflictos -->
                     <div class="form-group checkbox-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
                         <label class="checkbox-container">
                             <input type="checkbox" v-model="formData.TieneGestionConflicto">
@@ -429,7 +429,7 @@ const FormEncuestaCatastral = {
         Vue.onMounted(async () => {
             // Solo calcular si es un registro NUEVO (sin NoEncuesta)
             if (!formData.NoEncuesta) {
-                console.log('🏗️ Calculando ID de Encuesta exclusivo...');
+                console.log('🏗️ Calculando ID de Ficha exclusivo...');
                 try {
                     if (typeof Android !== 'undefined' && Android.getSiguienteConsecutivo) {
                         const lat = formData.LatLng?.Lat || 0;
@@ -465,7 +465,6 @@ const FormEncuestaCatastral = {
             if (formData._DeptoNombre) {
                 return { cod: formData._CodDepto || '', nombre: formData._DeptoNombre };
             }
-            // Fallback si no hay nombre pero hay código
             if (formData.MunicipioCatalog) {
                 const codDepto = String(formData.MunicipioCatalog).padStart(4, '0').slice(0, 2);
                 return { cod: codDepto, nombre: '...' };
@@ -479,7 +478,6 @@ const FormEncuestaCatastral = {
                 const codMuni = codFull.length >= 2 ? codFull.slice(-2) : codFull;
                 return { cod: codMuni, nombre: formData._MuniNombre };
             }
-            // Fallback si no hay nombre pero hay código
             if (formData.MunicipioCatalog) {
                 const codMuni = String(formData.MunicipioCatalog).slice(-2);
                 return { cod: codMuni, nombre: 'Cargando...' };
@@ -491,7 +489,6 @@ const FormEncuestaCatastral = {
             get: () => {
                 const val = formData.AreaEstimada;
                 if (val === null || val === undefined || val === '') return '';
-                // Solo redondear en la visualización si viene del mapa
                 if (formData._isFromMap) {
                     return parseFloat(val).toFixed(2);
                 }
@@ -520,7 +517,6 @@ const FormEncuestaCatastral = {
                     }
                 };
 
-                // Prioridad 1: Android Bridge (inmediato y offline)
                 if (window.Android && window.Android.loadCatalogJson) {
                     try {
                         const jsonStr = window.Android.loadCatalogJson(filename);
@@ -531,7 +527,6 @@ const FormEncuestaCatastral = {
                     } catch (e) { console.error('Error Bridge:', e); }
                 }
 
-                // Prioridad 2: Fetch (solo si falla el bridge o modo dev)
                 fetch(`data/${filename}`)
                     .then(r => r.json())
                     .then(processData)
@@ -539,13 +534,12 @@ const FormEncuestaCatastral = {
             }
         }, { immediate: true });
 
-        // Limpiar documentos al desmarcar la opción
+        // Limpiar documentos al desmarcar
         Vue.watch(() => formData.PresentaDocumentos, (newVal) => {
             if (!newVal) {
                 formData.Documentos = [];
                 formData.AreaTitulada = null;
                 formData.UnidadMedidaAreaTituladaCatalog = null;
-                // También limpiar errores visuales relacionados
                 delete errors.Documentos;
                 delete errors.AreaTitulada;
                 delete errors.UnidadMedidaAreaTituladaCatalog;
@@ -555,7 +549,7 @@ const FormEncuestaCatastral = {
             }
         });
 
-        // Limpiar datos registrales al desmarcar
+        // Limpiar datos registrales
         Vue.watch(() => formData.TieneDatosRegistrales, (newVal) => {
             if (!newVal) {
                 formData.FechaAdquisicion = null;
@@ -564,8 +558,6 @@ const FormEncuestaCatastral = {
                 formData.Tomo = '';
                 formData.Folio = '';
                 formData.Asiento = '';
-
-                // Limpiar errores visuales
                 delete errors.FechaAdquisicion;
                 delete errors.FechaRegistro;
                 delete errors.NoFinca;
@@ -575,31 +567,28 @@ const FormEncuestaCatastral = {
             }
         });
 
-        // Limpiar "A Favor De" al desmarcar
+        // Limpiar "A Favor De"
         Vue.watch(() => formData.EsAFavorDe, (newVal) => {
             if (!newVal) {
                 formData.AFavorDe = '';
                 formData.RelacionConPoseedorCatalog = 0;
                 formData._ParentescoName = '';
                 parentescoName.value = '';
-
-                // Limpiar errores visuales
                 delete errors.AFavorDe;
                 delete errors.RelacionConPoseedorCatalog;
             }
         });
 
-        // Watchers reactivos para limpiar errores al escribir/seleccionar
+        // Watchers para errores
         Vue.watch(() => formData.AFavorDe, (val) => { if (val?.trim()) delete errors.AFavorDe; });
         Vue.watch(() => formData.RelacionConPoseedorCatalog, (val) => { if (val) delete errors.RelacionConPoseedorCatalog; });
-
-        // Limpieza reactiva de errores registrales
         Vue.watch(() => formData.FechaAdquisicion, (val) => { if (val) delete errors.FechaAdquisicion; });
         Vue.watch(() => formData.FechaRegistro, (val) => { if (val) delete errors.FechaRegistro; });
         Vue.watch(() => formData.NoFinca, (val) => { if (val?.trim()) delete errors.NoFinca; });
         Vue.watch(() => formData.Tomo, (val) => { if (val?.trim()) delete errors.Tomo; });
         Vue.watch(() => formData.Folio, (val) => { if (val?.trim()) delete errors.Folio; });
         Vue.watch(() => formData.Asiento, (val) => { if (val?.trim()) delete errors.Asiento; });
+
         Vue.watch(() => formData.ClaseConflictoCatalog, (val) => {
             if (val) delete errors.ClaseConflictoCatalog;
             if (val !== 13) {
@@ -609,10 +598,9 @@ const FormEncuestaCatastral = {
         });
         Vue.watch(() => formData.ClaseConflictoOtroText, (val) => { if (val?.trim()) delete errors.ClaseConflictoOtroText; });
 
-        // Limpieza reactiva de Origen de la Tierra
         Vue.watch(() => formData.OrigenTierraCatalog, (val) => {
             if (val) delete errors.OrigenTierraCatalog;
-            if (val !== 1) { // 1 es "Otros"
+            if (val !== 1) {
                 formData.OrigenTierraOtroText = '';
                 delete errors.OrigenTierraOtroText;
             }
@@ -626,15 +614,11 @@ const FormEncuestaCatastral = {
                 formData.ClaseConflictoOtroText = '';
                 formData._ConflictoName = '';
                 conflictoName.value = '';
-
-                // Limpiar Gestión
                 formData.TieneGestionConflicto = false;
                 formData.GestionConflictoCatalog = null;
                 formData.GestionConflictoOtroText = '';
                 formData._GestionConflictoName = '';
                 gestionConflictoName.value = '';
-
-                // Limpiar errores visuales
                 delete errors.ClaseConflictoCatalog;
                 delete errors.ClaseConflictoOtroText;
                 delete errors.TieneGestionConflicto;
@@ -643,24 +627,20 @@ const FormEncuestaCatastral = {
             }
         });
 
-        // Limpiar Gestión de Conflictos al desmarcar
         Vue.watch(() => formData.TieneGestionConflicto, (newVal) => {
             if (!newVal) {
                 formData.GestionConflictoCatalog = null;
                 formData.GestionConflictoOtroText = '';
                 formData._GestionConflictoName = '';
                 gestionConflictoName.value = '';
-
-                // Limpiar errores visuales
                 delete errors.GestionConflictoCatalog;
                 delete errors.GestionConflictoOtroText;
             }
         });
 
-        // Observadores para Gestión de Conflictos
         Vue.watch(() => formData.GestionConflictoCatalog, (val) => {
             if (val) delete errors.GestionConflictoCatalog;
-            if (val !== 6) { // 6 es "Otra" en GestionConflicto.json
+            if (val !== 6) {
                 formData.GestionConflictoOtroText = '';
                 delete errors.GestionConflictoOtroText;
             }
@@ -672,12 +652,10 @@ const FormEncuestaCatastral = {
         const origenTierraName = Vue.ref(formData._OrigenTierraName || '');
         const gestionConflictoName = Vue.ref(formData._GestionConflictoName || '');
 
-        // Normalizar fechas de documentos
+        // Normalizar fechas
         formData.Documentos.forEach(doc => {
             if (doc.FechaDocumento) doc.FechaDocumento = doc.FechaDocumento.split('T')[0];
         });
-
-        // Normalizar fechas principales
         const dateFields = ['FechaAdquisicion', 'FechaRegistro'];
         dateFields.forEach(f => {
             if (formData[f]) formData[f] = formData[f].split('T')[0];
@@ -700,7 +678,7 @@ const FormEncuestaCatastral = {
             ]
         };
 
-        // --- Selectores Globales ---
+        // Selectores Globales
         const pedirMunicipioGlobal = () => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openMunicipio({
@@ -783,7 +761,6 @@ const FormEncuestaCatastral = {
             }
         };
 
-        // --- Gestión de Documentos ---
         const agregarDocumento = () => {
             formData.Documentos.push({
                 DocumentoCatalog: 0,
@@ -798,122 +775,115 @@ const FormEncuestaCatastral = {
         };
 
         const capturarFoto = () => {
-            if (typeof Android !== 'undefined') {
-                Android.Camera(formData.NombreFinca || 'ENCUESTA');
+            emit('camera');
+        };
+
+        const verFoto = (foto) => {
+            if (typeof Android !== 'undefined' && Android.showPhoto) {
+                Android.showPhoto(foto.name);
             }
         };
 
         const eliminarFoto = (filename) => {
-            if (typeof window.deletePhoto === 'function') {
+            if (window.deletePhoto) {
                 window.deletePhoto(filename);
             }
         };
 
-        const save = () => {
-            Object.keys(errors).forEach(key => delete errors[key]);
-            const errs = [];
+        const validate = () => {
+            let isValid = true;
+            Object.keys(errors).forEach(k => delete errors[k]);
 
-            if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; errs.push('Municipio'); }
-            if (!formData.NombreFinca?.trim()) { errors.NombreFinca = true; errs.push('Nombre Finca'); }
-            if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; errs.push('Tipo Encuesta'); }
-            if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; errs.push('Tipo Uso'); }
-            if (!formData.AreaEstimada) { errors.AreaEstimada = true; errs.push('Área Estimada'); }
-            if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; errs.push('Unidad Medida'); }
-            if (!formData.DerehoParcelaCatalog) { errors.DerehoParcelaCatalog = true; errs.push('Derecho Parcelario'); }
+            if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; isValid = false; }
+            if (!formData.NombreFinca?.trim()) { errors.NombreFinca = true; isValid = false; }
+            if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
+            if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
+            if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
+            if (!formData.DerehoParcelaCatalog) { errors.DerehoParcelaCatalog = true; isValid = false; }
 
-            // Validación de personas con derecho similar (> 0)
-            if (!(formData.NoPersonasSimilarDerecho > 0)) {
-                errors.NoPersonasSimilarDerecho = true;
-                errs.push('No. Personas Similar Derecho');
-            }
-
-            // Validación de Origen de la Tierra "Otro" (ID 1)
-            if (formData.OrigenTierraCatalog === 1 && !formData.OrigenTierraOtroText?.trim()) {
-                errors.OrigenTierraOtroText = true;
-                errs.push('Especificar Origen Tierra');
-            }
-
-            // Validación condicional de servidumbres "Otro"
-            if (formData.ServidumbreAguaCatalog === 4 && !formData.ServidumbreAguaOtroText?.trim()) {
-                errors.ServidumbreAguaOtroText = true; errs.push('Especificar Agua');
-            }
-            if (formData.ServidumbrePaseCatalog === 4 && !formData.ServidumbrePaseOtroText?.trim()) {
-                errors.ServidumbrePaseOtroText = true; errs.push('Especificar Pase');
-            }
-            if (formData.ServidumbreOtroCatalog === 4 && !formData.ServidumbreOtroOtroText?.trim()) {
-                errors.ServidumbreOtroOtroText = true; errs.push('Especificar Otro');
-            }
-
-            // Validación de documentos
             if (formData.PresentaDocumentos) {
-                if (!formData.AreaTitulada) { errors.AreaTitulada = true; errs.push('Área Titulada'); }
-                if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; errs.push('Unidad Título'); }
-
                 if (!formData.Documentos || formData.Documentos.length === 0) {
                     errors.Documentos = true;
-                    errs.push('Al menos un documento');
+                    isValid = false;
                 } else {
-                    // Validar cada documento individualmente
                     formData.Documentos.forEach((doc, idx) => {
-                        if (!doc.DocumentoCatalog) { errors[`Doc${idx}_Catalog`] = true; errs.push(`Doc ${idx + 1} Tipo`); }
-                        if (!doc.AutorNotario?.trim()) { errors[`Doc${idx}_Autor`] = true; errs.push(`Doc ${idx + 1} Autor`); }
-                        if (!doc.FechaDocumento) { errors[`Doc${idx}_Fecha`] = true; errs.push(`Doc ${idx + 1} Fecha`); }
+                        if (!doc.DocumentoCatalog) { errors['Doc' + idx + '_Catalog'] = true; isValid = false; }
+                        if (!doc.AutorNotario?.trim()) { errors['Doc' + idx + '_Autor'] = true; isValid = false; }
+                        if (!doc.FechaDocumento) { errors['Doc' + idx + '_Fecha'] = true; isValid = false; }
                     });
                 }
+                if (!formData.AreaTitulada) { errors.AreaTitulada = true; isValid = false; }
+                if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; isValid = false; }
             }
 
-            // Validación de datos registrales
             if (formData.TieneDatosRegistrales) {
-                if (!formData.FechaAdquisicion) { errors.FechaAdquisicion = true; errs.push('Fecha Adquisición'); }
-                if (!formData.FechaRegistro) { errors.FechaRegistro = true; errs.push('Fecha Registro'); }
-                if (!formData.NoFinca?.trim()) { errors.NoFinca = true; errs.push('No Finca'); }
-                if (!formData.Tomo?.trim()) { errors.Tomo = true; errs.push('Tomo'); }
-                if (!formData.Folio?.trim()) { errors.Folio = true; errs.push('Folio'); }
-                if (!formData.Asiento?.trim()) { errors.Asiento = true; errs.push('Asiento'); }
+                if (!formData.FechaAdquisicion) { errors.FechaAdquisicion = true; isValid = false; }
+                if (!formData.FechaRegistro) { errors.FechaRegistro = true; isValid = false; }
+                if (!formData.NoFinca?.trim()) { errors.NoFinca = true; isValid = false; }
+                if (!formData.Tomo?.trim()) { errors.Tomo = true; isValid = false; }
+                if (!formData.Folio?.trim()) { errors.Folio = true; isValid = false; }
+                if (!formData.Asiento?.trim()) { errors.Asiento = true; isValid = false; }
             }
 
-            // Validación de A Favor De
             if (formData.EsAFavorDe) {
-                if (!formData.AFavorDe?.trim()) { errors.AFavorDe = true; errs.push('Nombre Tercero'); }
-                if (!formData.RelacionConPoseedorCatalog) { errors.RelacionConPoseedorCatalog = true; errs.push('Parentesco'); }
+                if (!formData.AFavorDe?.trim()) { errors.AFavorDe = true; isValid = false; }
+                if (!formData.RelacionConPoseedorCatalog) { errors.RelacionConPoseedorCatalog = true; isValid = false; }
             }
 
-            // Validación de Conflictos
             if (formData.TieneConflicto) {
-                if (!formData.ClaseConflictoCatalog) {
-                    errors.ClaseConflictoCatalog = true;
-                    errs.push('Clase Conflicto');
-                } else if (formData.ClaseConflictoCatalog === 13 && !formData.ClaseConflictoOtroText?.trim()) {
+                if (!formData.ClaseConflictoCatalog) { errors.ClaseConflictoCatalog = true; isValid = false; }
+                if (formData.ClaseConflictoCatalog === 13 && !formData.ClaseConflictoOtroText?.trim()) {
                     errors.ClaseConflictoOtroText = true;
-                    errs.push('Especificar Conflicto');
+                    isValid = false;
                 }
-
                 if (formData.TieneGestionConflicto) {
-                    if (!formData.GestionConflictoCatalog) {
-                        errors.GestionConflictoCatalog = true;
-                        errs.push('Vía de Gestión de Conflictos');
-                    } else if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) {
+                    if (!formData.GestionConflictoCatalog) { errors.GestionConflictoCatalog = true; isValid = false; }
+                    if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) {
                         errors.GestionConflictoOtroText = true;
-                        errs.push('Especificar Vía de Gestión');
+                        isValid = false;
                     }
                 }
             }
-            if (errs.length > 0) {
-                const msg = '⚠️ No se puede salvar, faltan datos obligatorios.';
-                if (typeof Android !== 'undefined') Android.showAlert(msg); else alert(msg);
-                return;
-            }
 
-            emit('save', Vue.toRaw(formData));
+            return isValid;
+        };
+
+        const save = () => {
+            if (validate()) {
+                emit('save', JSON.parse(JSON.stringify(formData)));
+            } else {
+                if (typeof Android !== 'undefined' && Android.showToast) {
+                    Android.showToast('Por favor, complete los campos obligatorios marcados en rojo.');
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         };
 
         return {
-            formData, errors, catalogos,
-            muniDisplay, deptoDisplay, areaDisplay, parentescoName, conflictoName, origenTierraName, gestionConflictoName,
-            pedirMunicipioGlobal, pedirParentescoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
-            agregarDocumento, quitarDocumento, capturarFoto, eliminarFoto, save
+            formData,
+            errors,
+            catalogos,
+            muniDisplay,
+            deptoDisplay,
+            areaDisplay,
+            parentescoName,
+            conflictoName,
+            origenTierraName,
+            gestionConflictoName,
+            pedirMunicipioGlobal,
+            pedirParentescoGlobal,
+            pedirClaseConflictoGlobal,
+            pedirOrigenTierraGlobal,
+            pedirGestionConflictoGlobal,
+            pedirDocumentoGlobal,
+            agregarDocumento,
+            quitarDocumento,
+            capturarFoto,
+            verFoto,
+            eliminarFoto,
+            save
         };
     }
 };
 
-window.app.component('form-encuesta-catastral', FormEncuestaCatastral);
+window.app.component('form-ficha', FormFicha);
