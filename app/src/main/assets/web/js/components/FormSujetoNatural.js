@@ -25,6 +25,12 @@ const FormSujetoNatural = {
                         <input type="text" v-model="formData.Identificacion">
                     </div>
                 </div>
+
+                <!-- Especificar Tipo Identificación (cuando es 'Otro' ID 6) -->
+                <div v-if="formData.TipoIdentificacionCatalog == 6" class="form-group sub-section" style="margin-top: -10px; margin-bottom: 15px;">
+                    <label :style="{color: errors.TipoIdentificacionOtroText ? 'red' : 'inherit', fontWeight: errors.TipoIdentificacionOtroText ? 'bold' : 'normal'}">Especifique Tipo de Identificación *</label>
+                    <input type="text" v-model="formData.TipoIdentificacionOtroText" placeholder="Detalle el tipo de identificación...">
+                </div>
             </div>
 
             <div class="section">
@@ -127,6 +133,12 @@ const FormSujetoNatural = {
                         <label :style="{color: errors.NoPersonasSimilarDerecho ? 'red' : 'inherit', fontWeight: errors.NoPersonasSimilarDerecho ? 'bold' : 'normal'}">Número de personas con derecho similar *</label>
                         <input type="number" v-model.number="formData.NoPersonasSimilarDerecho" min="1">
                     </div>
+                </div>
+
+                <!-- Especificar Otro Derecho Parcelario (ID 5) -->
+                <div v-if="formData.DerehoParcelaCatalog == 5" class="form-group sub-section" style="margin-top: 10px; margin-bottom: 10px;">
+                    <label :style="{color: errors.DerehoParcelaOtroText ? 'red' : 'inherit', fontWeight: errors.DerehoParcelaOtroText ? 'bold' : 'normal'}">Especifique Otro Derecho Parcelario *</label>
+                    <input type="text" v-model="formData.DerehoParcelaOtroText" placeholder="Detalle el derecho sobre la parcela...">
                 </div>
 
                 <!-- Vínculo con Propietario (Se muestra si NO es Propietario ID 1) -->
@@ -276,9 +288,15 @@ const FormSujetoNatural = {
                     label: 'Buscar Profesión...',
                     placeholder: 'Nombre o ID...',
                     onSelect: (val) => {
-                        formData.ProfessionCatalog = val.id;    // <- campo DTO (va al backend)
-                        formData._ProfessionName = val.name; // <- helper UI (persiste en app.js)
-                        profesionName.value = val.name;         // <- actualiza el texto visible ahora
+                        const id = parseInt(val.id);
+                        formData.ProfessionCatalog = id;    // <- Asegurar tipo número
+                        formData._ProfessionName = val.name;
+                        profesionName.value = val.name;
+
+                        if (id !== 26) {
+                            formData.ProfessionOtroText = '';
+                            delete errors.ProfessionOtroText;
+                        }
                     }
                 });
             } else {
@@ -292,7 +310,7 @@ const FormSujetoNatural = {
                     catalogName: 'RelacionInformantePropietario',
                     label: 'Relación con el Propietario...',
                     onSelect: (val) => {
-                        formData.RelacionConPropietarioCatalog = val.id;
+                        formData.RelacionConPropietarioCatalog = parseInt(val.id);
                         formData._RelacionPropietarioName = val.name;
                         relacionPropietarioName.value = val.name;
                     }
@@ -306,9 +324,15 @@ const FormSujetoNatural = {
                     catalogName: 'PerfilPropietario',
                     label: 'Perfil del Propietario...',
                     onSelect: (val) => {
-                        formData.PerfilPropietarioCatalog = val.id;
+                        const id = parseInt(val.id);
+                        formData.PerfilPropietarioCatalog = id;
                         formData._PerfilPropietarioName = val.name;
                         perfilPropietarioName.value = val.name;
+
+                        if (id !== 7) {
+                            formData.PerfilPropietarioOtroText = '';
+                            delete errors.PerfilPropietarioOtroText;
+                        }
                     }
                 });
             } else {
@@ -316,11 +340,18 @@ const FormSujetoNatural = {
             }
         };
 
-        // Limpiar "Otro" si se cambia la profesión
         Vue.watch(() => formData.ProfessionCatalog, (newVal) => {
-            if (newVal != 26) {
+            if (newVal !== 26) {
                 formData.ProfessionOtroText = '';
                 delete errors.ProfessionOtroText;
+            }
+        });
+
+        // Limpiar "Otro" si se cambia el tipo de identificación
+        Vue.watch(() => formData.TipoIdentificacionCatalog, (newVal) => {
+            if (newVal != 6) {
+                formData.TipoIdentificacionOtroText = '';
+                delete errors.TipoIdentificacionOtroText;
             }
         });
 
@@ -332,16 +363,19 @@ const FormSujetoNatural = {
                 relacionPropietarioName.value = '';
                 delete errors.RelacionConPropietarioCatalog;
             }
+            if (newVal !== 5) {
+                formData.DerehoParcelaOtroText = '';
+                delete errors.DerehoParcelaOtroText;
+            }
         });
 
-        // Limpiar "Otro" y carnet si se cambia el perfil
         Vue.watch(() => formData.PerfilPropietarioCatalog, (newVal) => {
             if (!newVal) {
                 formData.PerfilPropietarioOtroText = '';
                 formData.PerfilPropietarioCarnet = '';
                 delete errors.PerfilPropietarioOtroText;
                 delete errors.PerfilPropietarioCarnet;
-            } else if (newVal != 7) {
+            } else if (newVal !== 7) {
                 formData.PerfilPropietarioOtroText = '';
                 delete errors.PerfilPropietarioOtroText;
             }
@@ -360,6 +394,10 @@ const FormSujetoNatural = {
             if (!formData.TipoIdentificacionCatalog) {
                 errors.TipoIdentificacionCatalog = true;
                 errorList.push('Tipo de Identificación');
+            }
+            if (formData.TipoIdentificacionCatalog == 6 && !formData.TipoIdentificacionOtroText?.trim()) {
+                errors.TipoIdentificacionOtroText = true;
+                errorList.push('Especificar Tipo de Identificación');
             }
             if (!formData.Identificacion?.trim()) {
                 errors.Identificacion = true;
@@ -424,6 +462,10 @@ const FormSujetoNatural = {
             if (!formData.DerehoParcelaCatalog) {
                 errors.DerehoParcelaCatalog = true;
                 errorList.push('Derecho Parcelario');
+            }
+            if (formData.DerehoParcelaCatalog == 5 && !formData.DerehoParcelaOtroText?.trim()) {
+                errors.DerehoParcelaOtroText = true;
+                errorList.push('Detallar Derecho Parcelario');
             }
             if (!formData.NoPersonasSimilarDerecho || formData.NoPersonasSimilarDerecho <= 0) {
                 errors.NoPersonasSimilarDerecho = true;

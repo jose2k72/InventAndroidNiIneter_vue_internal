@@ -52,7 +52,6 @@ window.ModelsFactory = {
         ClaseConflictoCatalog: null,
         TieneConflicto: false,
         ClaseConflictoOtroText: '',
-        TieneGestionConflicto: false,
         GestionConflictoCatalog: null,
         GestionConflictoOtroText: '',
 
@@ -67,7 +66,8 @@ window.ModelsFactory = {
 
         // Helpers UI
         _MuniNombre: '', _DeptoNombre: '', _CodDepto: '',
-        _ParentescoName: '', _ConflictoName: '', _GestionConflictoName: ''
+        _ParentescoName: '', _ConflictoName: '', _GestionConflictoName: '',
+        _OrigenTierraName: ''
     }),
 
     /**
@@ -77,6 +77,7 @@ window.ModelsFactory = {
         Type: 'SujetoNatural',
         FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
         TipoIdentificacionCatalog: null,
+        TipoIdentificacionOtroText: '',
         Identificacion: '',
         GenderCatalog: null,
         Age: null,
@@ -93,6 +94,7 @@ window.ModelsFactory = {
 
         // Derecho sobre la parcela
         DerehoParcelaCatalog: null,
+        DerehoParcelaOtroText: '',
         NoPersonasSimilarDerecho: 0,
         RelacionConPropietarioCatalog: 0,
 
@@ -116,6 +118,7 @@ window.ModelsFactory = {
         RegistradaEn: '',
         FechaRegistro: null,
         TipoPersonaJuridicaCatalog: null,
+        TipoPersonaJuridicaOtroText: '',
         NroSocios: 0,
         NroSocias: 0,
         Colectivo: '',
@@ -139,6 +142,7 @@ window.ModelsFactory = {
         Type: 'Entrevistado',
         FirstName: '', SecondName: '', FirstSurName: '', SecondSurName: '',
         TipoIdentificacionCatalog: null,
+        TipoIdentificacionOtroText: '',
         Identificacion: '',
         GenderCatalog: null,
         Age: null,

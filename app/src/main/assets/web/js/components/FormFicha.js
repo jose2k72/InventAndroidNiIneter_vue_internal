@@ -323,29 +323,19 @@ const FormFicha = {
                         <input type="text" v-model="formData.ClaseConflictoOtroText" :style="{borderColor: errors.ClaseConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa el conflicto...">
                     </div>
 
-                    <!-- Vía de Gestión de Conflictos -->
-                    <div class="form-group checkbox-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
-                        <label class="checkbox-container">
-                            <input type="checkbox" v-model="formData.TieneGestionConflicto">
-                            <span class="checkmark"></span>
-                            ¿Tiene Vía de Gestión de Conflicto?
-                        </label>
+                    <!-- Vía de Gestión de Conflictos (Obligatoria si hay conflicto) -->
+                    <div class="form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                        <label :style="{color: errors.GestionConflictoCatalog ? 'red' : 'inherit', fontWeight: errors.GestionConflictoCatalog ? 'bold' : 'normal'}">Vía de Gestión de Conflictos *</label>
+                        <div class="selector-display" @click="pedirGestionConflictoGlobal" :style="{borderColor: errors.GestionConflictoCatalog ? '#d32f2f' : '#ccc'}">
+                            <span v-if="gestionConflictoName" style="color: #1565C0; font-weight: 600;">{{ gestionConflictoName }}</span>
+                            <span v-else style="color: #757575;">Seleccione vía de gestión...</span>
+                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                        </div>
                     </div>
 
-                    <div v-if="formData.TieneGestionConflicto">
-                        <div class="form-group">
-                            <label :style="{color: errors.GestionConflictoCatalog ? 'red' : 'inherit', fontWeight: errors.GestionConflictoCatalog ? 'bold' : 'normal'}">Vía de Gestión de Conflictos *</label>
-                            <div class="selector-display" @click="pedirGestionConflictoGlobal" :style="{borderColor: errors.GestionConflictoCatalog ? '#d32f2f' : '#ccc'}">
-                                <span v-if="gestionConflictoName" style="color: #1565C0; font-weight: 600;">{{ gestionConflictoName }}</span>
-                                <span v-else style="color: #757575;">Seleccione vía de gestión...</span>
-                                <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
-                            </div>
-                        </div>
-
-                        <div v-if="formData.GestionConflictoCatalog === 6" class="form-group" style="margin-top: 10px;">
-                            <label :style="{color: errors.GestionConflictoOtroText ? 'red' : 'inherit', fontWeight: errors.GestionConflictoOtroText ? 'bold' : 'normal'}">Especifique otra gestión *</label>
-                            <input type="text" v-model="formData.GestionConflictoOtroText" :style="{borderColor: errors.GestionConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa la vía de gestión...">
-                        </div>
+                    <div v-if="formData.GestionConflictoCatalog === 6" class="form-group" style="margin-top: 10px;">
+                        <label :style="{color: errors.GestionConflictoOtroText ? 'red' : 'inherit', fontWeight: errors.GestionConflictoOtroText ? 'bold' : 'normal'}">Especifique otra gestión *</label>
+                        <input type="text" v-model="formData.GestionConflictoOtroText" :style="{borderColor: errors.GestionConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa la vía de gestión...">
                     </div>
                 </div>
             </div>
@@ -558,25 +548,12 @@ const FormFicha = {
                 formData.ClaseConflictoOtroText = '';
                 formData._ConflictoName = '';
                 conflictoName.value = '';
-                formData.TieneGestionConflicto = false;
                 formData.GestionConflictoCatalog = null;
                 formData.GestionConflictoOtroText = '';
                 formData._GestionConflictoName = '';
                 gestionConflictoName.value = '';
                 delete errors.ClaseConflictoCatalog;
                 delete errors.ClaseConflictoOtroText;
-                delete errors.TieneGestionConflicto;
-                delete errors.GestionConflictoCatalog;
-                delete errors.GestionConflictoOtroText;
-            }
-        });
-
-        Vue.watch(() => formData.TieneGestionConflicto, (newVal) => {
-            if (!newVal) {
-                formData.GestionConflictoCatalog = null;
-                formData.GestionConflictoOtroText = '';
-                formData._GestionConflictoName = '';
-                gestionConflictoName.value = '';
                 delete errors.GestionConflictoCatalog;
                 delete errors.GestionConflictoOtroText;
             }
@@ -591,10 +568,34 @@ const FormFicha = {
         });
         Vue.watch(() => formData.GestionConflictoOtroText, (val) => { if (val?.trim()) delete errors.GestionConflictoOtroText; });
 
+        // --- PATRÓN OTRO PARA SERVIDUMBRES (ID 4) ---
+        Vue.watch(() => formData.ServidumbreAguaCatalog, (val) => {
+            if (val !== 4) {
+                formData.ServidumbreAguaOtroText = '';
+            }
+        });
+        Vue.watch(() => formData.ServidumbrePaseCatalog, (val) => {
+            if (val !== 4) {
+                formData.ServidumbrePaseOtroText = '';
+            }
+        });
+        Vue.watch(() => formData.ServidumbreOtroCatalog, (val) => {
+            if (val !== 4) {
+                formData.ServidumbreOtroOtroText = '';
+            }
+        });
+
         const parentescoName = Vue.ref(formData._ParentescoName || '');
         const conflictoName = Vue.ref(formData._ConflictoName || '');
         const origenTierraName = Vue.ref(formData._OrigenTierraName || '');
         const gestionConflictoName = Vue.ref(formData._GestionConflictoName || '');
+
+        // Recuperar nombres visuales si el registro ya tiene IDs (al cargar de BD)
+        Vue.onMounted(async () => {
+            if (formData.OrigenTierraCatalog && !origenTierraName.value) {
+                // Resolver nombre desde catálogo OrigenTierra...
+            }
+        });
 
         // Normalizar fechas
         formData.Documentos.forEach(doc => {
@@ -643,9 +644,15 @@ const FormFicha = {
                     catalogName: 'ClaseConflicto',
                     label: 'Clase de Conflicto...',
                     onSelect: (val) => {
-                        formData.ClaseConflictoCatalog = parseInt(val.id);
+                        const id = parseInt(val.id);
+                        formData.ClaseConflictoCatalog = id;
                         formData._ConflictoName = val.name;
                         conflictoName.value = val.name;
+
+                        if (id !== 13) {
+                            formData.ClaseConflictoOtroText = '';
+                            delete errors.ClaseConflictoOtroText;
+                        }
                     }
                 });
             }
@@ -657,9 +664,15 @@ const FormFicha = {
                     catalogName: 'OrigenTierra',
                     label: 'Origen de la Tierra...',
                     onSelect: (val) => {
-                        formData.OrigenTierraCatalog = parseInt(val.id);
+                        const id = parseInt(val.id);
+                        formData.OrigenTierraCatalog = id;
                         formData._OrigenTierraName = val.name;
                         origenTierraName.value = val.name;
+
+                        if (id !== 1) {
+                            formData.OrigenTierraOtroText = '';
+                            delete errors.OrigenTierraOtroText;
+                        }
                     }
                 });
             }
@@ -671,9 +684,15 @@ const FormFicha = {
                     catalogName: 'GestionConflicto',
                     label: 'Vía de Gestión de Conflictos...',
                     onSelect: (val) => {
-                        formData.GestionConflictoCatalog = parseInt(val.id);
+                        const id = parseInt(val.id);
+                        formData.GestionConflictoCatalog = id;
                         formData._GestionConflictoName = val.name;
                         gestionConflictoName.value = val.name;
+
+                        if (id !== 6) {
+                            formData.GestionConflictoOtroText = '';
+                            delete errors.GestionConflictoOtroText;
+                        }
                     }
                 });
             }
@@ -763,12 +782,12 @@ const FormFicha = {
                     errors.ClaseConflictoOtroText = true;
                     isValid = false;
                 }
-                if (formData.TieneGestionConflicto) {
-                    if (!formData.GestionConflictoCatalog) { errors.GestionConflictoCatalog = true; isValid = false; }
-                    if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) {
-                        errors.GestionConflictoOtroText = true;
-                        isValid = false;
-                    }
+
+                // Vía de gestión es obligatoria si hay conflicto
+                if (!formData.GestionConflictoCatalog) { errors.GestionConflictoCatalog = true; isValid = false; }
+                if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) {
+                    errors.GestionConflictoOtroText = true;
+                    isValid = false;
                 }
             }
 
@@ -793,6 +812,9 @@ const FormFicha = {
             muniDisplay,
             deptoDisplay,
             areaDisplay,
+            origenTierraName,
+            conflictoName,
+            gestionConflictoName,
             pedirMunicipioGlobal,
             pedirClaseConflictoGlobal,
             pedirOrigenTierraGlobal,

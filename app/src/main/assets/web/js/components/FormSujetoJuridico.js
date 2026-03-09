@@ -23,14 +23,20 @@ const FormSujetoJuridico = {
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label :style="{color: errors.TipoPersonaJuridicaCatalog ? 'red' : 'inherit', fontWeight: errors.TipoPersonaJuridicaCatalog ? 'bold' : 'normal'}">Tipo de Persona Jurídica *</label>
-                    <select v-model.number="formData.TipoPersonaJuridicaCatalog">
-                        <option :value="null" disabled selected>Seleccione...</option>
-                        <option v-for="opt in catalogos.TipoPersonaJuridica" :key="opt.id" :value="parseInt(opt.id)">{{ opt.nombre }}</option>
-                    </select>
+                    <div class="form-group">
+                        <label :style="{color: errors.TipoPersonaJuridicaCatalog ? 'red' : 'inherit', fontWeight: errors.TipoPersonaJuridicaCatalog ? 'bold' : 'normal'}">Tipo de Persona Jurídica *</label>
+                        <select v-model.number="formData.TipoPersonaJuridicaCatalog">
+                            <option :value="null" disabled selected>Seleccione...</option>
+                            <option v-for="opt in catalogos.TipoPersonaJuridica" :key="opt.id" :value="parseInt(opt.id)">{{ opt.nombre }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Especificar Otro Tipo de Persona Jurídica (ID 4) -->
+                    <div v-if="formData.TipoPersonaJuridicaCatalog === 4" class="form-group sub-section" style="margin-top: -10px; margin-bottom: 15px;">
+                        <label :style="{color: errors.TipoPersonaJuridicaOtroText ? 'red' : 'inherit', fontWeight: errors.TipoPersonaJuridicaOtroText ? 'bold' : 'normal'}">Especifique Tipo de Persona Jurídica *</label>
+                        <input type="text" v-model="formData.TipoPersonaJuridicaOtroText" placeholder="Detalle el tipo de entidad...">
+                    </div>
                 </div>
-            </div>
 
             <div class="section">
                 <h3>📜 Registro Público</h3>
@@ -100,6 +106,14 @@ const FormSujetoJuridico = {
             ]
         };
 
+        // Limpiar "Otro" si se cambia el tipo de persona jurídica
+        Vue.watch(() => formData.TipoPersonaJuridicaCatalog, (newVal) => {
+            if (newVal !== 4) {
+                formData.TipoPersonaJuridicaOtroText = '';
+                delete errors.TipoPersonaJuridicaOtroText;
+            }
+        });
+
         const save = () => {
             // Limpiar errores
             Object.keys(errors).forEach(key => delete errors[key]);
@@ -116,6 +130,10 @@ const FormSujetoJuridico = {
             if (!formData.TipoPersonaJuridicaCatalog) {
                 errors.TipoPersonaJuridicaCatalog = true;
                 errorList.push('Tipo de Persona Jurídica');
+            }
+            if (formData.TipoPersonaJuridicaCatalog === 4 && !formData.TipoPersonaJuridicaOtroText?.trim()) {
+                errors.TipoPersonaJuridicaOtroText = true;
+                errorList.push('Especificar Tipo de Persona Jurídica');
             }
 
             if (errorList.length > 0) {

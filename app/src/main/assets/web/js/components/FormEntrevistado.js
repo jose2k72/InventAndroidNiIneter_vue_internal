@@ -62,6 +62,12 @@ const FormEntrevistado = {
                         <input type="text" v-model="formData.Identificacion">
                     </div>
                 </div>
+
+                <!-- Especificar Tipo Identificación (cuando es 'Otro' ID 6) -->
+                <div v-if="formData.TipoIdentificacionCatalog == 6" class="form-group sub-section" style="margin-top: -10px; margin-bottom: 15px;">
+                    <label :style="{color: errors.TipoIdentificacionOtroText ? 'red' : 'inherit', fontWeight: errors.TipoIdentificacionOtroText ? 'bold' : 'normal'}">Especifique Tipo de Identificación *</label>
+                    <input type="text" v-model="formData.TipoIdentificacionOtroText" placeholder="Detalle el tipo de identificación...">
+                </div>
             </div>
 
             <div class="section">
@@ -289,6 +295,14 @@ const FormEntrevistado = {
             }
         });
 
+        // Limpiar "Otro" si se cambia el tipo de identificación
+        Vue.watch(() => formData.TipoIdentificacionCatalog, (newVal) => {
+            if (newVal != 6) {
+                formData.TipoIdentificacionOtroText = '';
+                delete errors.TipoIdentificacionOtroText;
+            }
+        });
+
         const pedirRelacionPropietarioGlobal = () => {
             if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
                 vueAppContext.openCatalog({
@@ -296,9 +310,9 @@ const FormEntrevistado = {
                     label: 'Buscar Relación...',
                     placeholder: 'Nombre o ID...',
                     onSelect: (val) => {
-                        formData.RelacionInformantePropietarioCatalog = val.id;    // <- campo DTO
-                        formData._RelacionPropietarioName = val.name; // <- helper UI
-                        relacionPropietarioName.value = val.name;         // <- actualiza vista local
+                        formData.RelacionInformantePropietarioCatalog = parseInt(val.id);    // <- numérico
+                        formData._RelacionPropietarioName = val.name;
+                        relacionPropietarioName.value = val.name;
                     }
                 });
             } else {
@@ -314,23 +328,22 @@ const FormEntrevistado = {
                     label: 'Buscar Profesión...',
                     placeholder: 'Nombre o ID...',
                     onSelect: (val) => {
-                        formData.ProfessionCatalog = val.id;    // <- campo DTO (va al backend)
-                        formData._ProfessionName = val.name; // <- helper UI (persiste en app.js)
-                        profesionName.value = val.name;         // <- actualiza el texto visible ahora
+                        const id = parseInt(val.id);
+                        formData.ProfessionCatalog = id;
+                        formData._ProfessionName = val.name;
+                        profesionName.value = val.name;
+
+                        // Limpiar "Otro" si ya no es el ID 26 (Otro)
+                        if (id !== 26) {
+                            formData.ProfessionOtroText = '';
+                            delete errors.ProfessionOtroText;
+                        }
                     }
                 });
             } else {
                 console.error("❌ Contexto global vueAppContext.openCatalog no encontrado.");
             }
         };
-
-        // Limpiar "Otro" si se cambia la profesión
-        Vue.watch(() => formData.ProfessionCatalog, (newVal) => {
-            if (newVal != 26) {
-                formData.ProfessionOtroText = '';
-                delete errors.ProfessionOtroText;
-            }
-        });
 
         const save = () => {
             // Limpiar errores previos
@@ -354,6 +367,10 @@ const FormEntrevistado = {
             if (!formData.TipoIdentificacionCatalog) {
                 errors.TipoIdentificacionCatalog = true;
                 errorList.push('Tipo de Identificación');
+            }
+            if (formData.TipoIdentificacionCatalog == 6 && !formData.TipoIdentificacionOtroText?.trim()) {
+                errors.TipoIdentificacionOtroText = true;
+                errorList.push('Especificar Tipo de Identificación');
             }
             if (!formData.Identificacion?.trim()) {
                 errors.Identificacion = true;
