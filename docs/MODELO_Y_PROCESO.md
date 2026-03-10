@@ -60,7 +60,7 @@ Para asegurar la consistencia y ligereza del intercambio de datos, se aplican la
 ### 3.2 Tabla de Mapeo de Clases
 
 | `Ficha` | `Ficha.cs` | Datos físicos del predio (uso del suelo, área e infraestructura). |
-| `SujetoNatural` | `SujetoNatural.cs` | Datos del titular o poseedor; incluye derechos y tenencia parcelaria. |
+| `SujetoNatural` | `SujetoNatural.cs` | Datos del titular o poseedor; incluye derechos y tenencia parcelaria (Propietario/Poseedor). |
 | `SujetoJuridico` | `SujetoJuridico.cs` | Datos de empresas o entidades legales propietarias. |
 | `Entrevistado` | `Entrevistado.cs` | Datos del informante del predio. |
 | `Familiares` | `Familiar.cs` (Colección) | Composición del núcleo familiar residente. |

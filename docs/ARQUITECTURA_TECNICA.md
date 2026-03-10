@@ -146,7 +146,7 @@ Para reducir la complejidad del controlador principal (`app.js`) y mejorar la ma
 
 *   **`conversionService.js` (Clonación de Identidades)**:
     - Maneja la transformación de registros entre tipos (ej. Crear **Entrevistado** desde un **Sujeto Natural** existente).
-    - Automatiza la clonación de campos comunes y ajustes de catálogos específicos.
+    - **Clonación Inteligente (Higiene de Datos)**: Implementa mapeo dinámico de roles (Propietario 1 / Poseedor 2) y limpia automáticamente el campo de relación con el dueño si el destino es Propietario Pleno, evitando inconsistencias ("churres").
 
 *   **`displayService.js` (UI Helpers)**:
     - Encapsula la lógica de etiquetas y la construcción de strings informativos.

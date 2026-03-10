@@ -46,7 +46,7 @@ El ciclo de vida de las fotografías está estrictamente controlado por las acci
     - **No. Identificación**: Campo obligatorio.
 - **Vínculo con el Propietario (Regla de Exclusión)**:
     - Si `Derecho Parcelario` != **"Propietario (Dominio Pleno)"** (ID: 1), es **obligatorio** seleccionar un vínculo en el catálogo de relaciones.
-    - Si se cambia a "Propietario", cualquier vínculo previo se limpia automáticamente para mantener la integridad.
+    - Si se cambia a "Propietario", cualquier vínculo previo se limpia automáticamente para mantener la integridad. El catálogo ha sido simplificado para eliminar la opción "Otros", dejando únicamente **Propietario** (1) y **Poseedor** (2).
 - **Perfil y Carnet**: Si se selecciona un Perfil del Propietario (Desmovilizado, Retirado, etc.), el campo **Carnet del Perfil** se vuelve obligatorio. Si el perfil es "Otro", la descripción también es obligatoria.
 
 ---

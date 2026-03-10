@@ -22,6 +22,9 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 ### 🧹 Limpieza y Estabilidad
 - **Modelo Jurídico**: Restauración de la fábrica de modelos para Propietarios Jurídicos.
 - **Contexto Global**: Asegurada la integridad de `vueAppContext` para acceso síncrono desde los puentes de Android.
+- **Simplificación de Derechos**: Eliminada la opción "Otros" del catálogo de derechos y el campo `DerehoParcelaOtroText` en todos los niveles (DTO, JS, UI).
+- **Lista Dinámica**: Implementación de visualización y pesos de ordenamiento diferenciados para **PROP. NATURAL** y **POSEEDOR**.
+- **Clonación Higiénica**: Nueva lógica en `ConversionService` que automatiza la limpieza de vínculos al clonar dueños plenos entre identidades.
 
 ---
 

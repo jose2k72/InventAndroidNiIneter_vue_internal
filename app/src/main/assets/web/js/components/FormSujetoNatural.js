@@ -135,12 +135,6 @@ const FormSujetoNatural = {
                     </div>
                 </div>
 
-                <!-- Especificar Otro Derecho Parcelario (ID 5) -->
-                <div v-if="formData.DerehoParcelaCatalog == 5" class="form-group sub-section" style="margin-top: 10px; margin-bottom: 10px;">
-                    <label :style="{color: errors.DerehoParcelaOtroText ? 'red' : 'inherit', fontWeight: errors.DerehoParcelaOtroText ? 'bold' : 'normal'}">Especifique Otro Derecho Parcelario *</label>
-                    <input type="text" v-model="formData.DerehoParcelaOtroText" placeholder="Detalle el derecho sobre la parcela...">
-                </div>
-
                 <!-- Vínculo con Propietario (Se muestra si NO es Propietario ID 1) -->
                 <div v-if="formData.DerehoParcelaCatalog && formData.DerehoParcelaCatalog !== 1" class="form-group sub-section" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
                     <label :style="{color: errors.RelacionConPropietarioCatalog ? 'red' : 'inherit', fontWeight: errors.RelacionConPropietarioCatalog ? 'bold' : 'normal'}">Relación / Vínculo con el Propietario *</label>
@@ -272,11 +266,8 @@ const FormSujetoNatural = {
                 { id: 3, nombre: 'Union de Hecho' }
             ],
             TipoDerecho: [
-                { id: 1, nombre: 'Propietario (Dominio Pleno)' },
-                { id: 2, nombre: 'Poseedor (Derecho de Hecho)' },
-                { id: 3, nombre: 'Ocupante / Arrendatario' },
-                { id: 4, nombre: 'Usufructuario' },
-                { id: 5, nombre: 'Otro' }
+                { id: 1, nombre: 'Propietario' },
+                { id: 2, nombre: 'Poseedor' }
             ]
         };
 
@@ -355,17 +346,12 @@ const FormSujetoNatural = {
             }
         });
 
-        // Limpiar relación si el derecho cambia a Propietario (ID 1)
         Vue.watch(() => formData.DerehoParcelaCatalog, (newVal) => {
             if (newVal === 1) {
                 formData.RelacionConPropietarioCatalog = 0;
                 formData._RelacionPropietarioName = '';
                 relacionPropietarioName.value = '';
                 delete errors.RelacionConPropietarioCatalog;
-            }
-            if (newVal !== 5) {
-                formData.DerehoParcelaOtroText = '';
-                delete errors.DerehoParcelaOtroText;
             }
         });
 
@@ -462,10 +448,6 @@ const FormSujetoNatural = {
             if (!formData.DerehoParcelaCatalog) {
                 errors.DerehoParcelaCatalog = true;
                 errorList.push('Derecho Parcelario');
-            }
-            if (formData.DerehoParcelaCatalog == 5 && !formData.DerehoParcelaOtroText?.trim()) {
-                errors.DerehoParcelaOtroText = true;
-                errorList.push('Detallar Derecho Parcelario');
             }
             if (!formData.NoPersonasSimilarDerecho || formData.NoPersonasSimilarDerecho <= 0) {
                 errors.NoPersonasSimilarDerecho = true;

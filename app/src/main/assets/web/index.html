@@ -398,7 +398,7 @@
                 <tbody>
                     <tr v-for="(item, index) in sortedListData" :key="item.Id" @click="editItem(item)"
                         class="clickable-row">
-                        <td style="font-weight: bold; color: #1565C0;">{{ getDisplayName(item.Data?.Type) }}</td>
+                        <td style="font-weight: bold; color: #1565C0;">{{ getDisplayName(item.Data) }}</td>
                         <td>{{ getDisplayInfo(item) }}</td>
                         <td>
                             <button v-if="item.Data?.Type === 'SujetoNatural' && !hasEntrevistado"

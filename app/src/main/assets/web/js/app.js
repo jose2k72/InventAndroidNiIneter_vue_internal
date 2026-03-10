@@ -450,22 +450,23 @@ const app = createApp({
 
         // Ordenar y formatear lista para la tabla
         const sortedListData = Vue.computed(() => {
-            const orderWeights = {
-                'Ficha': 1,
-                'SujetoNatural': 2,
-                'SujetoJuridico': 2,
-                'Entrevistado': 3,
-                'Familiares': 4
+            const getWeight = (item) => {
+                const type = item.Data?.Type;
+                if (type === 'Ficha') return 1;
+                if (type === 'SujetoJuridico') return 2;
+                if (type === 'SujetoNatural') {
+                    // Priorizar Propietario (1) sobre Poseedor (2)
+                    return item.Data.DerehoParcelaCatalog === 2 ? 4 : 3;
+                }
+                if (type === 'Entrevistado') return 5;
+                if (type === 'Familiares') return 6;
+                return 99;
             };
 
-            return [...listData.value].sort((a, b) => {
-                const weightA = orderWeights[a.Data?.Type] || 99;
-                const weightB = orderWeights[b.Data?.Type] || 99;
-                return weightA - weightB;
-            });
+            return [...listData.value].sort((a, b) => getWeight(a) - getWeight(b));
         });
 
-        const getDisplayName = (type) => DisplayService.getShortName(type);
+        const getDisplayName = (data) => DisplayService.getShortName(data);
 
         const getDisplayInfo = (item) => DisplayService.getDisplayInfo(item, localizacion.value);
 

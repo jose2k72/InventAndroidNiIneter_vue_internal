@@ -117,7 +117,6 @@ window.ModelsFactory = {
             PerfilPropietarioOtroText: '',
             PerfilPropietarioCarnet: '',
             DerehoParcelaCatalog: null, // Nota: typo 'Dereho' heredado del DTO
-            DerehoParcelaOtroText: '',
             NoPersonasSimilarDerecho: 0,
             RelacionConPropietarioCatalog: 0,
             _RelacionPropietarioName: '',
