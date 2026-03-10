@@ -216,7 +216,7 @@ class AndroidBridge(activity: FormActivity) {
         val act = activity ?: return ""
         return try {
             val assetPath = "web/data/$filename"
-            act.assets.open(assetPath).bufferedReader().use { it.readText() }
+            act.assets.open(assetPath).bufferedReader(Charsets.UTF_8).use { it.readText() }
         } catch (e: Exception) {
             ""
         }

@@ -181,16 +181,16 @@ const FormEntrevistado = {
                     </div>
                 </div>
 
-                <!-- Comarca en una sola línea -->
+                <!-- Caserío en una sola línea -->
                 <div class="form-group">
-                    <label :style="{color: errors.ResidenceComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceComarca ? 'bold' : 'normal'}">Comarca *</label>
-                    <input type="text" v-model="formData.ResidenceComarca">
+                    <label :style="{color: errors.ResidenceCaserio ? 'red' : 'inherit', fontWeight: errors.ResidenceCaserio ? 'bold' : 'normal'}">Caserío *</label>
+                    <input type="text" v-model="formData.ResidenceCaserio">
                 </div>
 
-                <!-- Barrio / Caserío en una sola línea -->
+                <!-- Barrio/Comarca en una sola línea -->
                 <div class="form-group">
-                    <label :style="{color: errors.ResidenceBarrio ? 'red' : 'inherit', fontWeight: errors.ResidenceBarrio ? 'bold' : 'normal'}">Barrio / Caserío *</label>
-                    <input type="text" v-model="formData.ResidenceBarrio">
+                    <label :style="{color: errors.ResidenceBarrioComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceBarrioComarca ? 'bold' : 'normal'}">Barrio/Comarca *</label>
+                    <input type="text" v-model="formData.ResidenceBarrioComarca">
                 </div>
 
                 <div class="form-group">
@@ -408,13 +408,13 @@ const FormEntrevistado = {
                 errors.ResidenceMunicipioCatalog = true;
                 errorList.push('Municipio (ID catalog)');
             }
-            if (!formData.ResidenceComarca?.trim()) {
-                errors.ResidenceComarca = true;
-                errorList.push('Comarca');
+            if (!formData.ResidenceCaserio?.trim()) {
+                errors.ResidenceCaserio = true;
+                errorList.push('Caserío');
             }
-            if (!formData.ResidenceBarrio?.trim()) {
-                errors.ResidenceBarrio = true;
-                errorList.push('Barrio');
+            if (!formData.ResidenceBarrioComarca?.trim()) {
+                errors.ResidenceBarrioComarca = true;
+                errorList.push('Barrio/Comarca');
             }
             if (!formData.ResidenceDireccion?.trim()) {
                 errors.ResidenceDireccion = true;

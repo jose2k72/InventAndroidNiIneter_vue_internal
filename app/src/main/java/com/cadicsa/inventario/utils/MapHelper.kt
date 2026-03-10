@@ -26,12 +26,17 @@ import org.json.JSONObject
  */
 class MapHelper(private val activity: AppCompatActivity, private val mMap: GoogleMap) {
 
+    private class DataGroup(val centerLat: Double, val centerLng: Double) {
+        val items = mutableListOf<com.cadicsa.inventario.DataItem>()
+    }
+
     private val rutasPolylines = mutableListOf<Polyline>()
     private val rutasMarkers = mutableListOf<Marker>()
     private val captureMarkers = mutableListOf<Marker>()
 
     /**
      * Carga y dibuja los puntos capturados desde la BD.
+     * Implementa agrupamiento por proximidad (3m) y lógica de colores.
      */
     fun loadCapturedPoints(lastSavedDataId: Int) {
         captureMarkers.forEach { it.remove() }
@@ -39,23 +44,73 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
 
         val dbHelper = DatabaseHelper.getInstance(activity)
         val allData = dbHelper.getAllData()
+        if (allData.isEmpty()) return
 
+        // 1. Agrupar puntos en un radio de 3 metros
+        val groups = mutableListOf<DataGroup>()
         allData.forEach { item ->
-            val isLastSaved = item.id == lastSavedDataId
-            val markerColor = if (isLastSaved) 0f else 120f // Rojo para el último, Verde (120) para el resto
+            val existingGroup = groups.find { g ->
+                calculateDistance(LatLng(item.latitud, item.longitud), LatLng(g.centerLat, g.centerLng)) <= 3.0
+            }
+            if (existingGroup != null) {
+                existingGroup.items.add(item)
+            } else {
+                val newGroup = DataGroup(item.latitud, item.longitud)
+                newGroup.items.add(item)
+                groups.add(newGroup)
+            }
+        }
 
+        // 2. Pintar un marcador por cada grupo con el color correspondiente
+        groups.forEach { group ->
+            val markerColor = calculateGroupColor(group.items, lastSavedDataId)
+            
+            // Usamos la posición del primer elemento para el marcador
+            val firstItem = group.items.first()
             val marker = mMap.addMarker(
                 MarkerOptions()
-                    .position(LatLng(item.latitud, item.longitud))
-                    .title("ID: ${item.id}")
-                    .snippet("Layer: ${item.layer}")
+                    .position(LatLng(firstItem.latitud, firstItem.longitud))
+                    .title("Unidad: ${group.items.size} registros")
+                    .snippet("ID base: ${firstItem.id}")
                     .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
             )
+            
             marker?.let {
-                it.tag = "${SpatialNormalizer.format(item.latitud)},${SpatialNormalizer.format(item.longitud)}"
+                // El tag se usa en el listener de clic para saber qué abrir
+                it.tag = "${SpatialNormalizer.format(firstItem.latitud)},${SpatialNormalizer.format(firstItem.longitud)}"
                 captureMarkers.add(it)
             }
         }
+    }
+
+    /**
+     * Determina el color del marcador basado en el estado del grupo de registros.
+     * Rojo: Contiene el último guardado.
+     * Verde: Combo completo (Ficha + Entrevistado + Dueño).
+     * Amarillo: Incompleto.
+     */
+    private fun calculateGroupColor(items: List<com.cadicsa.inventario.DataItem>, lastSavedDataId: Int): Float {
+        // Prioridad 1: ¿Contiene el último guardado?
+        if (items.any { it.id == lastSavedDataId }) return 0f // HUE_RED
+
+        // Prioridad 2: ¿Está completo? (Ficha + Entrevistado + SujetoNatural/Juridico)
+        var tieneFicha = false
+        var tieneEntrevistado = false
+        var tieneDuenio = false
+
+        items.forEach { item ->
+            try {
+                val json = JSONObject(item.data)
+                val type = json.optString("Type")
+                when (type) {
+                    "Ficha" -> tieneFicha = true
+                    "Entrevistado" -> tieneEntrevistado = true
+                    "SujetoNatural", "SujetoJuridico" -> tieneDuenio = true
+                }
+            } catch (e: Exception) {}
+        }
+
+        return if (tieneFicha && tieneEntrevistado && tieneDuenio) 120f else 60f // GREEN : YELLOW
     }
 
     /**

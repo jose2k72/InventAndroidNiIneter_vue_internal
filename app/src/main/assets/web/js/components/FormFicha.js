@@ -48,18 +48,18 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label>Dirección de la Parcela</label>
+                    <label :style="{color: errors.Direccion ? 'red' : 'inherit', fontWeight: errors.Direccion ? 'bold' : 'normal'}">Dirección de la Parcela *</label>
                     <textarea v-model="formData.Direccion" rows="2" placeholder="Dirección exacta o descripción del lugar"></textarea>
                 </div>
 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label>Comarca/Caserío</label>
-                        <input type="text" v-model="formData.Cacerio" placeholder="Ej: El Corozo">
+                        <label :style="{color: errors.Caserio ? 'red' : 'inherit', fontWeight: errors.Caserio ? 'bold' : 'normal'}">Caserío *</label>
+                        <input type="text" v-model="formData.Caserio" placeholder="Ej: El Corozo">
                     </div>
                     <div class="form-group">
-                        <label>Barrio</label>
-                        <input type="text" v-model="formData.Barrio" placeholder="Ej: San José">
+                        <label :style="{color: errors.BarrioComarca ? 'red' : 'inherit', fontWeight: errors.BarrioComarca ? 'bold' : 'normal'}">Barrio/Comarca *</label>
+                        <input type="text" v-model="formData.BarrioComarca" placeholder="Ej: San José">
                     </div>
                 </div>
 
@@ -106,12 +106,12 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label>Descripción del Uso</label>
-                    <textarea v-model="formData.Descripcion" rows="2"></textarea>
+                    <label :style="{color: errors.Descripcion ? 'red' : 'inherit', fontWeight: errors.Descripcion ? 'bold' : 'normal'}">Descripción del Uso *</label>
+                    <textarea v-model="formData.Descripcion" rows="7" placeholder="Detalle el uso actual del predio..."></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra</label>
+                    <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra *</label>
                     <div class="selector-display" @click="pedirOrigenTierraGlobal" :style="{borderColor: errors.OrigenTierraCatalog ? '#d32f2f' : '#ccc'}">
                         <span v-if="origenTierraName" style="color: #1565C0; font-weight: 600;">{{ origenTierraName }}</span>
                         <span v-else style="color: #757575;">Seleccione origen...</span>
@@ -126,8 +126,8 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label>Reseña Histórica</label>
-                    <textarea v-model="formData.ResenaHistorica" rows="4" placeholder="Documentación histórica del predio..."></textarea>
+                    <label :style="{color: errors.ResenaHistorica ? 'red' : 'inherit', fontWeight: errors.ResenaHistorica ? 'bold' : 'normal'}">Reseña Histórica *</label>
+                    <textarea v-model="formData.ResenaHistorica" rows="9" placeholder="Documentación histórica del predio..."></textarea>
                 </div>
 
                 <div class="coords-grid">
@@ -400,6 +400,14 @@ const FormFicha = {
             if (formData.Consecutivo) generarNoEncuesta();
         });
 
+        // Limpieza de errores al escribir
+        Vue.watch(() => formData.Caserio, (val) => { if (val?.trim()) delete errors.Caserio; });
+        Vue.watch(() => formData.BarrioComarca, (val) => { if (val?.trim()) delete errors.BarrioComarca; });
+        Vue.watch(() => formData.Direccion, (val) => { if (val?.trim()) delete errors.Direccion; });
+        Vue.watch(() => formData.Descripcion, (val) => { if (val?.trim()) delete errors.Descripcion; });
+        Vue.watch(() => formData.OrigenTierraCatalog, (val) => { if (val) delete errors.OrigenTierraCatalog; });
+        Vue.watch(() => formData.ResenaHistorica, (val) => { if (val?.trim()) delete errors.ResenaHistorica; });
+
         // --- inicialización ---
         if (!formData.Documentos) formData.Documentos = [];
 
@@ -564,7 +572,7 @@ const FormFicha = {
         const pedirDocumentoGlobal = (index) => {
             if (typeof vueAppContext !== 'undefined') {
                 vueAppContext.openCatalog({
-                    catalogName: 'Documento', label: 'Tipo de Documento...',
+                    catalogName: 'Documento-Mod', label: 'Tipo de Documento...',
                     onSelect: (val) => {
                         formData.Documentos[index].DocumentoCatalog = parseInt(val.id);
                         formData.Documentos[index]._DocumentoName = val.name;
@@ -584,8 +592,14 @@ const FormFicha = {
             let isValid = true;
             if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; isValid = false; }
             if (!formData.NombreFinca?.trim()) { errors.NombreFinca = true; isValid = false; }
+            if (!formData.Direccion?.trim()) { errors.Direccion = true; isValid = false; }
+            if (!formData.Caserio?.trim()) { errors.Caserio = true; isValid = false; }
+            if (!formData.BarrioComarca?.trim()) { errors.BarrioComarca = true; isValid = false; }
             if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
+            if (!formData.Descripcion?.trim()) { errors.Descripcion = true; isValid = false; }
+            if (!formData.OrigenTierraCatalog) { errors.OrigenTierraCatalog = true; isValid = false; }
+            if (!formData.ResenaHistorica?.trim()) { errors.ResenaHistorica = true; isValid = false; }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
             if (formData.PresentaDocumentos) {
                 if (!formData.Documentos?.length) { errors.Documentos = true; isValid = false; }

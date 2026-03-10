@@ -29,9 +29,19 @@ Para campos que terminan en la opción "Otro", se debe seguir estrictamente la s
 
 ---
 
+## 🎨 Patrones de Visualización y Feedback
+
+### 2. Feedback de Campos Obligatorios
+Para mejorar la tasa de éxito en el guardado y reducir la frustración del usuario:
+- **Label Dinámico**: Si un campo obligatorio está vacío durante la validación, su `<label>` debe cambiar a **Color Rojo** y **Negrita**.
+- **Watchers de Limpieza**: Se deben implementar `watchers` en Vue para que, en cuanto el usuario comience a escribir en un campo con error, el estilo regrese a la normalidad (Color inherit, Normal weight).
+- **Indicador Visual**: Los campos obligatorios deben llevar un asterisco `*` en el texto del label.
+
+---
+
 ## 💾 Integridad de Datos y Tipos
 
-### 2. Consistencia de Tipos (Enteros vs Strings)
+### 3. Consistencia de Tipos (Enteros vs Strings)
 Para asegurar la compatibilidad con el backend (.NET C#), los campos de catálogo deben tratarse como **Enteros**:
 
 - **Input HTML**: Usar el modificador `.number` en `v-model` (ej: `v-model.number="formData.GenderCatalog"`).
@@ -42,10 +52,12 @@ Para asegurar la compatibilidad con el backend (.NET C#), los campos de catálog
 
 ## 🗺 Visualización en el Mapa
 
-### 3. Marcadores y Capas
-- **Puntos Capturados**:
-  - Marcadores de color dinámico según el tipo de registro (Ej. Verde = Concluido, Rojo = Rechazado).
-  - Etiquetas con el nombre del titular al acercar el mapa (Zoom > 18).
+### 4. Marcadores y Reglas de Agrupamiento
+- **Agrupamiento por Proximidad (Snapping)**: Los registros individuales no se muestran si están a menos de **3 metros** de otro. Se agrupan bajo un único marcador que representa la "Unidad de Propiedad de Hecho".
+- **Semáforo de Estado**:
+  - **Rojo (Hue 0°)**: Es el punto de última interacción en la sesión actual.
+  - **Verde (Hue 120°)**: El predio está completo (Tiene al menos 1 Ficha, 1 Entrevistado y 1 Dueño).
+  - **Amarillo (Hue 60°)**: El predio tiene datos pero el ciclo de factopercepción está incompleto.
 
 - **Capas Vectoriales**:
   - **Predios**: Bordes amarillos (#FFD600), relleno transparente para lectura de fondo.

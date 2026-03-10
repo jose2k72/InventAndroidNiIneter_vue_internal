@@ -25,8 +25,8 @@ window.ModelsFactory = {
         OrigenTierraOtroText: '',
         ResenaHistorica: '',
         Direccion: '',
-        Cacerio: '',
-        Barrio: '',
+        Caserio: '',
+        BarrioComarca: '',
         Manzana: '',
         NumeroLote: '',
         TipoUsoCatalog: null,
@@ -88,8 +88,8 @@ window.ModelsFactory = {
         ProfessionOtroText: '',
         ResidenceMunicipioCatalog: '', // string en C# (Código compuesto)
         ResidenceDireccion: '',
-        ResidenceComarca: '',
-        ResidenceBarrio: '',
+        ResidenceCaserio: '',
+        ResidenceBarrioComarca: '',
 
         // Contexto y Auditoría (ADN Común de App)
         Localizacion: ctx?.loc || '',

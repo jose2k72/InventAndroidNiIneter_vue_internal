@@ -28,34 +28,40 @@ Para facilitar el consumo desde las diferentes capas del proyecto, estos archivo
 
 ## 2. Flujo de Modelado de Datos (Esquema)
 
-El diseño de las entidades (como la Ficha, Persona, Propietario) no es estático y ha pasado por un proceso de refinamiento y sincronización.
+El diseño de las entidades (Ficha, Persona, Propietario, Familia) sigue una arquitectura pragmática que equilibra la normativa institucional con la viabilidad técnica en campo.
 
-### El "Norte" (Modelo Original)
-El modelo de datos ideal y completo está documentado en:
-*   `DOCS\20260220\ModeloDatos_SurveyCatV2.pdf`: Especificación técnica completa del modelo V2 de INETER.
+### El "Norte" (Documentación Original / Modelo Institucional)
+Ubicación: `DOCS\20260220\`
+Este es el bloque de referencia institucional de INETER, compuesto por elementos altamente sincronizados:
+*   **Origen Físico**: `ModeloDatos_SurveyCatV2.pdf` (especificación completa).
+*   **Análisis Técnico**: Carpeta `ANALISIS` (incluye SQL DDL destilado).
+*   **Modelos de Referencia**: Carpeta `MODELO` (clases `.cs` que reflejan el modelo teórico 1:1).
 
-### El DTO como Adaptación (C# Core)
-El **DTO (Data Transfer Object)** en `NI.INETER.Core\Models` es nuestra estructura de intercambio oficial, pero es importante entender su naturaleza:
-*   **Construcción Selectiva:** No es un espejo 1:1 del PDF original; es una selección de lo que realmente se requiere representar en la solución actual.
-*   **Adaptación de Negocio:** El DTO adapta conceptos del modelo original para que sean funcionales en el sistema. Hay cosas que se tratan de forma diferente en el modelo teórico vs el DTO de intercambio.
-*   **Estado Evolutivo:** Muchas características de la documentación original aún no están implementadas y requieren un estudio previo antes de reflejarlas en el DTO.
+### El DTO como Herramienta Operativa (C# Core)
+Ubicación: `SRC\NI.INETER.Core\Models`
+Es nuestra **adaptación oficial de intercambio**. Es vital entender que el DTO **no es un subordinado** ni un espejo exacto del modelo original por las siguientes razones:
+*   **Modelado Selectivo**: Solo se incluyen las entidades y campos que hemos decidido implementar para la solución actual.
+*   **Re-conceptualización**: El DTO se toma la libertad de tratar ciertos datos de forma distinta a la documentación institucional, simplificando procesos y estructuras rígidas del modelo teórico para adaptarlas al negocio real.
+*   **Unicidad de la Verdad (Tríada de Referencia)**: La identificación y comparación de datos no se hace solo contra el PDF; se debe realizar contra el **Bloque de Referencia Unificado** (PDF, Análisis SQL/MD y Modelos .cs). Estos tres elementos son "la misma verdad" en formatos distintos.
+*   **Dificultad de Comparación**: Debido a las simplificaciones técnicas del DTO, compararlo contra la Tríada de Referencia requiere un análisis de intención y concepto, ya que los nombres de columnas o la granularidad pueden haber variado drásticamente en favor de la operatividad.
 
 ---
 
 ## 3. Representación en Android e Intercambio (JSON)
 
-La aplicación Android (Vue.js) consume y produce datos basados en la estructura definida en los DTOs de C#, pero con matices operativos.
+La aplicación Android (Vue.js) consume y produce datos basados en la estructura definida en los DTOs de C#, pero con una capa adicional de enriquecimiento operativo.
 
-### 3.1 La Regla del Espejo Flexibilizada (DTO + Contexto)
-La relación entre el **DTO y el modelo JS** ya no es 1:1 estricta, sino que se define de la siguiente manera:
-*   **Campos de Negocio (Persistentes)**: Debe existir una correspondencia exacta en nombre y tipo entre el JS y el C# para asegurar que los datos se guarden en la base de datos final.
-*   **Campos Operativos/Temporales (Inyectados)**: Se permite la inclusión de propiedades adicionales en el JSON (como metadatos de auditoría `Encuestador`, `Fecha`, datos espaciales `LatLng`, o flags de UI `_isFromMap`). 
-*   **Recepción en C#**: Aunque estos campos operativos no se persistan directamente en las tablas de la base de datos de destino, el código C# debe ser capaz de recibirlos dentro del BLOB JSON para tomar decisiones de flujo, validaciones de auditoría o transformaciones en caliente.
+### 3.1 El Modelo JS/JSON (Extensión del DTO)
+El modelo JS que reside en la App es, en esencia, **el mismo DTO de C#** con las siguientes características:
+*   **Espejo de Negocio**: Mantiene una correspondencia exacta en nombre y tipo con los campos del DTO para asegurar la persistencia.
+*   **Campos Operativos/Enriquecidos**: Se inyectan propiedades adicionales necesarias para el funcionamiento de la App (ej: metadatos de UI `_isFromMap`, auditoría local `Encuestador`, coordenadas `LatLng`). 
+*   **Persistencia Futura**: Aunque estos campos operativos no se persigan actualmente en tablas SQL individuales, viajan dentro del BLOB JSON. Esto no interfiere con el sistema; al contrario, es información que queda disponible para futuras decisiones de negocio o auditoría.
+
 ### 3.2 Estándares de Datos Operativos (JSON)
-Para asegurar la consistencia y ligereza del intercambio de datos, se aplican las siguientes reglas obligatorias:
+Para asegurar la consistencia, se aplican las siguientes reglas:
 1. **Fechas**: Siempre en formato **ISO 8601** (`YYYY-MM-DD`). La conversión a formato local para visualización debe ocurrir solo en la capa de UI.
 2. **Encuestador**: Se deben almacenar únicamente las **iniciales** (ej: "JB").
-3. **Coordenadas Proyectadas**: El objeto `LocalProj` debe usar estrictamente las claves **`x`** e **`y`** (minúsculas).
+3. **Coordenadas**: El objeto `LocalProj` usa estrictamente las claves **`x`** e **`y`** (minúsculas).
 
 ### 3.2 Tabla de Mapeo de Clases
 
@@ -105,6 +111,29 @@ Existen campos en el modelo JavaScript que NO persisten en columnas individuales
     *   En C#, se espera una `List<DocumentoFicha>` donde los campos coincidan con los del objeto JS del array.
 *   **Fechas**: En JS se manejan como strings (`YYYY-MM-DD`), en C# el DTO debe usar `DateTime?` para permitir nulos sin romper el mapeo.
 *   **Tenencia**: La Ficha ya **NO** contiene campos de derecho parcelario. Estos han sido movidos a `SujetoNatural`.
+
+---
+
+## 4. Análisis de Identificación y Ubicación (Divergencias Técnicas)
+
+Para evitar errores de interpretación al proyectar el DTO hacia la Tríada de Referencia (original), se deben considerar las siguientes realidades de negocio:
+
+### 4.1 Identidad de la Encuesta (`Ficha`)
+*   **UUID de Identificación (Unívoco)**: Aunque no sea un campo institucional, en el DTO/JS (`IdPropiedad`) se genera un UUID único por encuesta. Esto garantiza la integridad y trazabilidad absoluta del registro ante cualquier cambio de nomenclatura oficial posterior.
+*   **No. Encuesta (Campañista)**: El campo `NoEncuesta` es un código de referencia interno/no oficial. Se utiliza para identificar la encuesta de forma rápida durante la campaña técnica, pero no sustituye al folio real.
+*   **Localización (Vínculo No Oficial)**: El campo `Localizacion` **no es un dato oficial de catastro**. Es un identificador generado por nuestro equipo durante la preparación de la cartografía WGS84. Es vital para:
+    *   Soportar la lógica de relación espacial de la App.
+    *   Generar nomenclaturas y códigos temporales únicos.
+    *   Una vez entregados los datos, la institución se encargará de asignar su propia codificación "oficial" definitiva.
+
+### 4.2 El Concepto de "Sector" (Divergencia Semántica)
+*   **Sector Logístico vs Geográfico**: Existe una homonimia con el modelo original. El `IdSector` en el DTO **no representa** el sector geográfico administrativo.
+*   **Propósito**: Representa el **Sector de Campaña de Encuesta** (Lote de trabajo). Responde a un requerimiento operativo para organizar la entrega de datos por grupos de manzanas (lotes), facilitando el ingreso manual posterior por parte de la entidad.
+
+### 4.3 Flexibilidad Geográfica y "Truth on Ground"
+*   **Aplanamiento de Tablas**: Se decidió usar `string` (texto libre) para **Caserío** y **Barrio/Comarca**, rompiendo el esquema relacional rígido del original.
+*   **Razón**: La entidad solo posee límites normalizados fiables a nivel de **Municipio y Departamento**. Exigir catálogos en niveles inferiores bloquearía el levantamiento en zonas rurales o urbanas no saneadas.
+*   **Realidad del Terreno**: La App ignora las delimitaciones teóricas de límites urbanos/rurales institucionales. El objetivo es capturar el estado real de la verdad física sobre el terreno en el momento del levantamiento.
 
 ---
 

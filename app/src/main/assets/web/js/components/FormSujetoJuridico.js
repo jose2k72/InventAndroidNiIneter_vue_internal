@@ -42,12 +42,12 @@ const FormSujetoJuridico = {
                 <h3>📜 Registro Público</h3>
                 
                 <div class="form-group">
-                    <label>Registrada En</label>
+                    <label :style="{color: errors.RegistradaEn ? 'red' : 'inherit', fontWeight: errors.RegistradaEn ? 'bold' : 'normal'}">Registrada En *</label>
                     <input type="text" v-model="formData.RegistradaEn" placeholder="Ej: Registro Público de Managua">
                 </div>
 
                 <div class="form-group">
-                    <label>Fecha de Registro</label>
+                    <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha de Registro *</label>
                     <input type="date" v-model="formData.FechaRegistro">
                 </div>
             </div>
@@ -57,23 +57,23 @@ const FormSujetoJuridico = {
                 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label>Número de Socios</label>
+                        <label :style="{color: errors.NroSociosSocias ? 'red' : 'inherit', fontWeight: errors.NroSociosSocias ? 'bold' : 'normal'}">Número de Socios *</label>
                         <input type="number" v-model.number="formData.NroSocios" min="0">
                     </div>
                     <div class="form-group">
-                        <label>Número de Socias</label>
+                        <label :style="{color: errors.NroSociosSocias ? 'red' : 'inherit', fontWeight: errors.NroSociosSocias ? 'bold' : 'normal'}">Número de Socias *</label>
                         <input type="number" v-model.number="formData.NroSocias" min="0">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Denominación</label>
+                    <label :style="{color: errors.Denominacion ? 'red' : 'inherit', fontWeight: errors.Denominacion ? 'bold' : 'normal'}">Denominación *</label>
                     <input type="text" v-model="formData.Denominacion" placeholder="Ej: Sucursal Norte">
                 </div>
 
                 <div class="form-group">
                     <label>Número total de Miembros</label>
-                    <input type="number" v-model.number="formData.NroMiembros" min="0">
+                    <input type="number" :value="totalMiembros" readonly style="background-color: #f5f5f5; color: #1565C0; font-weight: bold;">
                 </div>
             </div>
 
@@ -106,6 +106,26 @@ const FormSujetoJuridico = {
             ]
         };
 
+        // Cálculo automático del total de miembros
+        const totalMiembros = Vue.computed(() => {
+            const socios = parseInt(formData.NroSocios) || 0;
+            const socias = parseInt(formData.NroSocias) || 0;
+            return socios + socias;
+        });
+
+        // Sincronizar el total al modelo para la salva
+        Vue.watchEffect(() => {
+            formData.NroMiembros = totalMiembros.value;
+        });
+
+        // Limpieza de errores al escribir
+        Vue.watch(() => formData.Identificacion, () => delete errors.Identificacion);
+        Vue.watch(() => formData.RazonSocial, () => delete errors.RazonSocial);
+        Vue.watch(() => formData.RegistradaEn, () => delete errors.RegistradaEn);
+        Vue.watch(() => formData.FechaRegistro, () => delete errors.FechaRegistro);
+        Vue.watch(() => [formData.NroSocios, formData.NroSocias], () => delete errors.NroSociosSocias);
+        Vue.watch(() => formData.Denominacion, () => delete errors.Denominacion);
+
         // Limpiar "Otro" si se cambia el tipo de persona jurídica
         Vue.watch(() => formData.TipoPersonaJuridicaCatalog, (newVal) => {
             if (newVal !== 4) {
@@ -136,8 +156,31 @@ const FormSujetoJuridico = {
                 errorList.push('Especificar Tipo de Persona Jurídica');
             }
 
+            // Registro Público (Obligatorios)
+            if (!formData.RegistradaEn?.trim()) {
+                errors.RegistradaEn = true;
+                errorList.push('Registrada En');
+            }
+            if (!formData.FechaRegistro) {
+                errors.FechaRegistro = true;
+                errorList.push('Fecha de Registro');
+            }
+
+            // Composición y Miembros
+            if (!formData.Denominacion?.trim()) {
+                errors.Denominacion = true;
+                errorList.push('Denominación');
+            }
+
+            const socios = parseInt(formData.NroSocios) || 0;
+            const socias = parseInt(formData.NroSocias) || 0;
+            if (socios < 0 || socias < 0 || (socios + socias) <= 0) {
+                errors.NroSociosSocias = true;
+                errorList.push('Número de Socios/Socias (la suma debe ser mayor a 0)');
+            }
+
             if (errorList.length > 0) {
-                const msg = '⚠️ Faltan datos obligatorios. Por favor, revise los campos marcados en rojo.';
+                const msg = '⚠️ Faltan datos obligatorios o inválidos. Revise los campos marcados en rojo.';
                 if (typeof Android !== 'undefined' && Android.showAlert) {
                     Android.showAlert(msg);
                 } else {
