@@ -348,6 +348,14 @@
                     <img src="images/family.svg" alt="Familia">
                     <span>COMPOSICIÓN FAMILIAR</span>
                 </button>
+                <button class="nav-btn" @click="startCreate('NoEncuestado')" style="border-left: 4px solid #dc3545; background: #fff5f5;">
+                    <img src="images/survey.svg" alt="No Encuestado" style="filter: hue-rotate(150deg) saturate(10);">
+                    <span style="color: #dc3545; font-weight: bold;">🚫 PREDIO NO ENCUESTADO</span>
+                </button>
+                <button class="nav-btn" @click="startCreate('UnionConPredio')" style="border-left: 4px solid #6200EE; background: #f3e5f5;">
+                    <img src="images/survey.svg" alt="Unión con Predio" style="filter: hue-rotate(250deg) saturate(5);">
+                    <span style="color: #6200EE; font-weight: bold;">🔗 UNIÓN CON PREDIO</span>
+                </button>
 
                 <!-- <button class="nav-btn" @click="startCreate('Acera')">
                     <img src="images/sidewalk.svg" alt="Acera">
@@ -447,6 +455,10 @@
                 @camera="openCamera"></form-entrevistado>
             <form-familiares v-if="formType === 'Familiares'" :data="formData" @save="sendData"
                 @cancel="volver"></form-familiares>
+            <form-no-encuestado v-if="formType === 'NoEncuestado'" :data="formData" @save="sendData"
+                @cancel="volver"></form-no-encuestado>
+            <form-union-con-predio v-if="formType === 'UnionConPredio'" :data="formData" @save="sendData"
+                @cancel="volver"></form-union-con-predio>
         </div>
 
         <!-- Vista Global Selección de Catálogo Masivo -->
@@ -487,6 +499,8 @@
     <script src="js/components/FormSujetoJuridico.js"></script>
     <script src="js/components/FormEntrevistado.js"></script>
     <script src="js/components/FormFamiliares.js"></script>
+    <script src="js/components/FormNoEncuestado.js"></script>
+    <script src="js/components/FormUnionConPredio.js"></script>
 
     <!-- Montar la app después de cargar componentes -->
     <script>

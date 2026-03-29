@@ -1,0 +1,106 @@
+[
+  {
+    "id": "1",
+    "nombre": "Habitacional",
+    "descripcion": "cuando existe en la parcela  viviendas/casas con la finalidad de  ser habitación. En este caso no es necesario que sea habitada por el protagonista dueño de la propiedad o  que este deshabitada su uso siempre será habitacional y se describe quien la habita cuando no la habita el dueño de la parcela "
+  },
+  {
+    "id": "2",
+    "nombre": "Comercial",
+    "descripcion": "(Bodega, beneficio de café, acopio de granos) depósitos,  fábricas alimenticias, hoteles, restaurantes,  estaciones de servicio."
+  },
+  {
+    "id": "3",
+    "nombre": "Agricola",
+    "descripcion": "Describir los tipos de siembro o cultivos permanentes o temporales  como, bosque, tacotales, viveros de plantas   y otros."
+  },
+  {
+    "id": "4",
+    "nombre": "Pecuario",
+    "descripcion": "Breve descripción del el tipo de pasto-ganado, forrajes, crianza de ganado y granjas lecheras."
+  },
+  {
+    "id": "5",
+    "nombre": "Mixto",
+    "descripcion": "Puede ser habitacional/agrícola/pecuario/comercial. Nota: para ser  uso mixto basta la existencia de dos tipos de uso- "
+  },
+  {
+    "id": "6",
+    "nombre": "Área Comunal",
+    "descripcion": "Casas Comunales, Zonas Comunitarias, Zonas Comerciales, Mercado Municipal, Baños Comunitarios"
+  },
+  {
+    "id": "7",
+    "nombre": "Área verde",
+    "descripcion": "Bulevares, corredores verdes, franjas verdes."
+  },
+  {
+    "id": "8",
+    "nombre": "Asistencia social",
+    "descripcion": "Hogar infantil, Centro de rehabilitación para adicciones y reinserción social"
+  },
+  {
+    "id": "9",
+    "nombre": "Cauce"
+  },
+  {
+    "id": "10",
+    "nombre": "Cultura",
+    "descripcion": "Teatro, Museo, Biblioteca, Cinemateca etc."
+  },
+  {
+    "id": "11",
+    "nombre": "Educación",
+    "descripcion": "Educación, Escuela de manejo, Escuela Preescolar, Escuela Primaria, Escuela Secundaria, Escuela técnica y vocacional, Universidad, Escuela especial, Instituto de Investigación, Escuela primaria y secundaria"
+  },
+  {
+    "id": "12",
+    "nombre": "Esparcimiento",
+    "descripcion": "Campo de equitación, Campo deportivo, Cancha de deportes, Casino, Centro Turístico, Club deportivo, Escuela de danza, Gimnasio múltiple (polideportivo), Parque infantil, Parque residencial, Parque urbano, Piscina pública"
+  },
+  {
+    "id": "13",
+    "nombre": "Gubernamental",
+    "descripcion": "Gobierno central, Gobierno local, Alcaldía Municipal, Policía, ENATREL, Estación de Bomberos, Lotería Nacional"
+  },
+  {
+    "id": "14",
+    "nombre": "Hidrografía",
+    "descripcion": "Ríos, lagos, lagunas."
+  },
+  {
+    "id": "15",
+    "nombre": "Organismo Internacional",
+    "descripcion": "Embajadas, ONG´s"
+  },
+  {
+    "id": "16",
+    "nombre": "Patrimonio Arqueológico",
+    "descripcion": "Yacimientos arqueológicos, objetos y artefactos, monumentos y arte rupestre, etc."
+  },
+  {
+    "id": "17",
+    "nombre": "Red vial",
+    "descripcion": "Distribuidor primario, colector primario, colector secundario, calles, callejón"
+  },
+  {
+    "id": "18",
+    "nombre": "Retiro",
+    "descripcion": "Retiro de derecho de vía de cauce: distancia medida a partir de la cota de elevación máxima de los taludes del cauce hacia el límite de la propiedad colindante; área perteneciente a la municipalidad, esta distancia varía según el estado físico del cauce."
+  },
+  {
+    "id": "19",
+    "nombre": "Salud",
+    "descripcion": "Hospital General, Clínica Privada, Centro de salud, Consultorio Privado, Puesto de salud, Laboratorios, Servicios de veterinaria"
+  },
+  {
+    "id": "20",
+    "nombre": "Servicios Sociales",
+    "descripcion": "Casa Pastoral, Sedes sociales y servicios conexos, Sedes políticas, sociales y literarias, Sedes de asociaciones comerciales, profesionales y laborales, Centros de Desarrollo Infantil (C. D. I), Edificios de culto (Iglesias)"
+  },
+  {
+    "id": "21",
+    "nombre": "Servicio Público",
+    "descripcion": "Cementerio, Antena, Basurero Municipal, Plantel de Almacenamiento, Pila de Captación de Agua, Planta Hidroeléctrica, Pozo de agua, Puesto de Control Forestal, Rastro Municipal, Tanque de agua"
+  }
+]

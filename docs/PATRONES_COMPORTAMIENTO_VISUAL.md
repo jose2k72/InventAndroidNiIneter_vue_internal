@@ -55,9 +55,11 @@ Para asegurar la compatibilidad con el backend (.NET C#), los campos de catálog
 ### 4. Marcadores y Reglas de Agrupamiento
 - **Agrupamiento por Proximidad (Snapping)**: Los registros individuales no se muestran si están a menos de **3 metros** de otro. Se agrupan bajo un único marcador que representa la "Unidad de Propiedad de Hecho".
 - **Semáforo de Estado**:
-  - **Rojo (Hue 0°)**: Es el punto de última interacción en la sesión actual.
-  - **Verde (Hue 120°)**: El predio está completo (Tiene al menos 1 Ficha, 1 Entrevistado y 1 Dueño).
-  - **Amarillo (Hue 60°)**: El predio tiene datos pero el ciclo de factopercepción está incompleto.
+  - **Violeta (Hue 270°)**: Es el punto de última interacción o guardado en la sesión actual (Sustituye al anterior color rojo para mejor visibilidad).
+  - **Rojo (Hue 0°)**: Predio marcado como **No Encuestado** (Indica una incidencia técnica o social que impidió la encuesta).
+  - **Cian (Hue 180°)**: Predio con **Unión con Master** (Indica que este objeto es dependiente y hereda la información de un polígono colindante).
+  - **Verde (Hue 120°)**: El predio está completo (Ciclo operativo estándar: Tiene al menos 1 Ficha, 1 Entrevistado y 1 Dueño).
+  - **Amarillo (Hue 60°)**: El predio tiene datos pero el ciclo operativo está incompleto.
 
 - **Capas Vectoriales**:
   - **Predios**: Bordes amarillos (#FFD600), relleno transparente para lectura de fondo.

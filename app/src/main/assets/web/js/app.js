@@ -185,8 +185,14 @@ const app = createApp({
                     formData.value = ModelsFactory.createEntrevistado(ctx);
                 } else if (type === 'Familiares') {
                     formData.value = ModelsFactory.createFamiliares(ctx);
+                } else if (type === 'NoEncuestado') {
+                    formData.value = ModelsFactory.createNoEncuestado(ctx);
+                } else if (type === 'UnionConPredio') {
+                    formData.value = ModelsFactory.createUnionConPredio(ctx);
                 }
             }
+
+
 
             operation.value = 'Edit';
         };
@@ -416,12 +422,13 @@ const app = createApp({
             console.log('🏁 Iniciando creación:', type);
 
             // 1. Validar reglas de negocio con WorkflowService
-            const workflow = WorkflowService.validateCreation(type, listData.value);
-            if (!workflow.allowed) {
+            const check = WorkflowService.validateCreation(type, listData.value, idObject.value);
+            if (!check.allowed) {
+
                 showConfirmModal({
-                    icon: workflow.icon || '⚠️',
-                    title: workflow.title,
-                    message: workflow.message,
+                    icon: check.icon || '⚠️',
+                    title: check.title,
+                    message: check.message,
                     confirmText: 'Entendido',
                     cancelText: '',
                     onConfirm: () => { }

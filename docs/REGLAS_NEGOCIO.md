@@ -20,6 +20,20 @@ Todas las reglas de flujo son validadas centralizadamente por el `WorkflowServic
 - **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único **"Sujeto Natural"**, el sistema ejecuta un borrado en cascada automático de su composición familiar vinculada.
 - **Validación de Borrado**: No se permite eliminar al **Entrevistado** si ya existe una **Ficha** (Encuesta) vinculada, protegiendo la integridad referencial.
 - **Relación Entrevistado-Propietario**: Si el entrevistado es el mismo propietario, el sistema permite una creación silenciosa para evitar doble entrada de datos mediante el `ConversionService`.
+- **Candidatos Master (Unificación)**: Un predio solo puede ser Master si ya tiene información registrada y esta pertenece a un **único cluster** espacial (una sola acumulación de puntos a menos de 3 metros).
+
+### 1.4 Reglas de Exclusividad de Estado (Bidireccional)
+Para garantizar la integridad del inventario, los registros se dividen en dos categorías mutuamente excluyentes:
+
+1.  **Estado Operativo (Normal)**: Predios con Ficha, Entrevistado, Propietarios, etc.
+2.  **Estado de Excepción (Terminal)**: Predios marcados como **No Encuestado** o **Unión con Predio**.
+
+**Restricciones Estrictas:**
+- **Bloqueo por Información Existing**: Si un predio ya tiene *cualquier* registro operativo, el sistema **impide** que sea marcado como excepción (No Encuestado/Unión).
+- **Bloqueo por Excepción**: Si un predio ya cuenta con un registro de No Encuestado o Unión, el sistema **bloquea** la inserción de cualquier otro tipo de dato normal.
+- **Exclusividad de Excepción**: Un predio no puede ser simultáneamente "No Encuestado" y "Unión con Predio". Solo se admite una de estas marcas por polígono.
+
+---
 
 ---
 

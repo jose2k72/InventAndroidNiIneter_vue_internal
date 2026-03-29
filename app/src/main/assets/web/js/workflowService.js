@@ -8,9 +8,10 @@ window.WorkflowService = {
      * Valida si se permite la creación de un nuevo registro basado en el estado actual
      * @param {String} type - Tipo de registro a crear
      * @param {Array} listData - Lista de registros existentes en el predio
+     * @param {Number} idObject - El ID geográfico del predio actual (opcional)
      * @returns {Object} { allowed: boolean, title: string, message: string, icon: string }
      */
-    validateCreation: function (type, listData) {
+    validateCreation: function (type, listData, idObject) {
         if (!listData) return { allowed: true };
 
         // 1. Mapeo de existencia
@@ -18,8 +19,32 @@ window.WorkflowService = {
         const hasEntrevistado = listData.some(item => item.Data?.Type === 'Entrevistado');
         const hasFicha = listData.some(item => item.Data?.Type === 'Ficha');
         const hasFamiliares = listData.some(item => item.Data?.Type === 'Familiares');
+        const hasNoEncuestado = listData.some(item => item.Data?.Type === 'NoEncuestado');
+        const hasUnionPredio = listData.some(item => item.Data?.Type === 'UnionConPredio');
 
-        // 2. Reglas por Tipo
+        // --- REGLAS DE EXCLUSIVIDAD TOTAL ---
+        
+        // 1. Si ya existe una excepción, no se permite agregar nada más
+        if (hasNoEncuestado || hasUnionPredio) {
+            return {
+                allowed: false,
+                icon: '🚫',
+                title: 'Predio con restricción',
+                message: 'Este predio ya cuenta con un registro de estado final (No Encuestado o Unión). No se permite agregar más información.'
+            };
+        }
+
+        // 2. Si se intenta agregar una excepción pero ya hay datos normales, bloquear
+        if ((type === 'NoEncuestado' || type === 'UnionConPredio') && listData.length > 0) {
+            return {
+                allowed: false,
+                icon: '🚫',
+                title: 'Acción no permitida',
+                message: 'No se puede marcar el predio como excepción si ya cuenta con información capturada (Encuesta, Propietario, etc.).'
+            };
+        }
+
+        // 3. Reglas por Tipo normalizados...
 
         // REGLA: Entrevistado Único
         if (type === 'Entrevistado' && hasEntrevistado) {
@@ -64,6 +89,27 @@ window.WorkflowService = {
                     title: 'Faltan datos',
                     message: 'Debe registrar primero un Entrevistado antes de realizar la encuesta.'
                 };
+            }
+        }
+
+        // REGLA: Unión con Predio (Englobamiento) - Validación Espacial Estricta
+
+        if (type === 'UnionConPredio') {
+            if (typeof Android !== 'undefined' && Android.getDataInAdjacentPolygons && idObject) {
+                try {
+                    const candidatos = this.getMasterCandidates(idObject);
+
+                    if (candidatos.length === 0) {
+                        return {
+                            allowed: false,
+                            icon: '🚫',
+                            title: 'Unión no permitida',
+                            message: 'No existen predios colindantes inmediatos que tengan información única registrada (exactamente un cluster).'
+                        };
+                    }
+                } catch (e) {
+                    console.error('Error validando colindancia:', e);
+                }
             }
         }
 
@@ -113,5 +159,70 @@ window.WorkflowService = {
             }
         }
         return null;
+    },
+
+    /**
+     * Obtiene los candidatos válidos para ser Predio Master
+     * @param {Number} idObject 
+     * @returns {Array} [{ localizacion, direccionRelativa }]
+     */
+    getMasterCandidates: function (idObject) {
+        if (typeof Android === 'undefined' || !Android.getDataInAdjacentPolygons || !idObject) return [];
+
+        try {
+            const rawJson = Android.getDataInAdjacentPolygons(idObject);
+            const adyacentes = JSON.parse(rawJson || "[]");
+
+            // 1. Agrupar por localización del predio vecino
+            const gruposPorPredio = {};
+            adyacentes.forEach(item => {
+                const loc = item.LocalizacionPredio;
+                if (!gruposPorPredio[loc]) gruposPorPredio[loc] = [];
+                gruposPorPredio[loc].push(item);
+            });
+
+            const candidatosFinales = [];
+
+            // 2. Analizar cada predio vecino para ver si tiene un ÚNICO cluster
+            Object.keys(gruposPorPredio).forEach(loc => {
+                const registros = gruposPorPredio[loc];
+                if (registros.length === 0) return;
+
+                // Agrupar registros por proximidad (3 metros)
+                const clustersInNeighbor = [];
+                registros.forEach(reg => {
+                    const lat = reg.Latitud;
+                    const lng = reg.Longitud;
+                    
+                    let foundCluster = clustersInNeighbor.find(c => {
+                        // Cálculo de distancia simple (aproximado para 3m es suficiente)
+                        const d = Math.sqrt(Math.pow(lat - c.lat, 2) + Math.pow(lng - c.lng, 2));
+                        return d < 0.00003; // Aprox 3 metros en grados
+                    });
+
+                    if (!foundCluster) {
+                        clustersInNeighbor.push({ lat, lng, count: 1 });
+                    } else {
+                        foundCluster.count++;
+                    }
+                });
+
+                // REGLA DE ORO: Debe tener información y esta debe pertenecer a UN SOLO cluster
+                if (clustersInNeighbor.length === 1) {
+                    candidatosFinales.push({
+                        localizacion: loc,
+                        direccionRelativa: registros[0].DireccionRelativa || '?'
+                    });
+                } else {
+                    console.log(`🚫 Predio ${loc} descartado por tener ${clustersInNeighbor.length} clusters.`);
+                }
+            });
+
+            return candidatosFinales;
+        } catch (e) {
+            console.error('Error en getMasterCandidates:', e);
+            return [];
+        }
     }
+
 };

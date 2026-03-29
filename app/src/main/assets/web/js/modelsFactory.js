@@ -30,7 +30,8 @@ window.ModelsFactory = {
         Manzana: '',
         NumeroLote: '',
         TipoUsoCatalog: null,
-        Descripcion: '',
+        DescripcionUsoCatalog: null,
+        DescripcionUsoOtroText: '',
         AreaEstimada: mapData?.area || null,
         UnidadMedidaAreaEstimadaCatalog: mapData?.area ? 3 : null, // 3 = Metros Cuadrados
         ServidumbreAguaCatalog: null,
@@ -47,7 +48,7 @@ window.ModelsFactory = {
         TieneDatosRegistrales: false,
         FechaAdquisicion: null,
         FechaRegistro: null,
-        NoFinca: '',
+        NoFinca_NAP: '',
         Tomo: '',
         Folio: '',
         Asiento: '',
@@ -56,6 +57,7 @@ window.ModelsFactory = {
         ClaseConflictoOtroText: '',
         GestionConflictoCatalog: null,
         GestionConflictoOtroText: '',
+        ObservacionesGenerales: '',
 
         // Contexto y Auditoría
         Localizacion: ctx?.loc || '',
@@ -149,6 +151,7 @@ window.ModelsFactory = {
             Type: 'SujetoJuridico',
             Identificacion: '',
             RazonSocial: '',
+            MuestraDatosRegistrales: false,
             RegistradaEn: '',
             FechaRegistro: null,
             TipoPersonaJuridicaCatalog: null,
@@ -157,6 +160,7 @@ window.ModelsFactory = {
             NroSocias: 0,
             Colectivo: '',
             Denominacion: '',
+            MuestraDatosDeMiembros: false,
             NroMiembros: 0,
 
             // Contexto y Auditoría
@@ -212,6 +216,42 @@ window.ModelsFactory = {
     }),
 
     /**
+     * Crea un modelo de No Encuestado (Cuando no se pudo realizar la encuesta)
+     */
+    createNoEncuestado: (ctx) => ({
+        Type: 'NoEncuestado',
+        Descripcion: '',
+        
+        // Contexto y Auditoría
+        Localizacion: ctx?.loc || '',
+        Fecha: ctx?.fecha || new Date().toISOString().split('T')[0],
+        Encuestador: ctx?.enc || null,
+        IdObject: ctx?.idObject || 0,
+        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
+        Imagenes: ''
+    }),
+
+    /**
+     * Crea un modelo de Unión con Predio (Englobamiento)
+     */
+    createUnionConPredio: (ctx) => ({
+        Type: 'UnionConPredio',
+        LocalizacionMaster: '',
+        _MasterDireccionRelativa: '', // Ayuda visual (N, S, E, O)
+        
+        // Contexto y Auditoría
+        Localizacion: ctx?.loc || '',
+        Fecha: ctx?.fecha || new Date().toISOString().split('T')[0],
+        Encuestador: ctx?.enc || null,
+        IdObject: ctx?.idObject || 0,
+        LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
+        LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
+        Imagenes: ''
+    }),
+
+    /**
+
      * Crea un modelo de Costo (Legacy)
      */
     createCosto: (lat, lng, x, y) => ({

@@ -157,6 +157,32 @@ El campo `DATOS` almacena todo el formulario serializado como JSON. La estructur
 }
 ```
 
+**Ejemplo para No Encuestado:**
+```json
+{
+  "Type": "NoEncuestado",
+  "Descripcion": "El ocupante se niega a brindar datos por conflicto de linderos.",
+  "Localizacion": "Barrio San José, Sector 4",
+  "Encuestador": "JB",
+  "Fecha": "2026-03-29",
+  "IdObject": 45021
+}
+```
+
+**Ejemplo para Unión con Predio:**
+```json
+{
+  "Type": "UnionConPredio",
+  "LocalizacionMaster": "6065-01-002-045",
+  "_MasterDireccionRelativa": "Norte",
+  "Localizacion": "6065-01-002-046",
+  "Encuestador": "JB",
+  "Fecha": "2026-03-29",
+  "IdObject": 45022
+}
+```
+
+
 
 #### Operaciones CRUD
 

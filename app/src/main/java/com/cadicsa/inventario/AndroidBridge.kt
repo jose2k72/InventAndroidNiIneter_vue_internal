@@ -43,9 +43,10 @@ class AndroidBridge(activity: FormActivity) {
 
     @JavascriptInterface
     fun getFecha(): String {
-        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US)
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         return sdf.format(Date())
     }
+
 
     @JavascriptInterface
     fun getEncuestador(): String {
@@ -231,4 +232,16 @@ class AndroidBridge(activity: FormActivity) {
             1
         }
     }
+
+    @JavascriptInterface
+    fun getDataInAdjacentPolygons(idObject: Int): String {
+        val act = activity ?: return "[]"
+        return try {
+            DatabaseHelper.getInstance(act).getDataInAdjacentPolygons(idObject)
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidBridge", "Error en getDataInAdjacentPolygons: ${e.message}")
+            "[]"
+        }
+    }
 }
+

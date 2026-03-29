@@ -4,6 +4,33 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-03-29] - Control de Excepciones y Unificación Espacial
+
+### 🔗 Unión con Predio Master (Englobamiento)
+- **Funcionalidad Técnica**: Implementación de la unificación de predios dependientes ("Esclavos") con un predio de referencia ("Master").
+- **Validación Espacial Nativa**: El sistema ahora consulta dinámicamente (`SpatialHelper.kt`) los predios colindantes inmediatos para proponer candidatos a Master.
+- **Unicidad por Clusters**: Algoritmo corregido en `WorkflowService.js` que agrupa registros vecinos por proximidad (3 metros). Solo permite designar como Master a predios con una **única agrupación de datos**, garantizando que no haya ambigüedad en la herencia de información.
+- **Dirección Relativa**: Integración con `RoutingHelper` para mostrar visualmente la orientación (N, S, E, O) de los predios candidatos en el formulario.
+
+### 🚫 Gestión de Predios No Encuestados
+- **Nuevo Modelo de Incidencia**: Creación del DTO `NoEncuestado.cs` y formulario asociado para documentar formalmente por qué no se pudo realizar la encuesta en un polígono (ej. rechazo, ausencia, etc.).
+- **Sincronización de Auditoría**: Captura automática de fecha, encuestador y ubicación al momento de la creación.
+
+### 🛡️ Reglas de Exclusividad Bidireccional (Integridad)
+- **Integridad de Estado**: Implementación de reglas estrictas en el `WorkflowService.js`:
+    - Si un predio tiene datos (Ficha, Dueño, etc.) **no puede** ser marcado como No Encuestado ni Unión.
+    - Si ya existe una excepción (No Encuestado/Unión), se **bloquea** la inserción de cualquier otro tipo de dato en ese polígono.
+    - **Exclusividad Mutua**: Un predio solo puede ser No Encuestado *o* Unión, nunca ambos.
+
+### 🎨 simbología de Mapa Personalizada
+- **Nueva Paleta de Colores en `MapHelper.kt`**:
+    - 🟣 **Violeta (270f)**: Último registro guardado (mejor visibilidad que el rojo).
+    - 🔴 **Rojo (0f)**: Predios **No Encuestados** (Atención inmediata/Incidencia).
+    - 🔵 **Cian (180f)**: Predios con **Unión con Master** (Estado de dependencia técnica).
+    - 🟢 **Verde / 🟡 Amarillo**: Mantienen su lógica de "Completo" e "Incompleto" respectivamente.
+
+---
+
 ## [2026-03-10] - Unificación de Ubicación y Rigor en Captura
 
 ### 📍 Estandarización de Geografía y Residencia

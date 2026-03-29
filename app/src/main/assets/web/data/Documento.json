@@ -20,24 +20,9 @@
     "codigo": "DA23"
   },
   {
-    "id": "5",
-    "nombre": "Documento de Reforma Agraria: Escritura otorgada por la Procuradoria de la Republica",
-    "codigo": "DA24"
-  },
-  {
     "id": "6",
     "nombre": "Documento de Reforma Agraria: Constancia de Asignacion",
     "codigo": "DA26"
-  },
-  {
-    "id": "7",
-    "nombre": "Documento de Reforma Urbana: Escritura de Donación Ley 85-86",
-    "codigo": "DA27"
-  },
-  {
-    "id": "8",
-    "nombre": "Documento de Reforma Urbana: Donación por Documento Publico Autentico o Administrativo",
-    "codigo": "DA28"
   },
   {
     "id": "9",
@@ -50,16 +35,6 @@
     "codigo": "DA31"
   },
   {
-    "id": "11",
-    "nombre": "Documento de otro tipo: Otro",
-    "codigo": "DA33"
-  },
-  {
-    "id": "12",
-    "nombre": "Documento de Reforma Urbana: Dominio Administrativo",
-    "codigo": "DA57"
-  },
-  {
     "id": "13",
     "nombre": "Constancia de Posesion INRA",
     "codigo": "DA58"
@@ -70,39 +45,14 @@
     "codigo": "DA60"
   },
   {
-    "id": "15",
-    "nombre": "Documento de otro tipo: Constancia Administrativa",
-    "codigo": "DA62"
-  },
-  {
     "id": "16",
     "nombre": "Certificación Registral",
     "codigo": "DA65"
   },
   {
-    "id": "17",
-    "nombre": "Declaración del informante",
-    "codigo": "DI01"
-  },
-  {
-    "id": "18",
-    "nombre": "Escritura Publica: Venta Forzada",
-    "codigo": "DJ03"
-  },
-  {
-    "id": "19",
-    "nombre": "Derechos Sucesorios:Sucesión Intestada",
-    "codigo": "DJ08"
-  },
-  {
     "id": "20",
     "nombre": "Derechos sucesorios: Declaratoria de Herederos",
     "codigo": "DJ09"
-  },
-  {
-    "id": "21",
-    "nombre": "Derechos Sucesorios:Testamento",
-    "codigo": "DJ10"
   },
   {
     "id": "22",
@@ -123,11 +73,6 @@
     "id": "25",
     "nombre": "Titulo Supletorio: Mas de 30 anos de otorgado",
     "codigo": "DJ19"
-  },
-  {
-    "id": "26",
-    "nombre": "Documento de otro tipo: Otro",
-    "codigo": "DJ33"
   },
   {
     "id": "27",
@@ -160,19 +105,9 @@
     "codigo": "DJ54"
   },
   {
-    "id": "33",
-    "nombre": "Documento de Otro Tipo:Cesación de Comunidad",
-    "codigo": "DJ55"
-  },
-  {
     "id": "34",
     "nombre": "Documentos Judiciales: Memoria Testamentada",
     "codigo": "DJ56"
-  },
-  {
-    "id": "35",
-    "nombre": "Dación en Pago de Deuda",
-    "codigo": "DJ63"
   },
   {
     "id": "36",
@@ -195,44 +130,14 @@
     "codigo": "DN03"
   },
   {
-    "id": "40",
-    "nombre": "Escritura Publica: Promesa de venta",
-    "codigo": "DN04"
-  },
-  {
-    "id": "41",
-    "nombre": "Escritura Publica: Cesión de Derechos posesorios",
-    "codigo": "DN05"
-  },
-  {
     "id": "42",
     "nombre": "Escritura Publica: Cesión de Derechos Hereditarios",
     "codigo": "DN06"
   },
   {
-    "id": "43",
-    "nombre": "Minutas de Mejoras",
-    "codigo": "DN07"
-  },
-  {
-    "id": "44",
-    "nombre": "Derechos sucesorios: Sucesión Intestada",
-    "codigo": "DN08"
-  },
-  {
     "id": "45",
     "nombre": "Escritura Pública: Testamento",
     "codigo": "DN10"
-  },
-  {
-    "id": "46",
-    "nombre": "Minuta Descriptiva: Otro",
-    "codigo": "DN11"
-  },
-  {
-    "id": "47",
-    "nombre": "Escritura Publica: Arriendo con Opcion a Compra",
-    "codigo": "DN15"
   },
   {
     "id": "48",
@@ -241,13 +146,8 @@
   },
   {
     "id": "49",
-    "nombre": "ESCRITURA DE DONACION LEY 85 Y 86",
+    "nombre": "ESCRITURA DE DONACION LEY 85y 86",
     "codigo": "DN27"
-  },
-  {
-    "id": "50",
-    "nombre": "Donación por Documento Público(Auténtico y/o Admin",
-    "codigo": "DN28"
   },
   {
     "id": "51",
@@ -270,19 +170,9 @@
     "codigo": "DN55"
   },
   {
-    "id": "55",
-    "nombre": "Derechos Sucesorios:Memoria Testamentaria",
-    "codigo": "DN56"
-  },
-  {
     "id": "56",
     "nombre": "Escritura Pública:Partición Extrajudicial",
     "codigo": "DN59"
-  },
-  {
-    "id": "57",
-    "nombre": "Escritura Publica: Declaracio Notarial",
-    "codigo": "DN61"
   },
   {
     "id": "58",
@@ -300,64 +190,9 @@
     "codigo": "DN67"
   },
   {
-    "id": "61",
-    "nombre": "Derechos Sucesorios: Sucesión Intestada",
-    "codigo": "DP08"
-  },
-  {
-    "id": "62",
-    "nombre": "Derechos sucesorios: Testamento",
-    "codigo": "DP10"
-  },
-  {
-    "id": "63",
-    "nombre": "Derechos sucesorios: Otro",
-    "codigo": "DP11"
-  },
-  {
-    "id": "64",
-    "nombre": "Documento Privado: Compra-Venta",
-    "codigo": "DP12"
-  },
-  {
-    "id": "65",
-    "nombre": "Documento Privado: Cesión de Derechos Posesorios",
-    "codigo": "DP13"
-  },
-  {
-    "id": "66",
-    "nombre": "Documento Privado: Cesión de Derechos Hereditarios",
-    "codigo": "DP14"
-  },
-  {
-    "id": "67",
-    "nombre": "Documento Privado: Arriendo",
-    "codigo": "DP15"
-  },
-  {
-    "id": "68",
-    "nombre": "Documento Privado: Otro",
-    "codigo": "DP16"
-  },
-  {
-    "id": "69",
-    "nombre": "Documento de otro tipo: Otro",
-    "codigo": "DP33"
-  },
-  {
-    "id": "70",
-    "nombre": "Sin Documento: Sucesión Intestada",
-    "codigo": "DP34"
-  },
-  {
     "id": "71",
     "nombre": "Documento Privado: Minuta de Mejoras",
     "codigo": "DP45"
-  },
-  {
-    "id": "72",
-    "nombre": "Dación en Pago de Deuda",
-    "codigo": "DP63"
   },
   {
     "id": "73",
@@ -368,21 +203,6 @@
     "id": "74",
     "nombre": "Existen documentos pero no fueron presentados.",
     "codigo": "NP01"
-  },
-  {
-    "id": "75",
-    "nombre": "Compra Venta",
-    "codigo": "PA01"
-  },
-  {
-    "id": "76",
-    "nombre": "Arriendo",
-    "codigo": "PA07"
-  },
-  {
-    "id": "77",
-    "nombre": "Arriendo",
-    "codigo": "PA15"
   },
   {
     "id": "78",
@@ -405,11 +225,6 @@
     "codigo": "PA23"
   },
   {
-    "id": "82",
-    "nombre": "Documento de Reforma Agraria: Escritura otorgada por Procuraduria de la Republica",
-    "codigo": "PA24"
-  },
-  {
     "id": "83",
     "nombre": "Documento de Reforma Agraria: Constancia de Asignacion",
     "codigo": "PA25"
@@ -418,11 +233,6 @@
     "id": "84",
     "nombre": "Documento de Reforma Agraria: Otro",
     "codigo": "PA26"
-  },
-  {
-    "id": "85",
-    "nombre": "Escritura de Donación Ley 8586",
-    "codigo": "PA27"
   },
   {
     "id": "86",
@@ -436,18 +246,13 @@
   },
   {
     "id": "88",
-    "nombre": "Documento de Reforma Urbana: Constancia de asignacion",
+    "nombre": "Documento de Reforma Urbana: Constancia de adjudicación",
     "codigo": "PA30"
   },
   {
     "id": "89",
     "nombre": "Documento de Reforma Urbana: Otro",
     "codigo": "PA31"
-  },
-  {
-    "id": "90",
-    "nombre": "Documento de otro tipo: Otro",
-    "codigo": "PA33"
   },
   {
     "id": "91",
@@ -466,23 +271,13 @@
   },
   {
     "id": "94",
-    "nombre": "Solvencia Intendencia de la Propiedad",
+    "nombre": "Solvencia Administrativa",
     "codigo": "PA64"
-  },
-  {
-    "id": "95",
-    "nombre": "Sucesión Intestada",
-    "codigo": "PJ08"
   },
   {
     "id": "96",
     "nombre": "Declaratoria de Heredero",
     "codigo": "PJ09"
-  },
-  {
-    "id": "97",
-    "nombre": "Testamento",
-    "codigo": "PJ10"
   },
   {
     "id": "98",
@@ -505,24 +300,9 @@
     "codigo": "PJ19"
   },
   {
-    "id": "102",
-    "nombre": "Ratificación de Reforma Agraria: Otro",
-    "codigo": "PJ26"
-  },
-  {
     "id": "103",
     "nombre": "Documento de otro tipo: Sentencia judicial de amparo en la posecion",
     "codigo": "PJ32"
-  },
-  {
-    "id": "104",
-    "nombre": "Documento de otro tipo: Otro",
-    "codigo": "PJ33"
-  },
-  {
-    "id": "105",
-    "nombre": "Declaración Jurada",
-    "codigo": "PJ61"
   },
   {
     "id": "106",
@@ -550,24 +330,9 @@
     "codigo": "PN06"
   },
   {
-    "id": "111",
-    "nombre": "Arriendo",
-    "codigo": "PN07"
-  },
-  {
-    "id": "112",
-    "nombre": "Sucesion Intestada",
-    "codigo": "PN08"
-  },
-  {
     "id": "113",
     "nombre": "Escritura Pública: Testamento",
     "codigo": "PN10"
-  },
-  {
-    "id": "114",
-    "nombre": "Otro",
-    "codigo": "PN11"
   },
   {
     "id": "115",
@@ -578,11 +343,6 @@
     "id": "116",
     "nombre": "Escritura Pública, Otorg.Procuraduria (Notaria)",
     "codigo": "PN24"
-  },
-  {
-    "id": "117",
-    "nombre": "Documento de Reforma Agraria: Otro",
-    "codigo": "PN26"
   },
   {
     "id": "118",
@@ -605,11 +365,6 @@
     "codigo": "PN55"
   },
   {
-    "id": "122",
-    "nombre": "Memoria Testamentaria",
-    "codigo": "PN56"
-  },
-  {
     "id": "123",
     "nombre": "Partición Extrajudicial",
     "codigo": "PN59"
@@ -623,56 +378,6 @@
     "id": "125",
     "nombre": "Dación en Pago de Deuda",
     "codigo": "PN63"
-  },
-  {
-    "id": "126",
-    "nombre": "AUTO DESMEMBRACION",
-    "codigo": "PN66"
-  },
-  {
-    "id": "127",
-    "nombre": "Compra Venta",
-    "codigo": "PP01"
-  },
-  {
-    "id": "128",
-    "nombre": "Donación",
-    "codigo": "PP02"
-  },
-  {
-    "id": "129",
-    "nombre": "Promesa de Venta",
-    "codigo": "PP04"
-  },
-  {
-    "id": "130",
-    "nombre": "Cesión de Derechos Posesorios",
-    "codigo": "PP05"
-  },
-  {
-    "id": "131",
-    "nombre": "Cesión de Derechos Hereditarios",
-    "codigo": "PP06"
-  },
-  {
-    "id": "132",
-    "nombre": "Arriendo",
-    "codigo": "PP07"
-  },
-  {
-    "id": "133",
-    "nombre": "Sucesión Intestada",
-    "codigo": "PP08"
-  },
-  {
-    "id": "134",
-    "nombre": "Derechos sucesorios: Testamento",
-    "codigo": "PP10"
-  },
-  {
-    "id": "135",
-    "nombre": "Derechos Sucesorios: Memoria Testamentaria",
-    "codigo": "PP11"
   },
   {
     "id": "136",
@@ -690,19 +395,9 @@
     "codigo": "PP14"
   },
   {
-    "id": "139",
-    "nombre": "Documento Privado: Arriendo",
-    "codigo": "PP15"
-  },
-  {
     "id": "140",
     "nombre": "Documento Privado: Otro",
     "codigo": "PP16"
-  },
-  {
-    "id": "141",
-    "nombre": "Documento de otro tipo: Otro",
-    "codigo": "PP33"
   },
   {
     "id": "142",
@@ -738,26 +433,6 @@
     "id": "148",
     "nombre": "Documento Privado: Declaracion Unilateral",
     "codigo": "PP46"
-  },
-  {
-    "id": "149",
-    "nombre": "Permuta",
-    "codigo": "PP51"
-  },
-  {
-    "id": "150",
-    "nombre": "Declaracion Jurada",
-    "codigo": "PP61"
-  },
-  {
-    "id": "151",
-    "nombre": "Dación en Pago de Deuda",
-    "codigo": "PP63"
-  },
-  {
-    "id": "152",
-    "nombre": "Poder Especial",
-    "codigo": "PPE1"
   },
   {
     "id": "153",

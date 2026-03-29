@@ -226,7 +226,7 @@ object SpatialHelper {
             }
         }
         
-        data class DatoAdyacente(val id: Int, val jsonData: String, val fecha: String, val localizacionPredio: String, val idObject: Int, val direccionRelativa: String, val codigoCamino: String)
+        data class DatoAdyacente(val id: Int, val jsonData: String, val fecha: String, val localizacionPredio: String, val idObject: Int, val direccionRelativa: String, val codigoCamino: String, val latitud: Double, val longitud: Double)
         val listaDatos = mutableListOf<DatoAdyacente>()
         
         for (info in prediosConfirmados) {
@@ -239,7 +239,7 @@ object SpatialHelper {
                     if (GeometryUtil.isPointInPolygon(lat, lon, info.geom)) {
                         val jsonData = cursorD.getString(1) ?: "{}"
                         val codigoCamino = try { org.json.JSONObject(jsonData).optString("CodigoCamino") ?: "" } catch (e: Exception) { "" }
-                        listaDatos.add(DatoAdyacente(cursorD.getInt(0), jsonData, cursorD.getString(2) ?: "", info.localizacion, info.id, info.direccionRelativa, codigoCamino))
+                        listaDatos.add(DatoAdyacente(cursorD.getInt(0), jsonData, cursorD.getString(2) ?: "", info.localizacion, info.id, info.direccionRelativa, codigoCamino, lat, lon))
                     }
                 }
             }
@@ -248,7 +248,7 @@ object SpatialHelper {
         listaDatos.sortWith(compareBy({ it.localizacionPredio }, { it.codigoCamino }))
         val builder = StringBuilder("[")
         for (dato in listaDatos) {
-            builder.append("{\"Id\":${dato.id},\"Data\": ${dato.jsonData},\"IdObject\":${dato.idObject},\"Fecha\": \"${dato.fecha}\",\"LocalizacionPredio\": \"${dato.localizacionPredio}\",\"DireccionRelativa\": \"${dato.direccionRelativa}\"},")
+            builder.append("{\"Id\":${dato.id},\"Data\": ${dato.jsonData},\"IdObject\":${dato.idObject},\"Fecha\": \"${dato.fecha}\",\"LocalizacionPredio\": \"${dato.localizacionPredio}\",\"DireccionRelativa\": \"${dato.direccionRelativa}\", \"Latitud\": ${dato.latitud}, \"Longitud\": ${dato.longitud}},")
         }
         val resultStr = builder.toString()
         return if (resultStr.length > 1) resultStr.dropLast(1) + "]" else "[]"

@@ -130,8 +130,8 @@ const FormSujetoNatural = {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label :style="{color: errors.NoPersonasSimilarDerecho ? 'red' : 'inherit', fontWeight: errors.NoPersonasSimilarDerecho ? 'bold' : 'normal'}">Número de personas con derecho similar *</label>
-                        <input type="number" v-model.number="formData.NoPersonasSimilarDerecho" min="1">
+                        <label :style="{color: errors.NoPersonasSimilarDerecho ? 'red' : 'inherit', fontWeight: errors.NoPersonasSimilarDerecho ? 'bold' : 'normal'}">Número de personas con derecho similar</label>
+                        <input type="number" v-model.number="formData.NoPersonasSimilarDerecho" min="0">
                     </div>
                 </div>
 
@@ -175,13 +175,13 @@ const FormSujetoNatural = {
 
                 <!-- Caserío en una sola línea -->
                 <div class="form-group">
-                    <label :style="{color: errors.ResidenceCaserio ? 'red' : 'inherit', fontWeight: errors.ResidenceCaserio ? 'bold' : 'normal'}">Caserío *</label>
+                    <label :style="{color: errors.ResidenceCaserio ? 'red' : 'inherit', fontWeight: errors.ResidenceCaserio ? 'bold' : 'normal'}">Caserío</label>
                     <input type="text" v-model="formData.ResidenceCaserio">
                 </div>
 
                 <!-- Barrio/Comarca en una sola línea -->
                 <div class="form-group">
-                    <label :style="{color: errors.ResidenceBarrioComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceBarrioComarca ? 'bold' : 'normal'}">Barrio/Comarca *</label>
+                    <label :style="{color: errors.ResidenceBarrioComarca ? 'red' : 'inherit', fontWeight: errors.ResidenceBarrioComarca ? 'bold' : 'normal'}">Barrio/Comarca</label>
                     <input type="text" v-model="formData.ResidenceBarrioComarca">
                 </div>
 
@@ -247,29 +247,51 @@ const FormSujetoNatural = {
         const relacionPropietarioName = Vue.ref(formData._RelacionPropietarioName || '');
 
         // Llamada a la app global usando el contexto global asegurado vueAppContext
-        const catalogos = {
-            TipoIdentificacion: [
-                { id: 1, nombre: 'Cédula de identidad', codigo: 'CI' },
-                { id: 2, nombre: 'Cédula de Residencia', codigo: 'CR' },
-                { id: 3, nombre: 'Pasaporte', codigo: 'PP' },
-                { id: 4, nombre: 'Numero RUC', codigo: 'RUC' },
-                { id: 5, nombre: 'Carnet de Notario', codigo: 'CN' },
-                { id: 6, nombre: 'Otro', codigo: 'OT' }
-            ],
-            Generos: [
-                { id: 1, nombre: 'Femenino' },
-                { id: 2, nombre: 'Masculino' }
-            ],
-            EstadoCivil: [
-                { id: 1, nombre: 'Soltero(a)' },
-                { id: 2, nombre: 'Casado(a)' },
-                { id: 3, nombre: 'Union de Hecho' }
-            ],
-            TipoDerecho: [
-                { id: 1, nombre: 'Propietario' },
-                { id: 2, nombre: 'Poseedor' }
-            ]
+        // Catálogos reactivos (Se cargan dinámicamente de /data/)
+        const catalogos = Vue.reactive({
+            TipoIdentificacion: [],
+            Generos: [],
+            EstadoCivil: [],
+            TipoDerecho: []
+        });
+
+        // Función para desacoplar catálogos
+        const cargarCatalogos = async () => {
+            const mapeo = {
+                TipoIdentificacion: 'TipoIdentificacion.json',
+                Generos: 'Genero.json',
+                EstadoCivil: 'EstadoCivil.json',
+                TipoDerecho: 'TipoDerecho.json'
+            };
+
+            for (const [key, fileName] of Object.entries(mapeo)) {
+                try {
+                    let data = null;
+                    if (window.Android && window.Android.loadCatalogJson) {
+                        const str = window.Android.loadCatalogJson(fileName);
+                        if (str) data = JSON.parse(str);
+                    }
+                    if (!data) {
+                        const response = await fetch('data/' + fileName);
+                        if (response.ok) data = await response.json();
+                    }
+
+                    if (data) {
+                        // Inyectar y normalizar IDs numéricos para v-model.number
+                        catalogos[key] = data.map(item => ({
+                            ...item,
+                            id: isNaN(parseInt(item.id)) ? item.id : parseInt(item.id)
+                        }));
+                    }
+                } catch (e) {
+                    console.error(`❌ Error al desacoplar catálogo ${fileName}:`, e);
+                }
+            }
         };
+
+        Vue.onMounted(() => {
+            cargarCatalogos();
+        });
 
         // Llamada a la app global usando el contexto global asegurado vueAppContext
         const pedirProfesionGlobal = () => {
@@ -370,8 +392,8 @@ const FormSujetoNatural = {
         // Limpieza de errores al escribir
         Vue.watch(() => formData.PerfilPropietarioOtroText, (val) => { if (val?.trim()) delete errors.PerfilPropietarioOtroText; });
         Vue.watch(() => formData.PerfilPropietarioCarnet, (val) => { if (val?.trim()) delete errors.PerfilPropietarioCarnet; });
-        Vue.watch(() => formData.ResidenceCaserio, (val) => { if (val?.trim()) delete errors.ResidenceCaserio; });
-        Vue.watch(() => formData.ResidenceBarrioComarca, (val) => { if (val?.trim()) delete errors.ResidenceBarrioComarca; });
+        Vue.watch(() => formData.ResidenceCaserio, (val) => { if (val?.trim()) { delete errors.ResidenceCaserio; delete errors.ResidenceBarrioComarca; } });
+        Vue.watch(() => formData.ResidenceBarrioComarca, (val) => { if (val?.trim()) { delete errors.ResidenceCaserio; delete errors.ResidenceBarrioComarca; } });
 
         const save = () => {
             // Limpiar errores previos
@@ -433,13 +455,10 @@ const FormSujetoNatural = {
                 errors.ResidenceMunicipioCatalog = true;
                 errorList.push('Municipio (ID catalog)');
             }
-            if (!formData.ResidenceCaserio?.trim()) {
+            if (!formData.ResidenceCaserio?.trim() && !formData.ResidenceBarrioComarca?.trim()) {
                 errors.ResidenceCaserio = true;
-                errorList.push('Caserío');
-            }
-            if (!formData.ResidenceBarrioComarca?.trim()) {
                 errors.ResidenceBarrioComarca = true;
-                errorList.push('Barrio/Comarca');
+                errorList.push('Caserío o Barrio/Comarca');
             }
             if (!formData.ResidenceDireccion?.trim()) {
                 errors.ResidenceDireccion = true;
@@ -451,9 +470,9 @@ const FormSujetoNatural = {
                 errors.DerehoParcelaCatalog = true;
                 errorList.push('Derecho Parcelario');
             }
-            if (!formData.NoPersonasSimilarDerecho || formData.NoPersonasSimilarDerecho <= 0) {
+            if (formData.NoPersonasSimilarDerecho < 0) {
                 errors.NoPersonasSimilarDerecho = true;
-                errorList.push('Número de personas con derecho similar');
+                errorList.push('Número de personas con derecho similar (mínimo 0)');
             }
             if (formData.DerehoParcelaCatalog && formData.DerehoParcelaCatalog !== 1) {
                 if (!formData.RelacionConPropietarioCatalog || formData.RelacionConPropietarioCatalog == 0) {

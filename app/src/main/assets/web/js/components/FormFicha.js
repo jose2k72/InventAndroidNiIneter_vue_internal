@@ -43,7 +43,7 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label :style="{color: errors.NombreFinca ? 'red' : 'inherit', fontWeight: errors.NombreFinca ? 'bold' : 'normal'}">Nombre de la Finca / Sitio *</label>
+                    <label>Nombre de la Finca / Sitio</label>
                     <input type="text" v-model="formData.NombreFinca" placeholder="Ej: Finca La Esperanza">
                 </div>
 
@@ -54,11 +54,11 @@ const FormFicha = {
 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label :style="{color: errors.Caserio ? 'red' : 'inherit', fontWeight: errors.Caserio ? 'bold' : 'normal'}">Caserío *</label>
+                        <label :style="{color: errors.Caserio ? 'red' : 'inherit', fontWeight: errors.Caserio ? 'bold' : 'normal'}">Caserío</label>
                         <input type="text" v-model="formData.Caserio" placeholder="Ej: El Corozo">
                     </div>
                     <div class="form-group">
-                        <label :style="{color: errors.BarrioComarca ? 'red' : 'inherit', fontWeight: errors.BarrioComarca ? 'bold' : 'normal'}">Barrio/Comarca *</label>
+                        <label :style="{color: errors.BarrioComarca ? 'red' : 'inherit', fontWeight: errors.BarrioComarca ? 'bold' : 'normal'}">Barrio/Comarca</label>
                         <input type="text" v-model="formData.BarrioComarca" placeholder="Ej: San José">
                     </div>
                 </div>
@@ -66,14 +66,14 @@ const FormFicha = {
                 <div class="coords-grid">
                     <div class="form-group">
                         <label>Parcela Catastrada</label>
-                        <input type="text" v-model="formData.ParcelaCatastrada">
+                        <input type="text" v-model="formData.ParcelaCatastrada" readonly style="background-color: #f5f5f5;">
                     </div>
                 </div>
 
                 <div class="coords-grid">
                     <div class="form-group">
                         <label>Parcela Segregada</label>
-                        <input type="text" v-model="formData.ParcelaSegregada">
+                        <input type="text" v-model="formData.ParcelaSegregada" readonly style="background-color: #f5f5f5;">
                     </div>
                     <div class="form-group">
                         <label>Manzana / Lote</label>
@@ -106,8 +106,17 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label :style="{color: errors.Descripcion ? 'red' : 'inherit', fontWeight: errors.Descripcion ? 'bold' : 'normal'}">Descripción del Uso *</label>
-                    <textarea v-model="formData.Descripcion" rows="7" placeholder="Detalle el uso actual del predio..."></textarea>
+                    <label :style="{color: errors.DescripcionUsoCatalog ? 'red' : 'inherit', fontWeight: errors.DescripcionUsoCatalog ? 'bold' : 'normal'}">Descripción del Uso *</label>
+                    <div class="selector-display" @click="pedirDescripcionUsoGlobal" :style="{borderColor: errors.DescripcionUsoCatalog ? '#d32f2f' : '#ccc'}">
+                        <span v-if="descripcionUsoName" style="color: #1565C0; font-weight: 600;">{{ descripcionUsoName }}</span>
+                        <span v-else style="color: #757575;">Seleccione descripción...</span>
+                        <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                    </div>
+                </div>
+
+                <div v-if="formData.DescripcionUsoCatalog === 5" class="form-group sub-section">
+                    <label :style="{color: errors.DescripcionUsoOtroText ? 'red' : 'inherit'}">Especifique Uso Mixto *</label>
+                    <textarea v-model="formData.DescripcionUsoOtroText" rows="3" placeholder="Detalle los múltiples usos de la parcela..."></textarea>
                 </div>
 
                 <div class="form-group">
@@ -202,31 +211,31 @@ const FormFicha = {
                 <div v-if="formData.TieneDatosRegistrales">
                     <div class="coords-grid">
                         <div class="form-group">
-                            <label :style="{color: errors.FechaAdquisicion ? 'red' : 'inherit', fontWeight: errors.FechaAdquisicion ? 'bold' : 'normal'}">Fecha Adquisición *</label>
+                            <label :style="{color: errors.FechaAdquisicion ? 'red' : 'inherit', fontWeight: errors.FechaAdquisicion ? 'bold' : 'normal'}">Fecha Adquisición</label>
                             <input type="date" v-model="formData.FechaAdquisicion">
                         </div>
                         <div class="form-group">
-                            <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha Registro *</label>
+                            <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha Registro</label>
                             <input type="date" v-model="formData.FechaRegistro">
                         </div>
                     </div>
                     <div class="coords-grid">
                         <div class="form-group">
-                            <label :style="{color: errors.NoFinca ? 'red' : 'inherit', fontWeight: errors.NoFinca ? 'bold' : 'normal'}">No. Finca *</label>
-                            <input type="text" v-model="formData.NoFinca">
+                            <label :style="{color: errors.NoFinca_NAP ? 'red' : 'inherit', fontWeight: errors.NoFinca_NAP ? 'bold' : 'normal'}">No. Finca / NAP *</label>
+                            <input type="text" v-model="formData.NoFinca_NAP">
                         </div>
                         <div class="form-group">
-                            <label :style="{color: errors.Tomo ? 'red' : 'inherit', fontWeight: errors.Tomo ? 'bold' : 'normal'}">Tomo *</label>
+                            <label :style="{color: errors.Tomo ? 'red' : 'inherit', fontWeight: errors.Tomo ? 'bold' : 'normal'}">Tomo</label>
                             <input type="text" v-model="formData.Tomo">
                         </div>
                     </div>
                     <div class="coords-grid">
                         <div class="form-group">
-                            <label :style="{color: errors.Folio ? 'red' : 'inherit', fontWeight: errors.Folio ? 'bold' : 'normal'}">Folio *</label>
+                            <label :style="{color: errors.Folio ? 'red' : 'inherit', fontWeight: errors.Folio ? 'bold' : 'normal'}">Folio</label>
                             <input type="text" v-model="formData.Folio">
                         </div>
                         <div class="form-group">
-                            <label :style="{color: errors.Asiento ? 'red' : 'inherit', fontWeight: errors.Asiento ? 'bold' : 'normal'}">Asiento *</label>
+                            <label :style="{color: errors.Asiento ? 'red' : 'inherit', fontWeight: errors.Asiento ? 'bold' : 'normal'}">Asiento</label>
                             <input type="text" v-model="formData.Asiento">
                         </div>
                     </div>
@@ -283,11 +292,11 @@ const FormFicha = {
 
                     <div class="coords-grid" style="margin-top: 15px;">
                         <div class="form-group">
-                            <label :style="{color: errors.AreaTitulada ? 'red' : 'inherit', fontWeight: errors.AreaTitulada ? 'bold' : 'normal'}">Área Titulada *</label>
+                            <label :style="{color: errors.AreaTitulada ? 'red' : 'inherit', fontWeight: errors.AreaTitulada ? 'bold' : 'normal'}">Área Titulada</label>
                             <input type="number" v-model.number="formData.AreaTitulada" step="0.01">
                         </div>
                         <div class="form-group">
-                            <label :style="{color: errors.UnidadMedidaAreaTituladaCatalog ? 'red' : 'inherit', fontWeight: errors.UnidadMedidaAreaTituladaCatalog ? 'bold' : 'normal'}">Unidad (Título) *</label>
+                            <label :style="{color: errors.UnidadMedidaAreaTituladaCatalog ? 'red' : 'inherit', fontWeight: errors.UnidadMedidaAreaTituladaCatalog ? 'bold' : 'normal'}">Unidad (Título)</label>
                             <select v-model.number="formData.UnidadMedidaAreaTituladaCatalog">
                                  <option :value="null" disabled selected>Seleccione...</option>
                                  <option v-for="opt in catalogos.UnidadMedida" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
@@ -340,6 +349,15 @@ const FormFicha = {
                 </div>
             </div>
 
+            <!-- SECCIÓN 7: OBSERVACIONES -->
+            <div class="section">
+                <h3>📝 Observaciones</h3>
+                <div class="form-group">
+                    <label>Observaciones Generales</label>
+                    <textarea v-model="formData.ObservacionesGenerales" rows="9" placeholder="Observaciones adicionales, notas o comentarios del encuestador acerca de la parcela..."></textarea>
+                </div>
+            </div>
+
             <!-- Fotografías -->
             <div class="section">
                 <h3>📸 Fotografías ({{ fotos.length }})</h3>
@@ -385,7 +403,13 @@ const FormFicha = {
                     const loc = (formData.Localizacion || 'SIN_LOC').replace(/\s+/g, '_').toUpperCase();
                     const cons = String(next).padStart(3, '0');
 
+
                     formData.NoEncuesta = `${muni}_${sector}_${loc}_${cons}`;
+                    
+                    // Inicializar valores automáticos para la vista
+                    formData.ParcelaCatastrada = formData.Localizacion || '';
+                    formData.ParcelaSegregada = cons;
+
                     console.log('🆔 ID Ficha actualizado:', formData.NoEncuesta);
                 }
             } catch (e) { console.error('❌ Error al generar NoEncuesta:', e); }
@@ -393,6 +417,7 @@ const FormFicha = {
 
         Vue.onMounted(async () => {
             if (!formData.NoEncuesta) generarNoEncuesta();
+            cargarCatalogos();
         });
 
         // Autorecalculo si cambian datos base en registro nuevo
@@ -401,12 +426,16 @@ const FormFicha = {
         });
 
         // Limpieza de errores al escribir
-        Vue.watch(() => formData.Caserio, (val) => { if (val?.trim()) delete errors.Caserio; });
-        Vue.watch(() => formData.BarrioComarca, (val) => { if (val?.trim()) delete errors.BarrioComarca; });
+        Vue.watch(() => formData.Caserio, (val) => { if (val?.trim()) { delete errors.Caserio; delete errors.BarrioComarca; } });
+        Vue.watch(() => formData.BarrioComarca, (val) => { if (val?.trim()) { delete errors.Caserio; delete errors.BarrioComarca; } });
         Vue.watch(() => formData.Direccion, (val) => { if (val?.trim()) delete errors.Direccion; });
-        Vue.watch(() => formData.Descripcion, (val) => { if (val?.trim()) delete errors.Descripcion; });
+        Vue.watch(() => formData.DescripcionUsoCatalog, (val) => { if (val) delete errors.DescripcionUsoCatalog; });
+        Vue.watch(() => formData.DescripcionUsoOtroText, (val) => { if (val?.trim()) delete errors.DescripcionUsoOtroText; });
         Vue.watch(() => formData.OrigenTierraCatalog, (val) => { if (val) delete errors.OrigenTierraCatalog; });
         Vue.watch(() => formData.ResenaHistorica, (val) => { if (val?.trim()) delete errors.ResenaHistorica; });
+
+        // Limpieza de errores de Datos Registrales
+        Vue.watch(() => formData.NoFinca_NAP, (val) => { if (val?.trim()) delete errors.NoFinca_NAP; });
 
         // --- inicialización ---
         if (!formData.Documentos) formData.Documentos = [];
@@ -482,8 +511,8 @@ const FormFicha = {
         Vue.watch(() => formData.TieneDatosRegistrales, (newVal) => {
             if (!newVal) {
                 formData.FechaAdquisicion = null; formData.FechaRegistro = null;
-                formData.NoFinca = ''; formData.Tomo = ''; formData.Folio = ''; formData.Asiento = '';
-                ['FechaAdquisicion', 'FechaRegistro', 'NoFinca', 'Tomo', 'Folio', 'Asiento'].forEach(k => delete errors[k]);
+                formData.NoFinca_NAP = ''; formData.Tomo = ''; formData.Folio = ''; formData.Asiento = '';
+                ['FechaAdquisicion', 'FechaRegistro', 'NoFinca_NAP', 'Tomo', 'Folio', 'Asiento'].forEach(k => delete errors[k]);
             }
         });
 
@@ -496,6 +525,7 @@ const FormFicha = {
         });
 
         // Limpieza de campos "Otro"
+        Vue.watch(() => formData.DescripcionUsoCatalog, (val) => { if (val !== 5) formData.DescripcionUsoOtroText = ''; });
         Vue.watch(() => formData.OrigenTierraCatalog, (val) => { if (val !== 1) formData.OrigenTierraOtroText = ''; });
         Vue.watch(() => formData.ClaseConflictoCatalog, (val) => { if (val !== 13) formData.ClaseConflictoOtroText = ''; });
         Vue.watch(() => formData.GestionConflictoCatalog, (val) => { if (val !== 6) formData.GestionConflictoOtroText = ''; });
@@ -503,6 +533,7 @@ const FormFicha = {
         Vue.watch(() => formData.ServidumbrePaseCatalog, (val) => { if (val !== 4) formData.ServidumbrePaseOtroText = ''; });
         Vue.watch(() => formData.ServidumbreOtroCatalog, (val) => { if (val !== 4) formData.ServidumbreOtroOtroText = ''; });
 
+        const descripcionUsoName = Vue.ref(formData._DescripcionUsoName || '');
         const conflictoName = Vue.ref(formData._ConflictoName || '');
         const origenTierraName = Vue.ref(formData._OrigenTierraName || '');
         const gestionConflictoName = Vue.ref(formData._GestionConflictoName || '');
@@ -512,11 +543,46 @@ const FormFicha = {
         dateFields.forEach(f => { if (formData[f]) formData[f] = formData[f].split('T')[0]; });
         formData.Documentos.forEach(doc => { if (doc.FechaDocumento) doc.FechaDocumento = doc.FechaDocumento.split('T')[0]; });
 
-        const catalogos = {
-            TipoEncuesta: [{ id: 1, nombre: 'Parcela Unificada' }, { id: 2, nombre: 'Parcela Horizontal' }],
-            TipoUso: [{ id: 1, nombre: 'Privado' }, { id: 2, nombre: 'Público' }],
-            UnidadMedida: [{ id: 1, nombre: 'Caballerías' }, { id: 2, nombre: 'Hectáreas' }, { id: 3, nombre: 'Metros Cuadrados' }, { id: 4, nombre: 'Manzanas' }, { id: 5, nombre: 'Sin Datos' }, { id: 6, nombre: 'Varas Cuadradas' }],
-            Servidumbre: [{ id: 1, nombre: 'Acuerdo Verbal' }, { id: 2, nombre: 'Escritura Publica' }, { id: 3, nombre: 'Sentencia Judicial' }, { id: 4, nombre: 'Otro' }]
+        // Catálogos reactivos (Se cargan dinámicamente de /data/)
+        const catalogos = Vue.reactive({
+            TipoEncuesta: [],
+            TipoUso: [],
+            UnidadMedida: [],
+            Servidumbre: []
+        });
+
+        // Función centralizada para desacoplar catálogos del código
+        const cargarCatalogos = async () => {
+            const mapeo = {
+                TipoEncuesta: 'TipoEncuesta.json',
+                TipoUso: 'TipoUso.json',
+                UnidadMedida: 'UnidadMedida.json',
+                Servidumbre: 'Servidumbre.json'
+            };
+
+            for (const [key, fileName] of Object.entries(mapeo)) {
+                try {
+                    let data = null;
+                    if (window.Android && window.Android.loadCatalogJson) {
+                        const str = window.Android.loadCatalogJson(fileName);
+                        if (str) data = JSON.parse(str);
+                    }
+                    if (!data) {
+                        const response = await fetch('data/' + fileName);
+                        if (response.ok) data = await response.json();
+                    }
+
+                    if (data) {
+                        // Inyectar y normalizar IDs numéricos para v-model.number
+                        catalogos[key] = data.map(item => ({
+                            ...item,
+                            id: isNaN(parseInt(item.id)) ? item.id : parseInt(item.id)
+                        }));
+                    }
+                } catch (e) {
+                    console.error(`❌ Error al desacoplar catálogo ${fileName}:`, e);
+                }
+            }
         };
 
         // --- Acciones de UI ---
@@ -540,6 +606,22 @@ const FormFicha = {
                     onSelect: (val) => {
                         formData.ClaseConflictoCatalog = parseInt(val.id);
                         formData._ConflictoName = val.name; conflictoName.value = val.name;
+                    }
+                });
+            }
+        };
+
+        const pedirDescripcionUsoGlobal = () => {
+            if (typeof vueAppContext !== 'undefined') {
+                vueAppContext.openCatalog({
+                    catalogName: 'UsoParcela', label: 'Descripción del Uso...',
+                    onSelect: (val) => {
+                        const parsedId = parseInt(val.id);
+                        formData.DescripcionUsoCatalog = parsedId;
+                        formData._DescripcionUsoName = val.name; descripcionUsoName.value = val.name;
+                        if (parsedId !== 5) {
+                            formData.DescripcionUsoOtroText = '';
+                        }
                     }
                 });
             }
@@ -591,13 +673,17 @@ const FormFicha = {
             Object.keys(errors).forEach(k => delete errors[k]);
             let isValid = true;
             if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; isValid = false; }
-            if (!formData.NombreFinca?.trim()) { errors.NombreFinca = true; isValid = false; }
+
             if (!formData.Direccion?.trim()) { errors.Direccion = true; isValid = false; }
-            if (!formData.Caserio?.trim()) { errors.Caserio = true; isValid = false; }
-            if (!formData.BarrioComarca?.trim()) { errors.BarrioComarca = true; isValid = false; }
+            if (!formData.Caserio?.trim() && !formData.BarrioComarca?.trim()) {
+                errors.Caserio = true;
+                errors.BarrioComarca = true;
+                isValid = false; 
+            }
             if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
-            if (!formData.Descripcion?.trim()) { errors.Descripcion = true; isValid = false; }
+            if (!formData.DescripcionUsoCatalog) { errors.DescripcionUsoCatalog = true; isValid = false; }
+            if (formData.DescripcionUsoCatalog === 5 && !formData.DescripcionUsoOtroText?.trim()) { errors.DescripcionUsoOtroText = true; isValid = false; }
             if (!formData.OrigenTierraCatalog) { errors.OrigenTierraCatalog = true; isValid = false; }
             if (!formData.ResenaHistorica?.trim()) { errors.ResenaHistorica = true; isValid = false; }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
@@ -611,13 +697,19 @@ const FormFicha = {
                     });
                     if (Object.keys(errors).some(k => k.startsWith('Doc'))) isValid = false;
                 }
-                if (!formData.AreaTitulada) { errors.AreaTitulada = true; isValid = false; }
-                if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; isValid = false; }
+                // El área titulada es opcional, pero si se pone debe tener unidad y ser >= 0
+                const areaInput = formData.AreaTitulada;
+                const hasAreaVal = areaInput !== null && areaInput !== undefined && areaInput !== '';
+                if (hasAreaVal) {
+                    if (areaInput < 0) { errors.AreaTitulada = true; isValid = false; }
+                    if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; isValid = false; }
+                }
             }
             if (formData.TieneDatosRegistrales) {
-                ['FechaAdquisicion', 'FechaRegistro', 'NoFinca', 'Tomo', 'Folio', 'Asiento'].forEach(f => {
-                    if (!formData[f] || (typeof formData[f] === 'string' && !formData[f].trim())) { errors[f] = true; isValid = false; }
-                });
+                if (!formData.NoFinca_NAP?.trim()) {
+                    errors.NoFinca_NAP = true;
+                    isValid = false;
+                }
             }
             if (formData.TieneConflicto) {
                 if (!formData.ClaseConflictoCatalog) { errors.ClaseConflictoCatalog = true; isValid = false; }
@@ -637,8 +729,8 @@ const FormFicha = {
         };
 
         return {
-            formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName,
-            pedirMunicipioGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
+            formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName, descripcionUsoName,
+            pedirMunicipioGlobal, pedirDescripcionUsoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
             agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save
         };
     }

@@ -19,7 +19,9 @@ window.DisplayService = {
             'Ficha': 'ENCUESTA',
             'SujetoJuridico': 'PROP. JURÍDICA',
             'Entrevistado': 'ENTREVIST.',
-            'Familiares': 'FAMILIA'
+            'Familiares': 'FAMILIA',
+            'NoEncuestado': 'NO ENCUEST.',
+            'UnionConPredio': 'UNIÓN PREDIO'
         };
         return names[type] || type;
     },
@@ -49,6 +51,12 @@ window.DisplayService = {
                 const sn = data.SecondName ? data.SecondName.charAt(0).toUpperCase() + '.' : '';
                 const ln = data.FirstSurName || '';
                 return `${fn} ${sn} ${ln}`.trim() || '-';
+
+            case 'NoEncuestado':
+                return data.Descripcion ? (data.Descripcion.substring(0, 30) + '...') : 'Sin motivo';
+
+            case 'UnionConPredio':
+                return `Master: ${data.LocalizacionMaster || '?'}`;
 
             default:
                 return data.CodigoCamino || '-';

@@ -16,20 +16,8 @@
     "nombre": "[DA23] / Documento de Reforma Agraria: Titulo desde 1992 hasta la Fecha"
   },
   {
-    "id": "5",
-    "nombre": "[DA24] / Documento de Reforma Agraria: Escritura otorgada por la Procuradoria de la Republica"
-  },
-  {
     "id": "6",
     "nombre": "[DA26] / Documento de Reforma Agraria: Constancia de Asignacion"
-  },
-  {
-    "id": "7",
-    "nombre": "[DA27] / Documento de Reforma Urbana: Escritura de Donación Ley 85-86"
-  },
-  {
-    "id": "8",
-    "nombre": "[DA28] / Documento de Reforma Urbana: Donación por Documento Publico Autentico o Administrativo"
   },
   {
     "id": "9",
@@ -40,14 +28,6 @@
     "nombre": "[DA31] / Documento de Reforma Urbana: Otros"
   },
   {
-    "id": "11",
-    "nombre": "[DA33] / Documento de otro tipo: Otro"
-  },
-  {
-    "id": "12",
-    "nombre": "[DA57] / Documento de Reforma Urbana: Dominio Administrativo"
-  },
-  {
     "id": "13",
     "nombre": "[DA58] / Constancia de Posesion INRA"
   },
@@ -56,32 +36,12 @@
     "nombre": "[DA60] / Documento de otro tipo: Certificación Catastral"
   },
   {
-    "id": "15",
-    "nombre": "[DA62] / Documento de otro tipo: Constancia Administrativa"
-  },
-  {
     "id": "16",
     "nombre": "[DA65] / Certificación Registral"
   },
   {
-    "id": "17",
-    "nombre": "[DI01] / Declaración del informante"
-  },
-  {
-    "id": "18",
-    "nombre": "[DJ03] / Escritura Publica: Venta Forzada"
-  },
-  {
-    "id": "19",
-    "nombre": "[DJ08] / Derechos Sucesorios:Sucesión Intestada"
-  },
-  {
     "id": "20",
     "nombre": "[DJ09] / Derechos sucesorios: Declaratoria de Herederos"
-  },
-  {
-    "id": "21",
-    "nombre": "[DJ10] / Derechos Sucesorios:Testamento"
   },
   {
     "id": "22",
@@ -98,10 +58,6 @@
   {
     "id": "25",
     "nombre": "[DJ19] / Titulo Supletorio: Mas de 30 anos de otorgado"
-  },
-  {
-    "id": "26",
-    "nombre": "[DJ33] / Documento de otro tipo: Otro"
   },
   {
     "id": "27",
@@ -128,16 +84,8 @@
     "nombre": "[DJ54] / Documento de Otro Tipo:Partición Judicial"
   },
   {
-    "id": "33",
-    "nombre": "[DJ55] / Documento de Otro Tipo:Cesación de Comunidad"
-  },
-  {
     "id": "34",
     "nombre": "[DJ56] / Documentos Judiciales: Memoria Testamentada"
-  },
-  {
-    "id": "35",
-    "nombre": "[DJ63] / Dación en Pago de Deuda"
   },
   {
     "id": "36",
@@ -156,36 +104,12 @@
     "nombre": "[DN03] / Escritura Publica: Venta Forzada"
   },
   {
-    "id": "40",
-    "nombre": "[DN04] / Escritura Publica: Promesa de venta"
-  },
-  {
-    "id": "41",
-    "nombre": "[DN05] / Escritura Publica: Cesión de Derechos posesorios"
-  },
-  {
     "id": "42",
     "nombre": "[DN06] / Escritura Publica: Cesión de Derechos Hereditarios"
   },
   {
-    "id": "43",
-    "nombre": "[DN07] / Minutas de Mejoras"
-  },
-  {
-    "id": "44",
-    "nombre": "[DN08] / Derechos sucesorios: Sucesión Intestada"
-  },
-  {
     "id": "45",
     "nombre": "[DN10] / Escritura Pública: Testamento"
-  },
-  {
-    "id": "46",
-    "nombre": "[DN11] / Minuta Descriptiva: Otro"
-  },
-  {
-    "id": "47",
-    "nombre": "[DN15] / Escritura Publica: Arriendo con Opcion a Compra"
   },
   {
     "id": "48",
@@ -193,11 +117,7 @@
   },
   {
     "id": "49",
-    "nombre": "[DN27] / ESCRITURA DE DONACION LEY 85 Y 86"
-  },
-  {
-    "id": "50",
-    "nombre": "[DN28] / Donación por Documento Público(Auténtico y/o Admin"
+    "nombre": "[DN27] / ESCRITURA DE DONACION LEY 85y 86"
   },
   {
     "id": "51",
@@ -216,16 +136,8 @@
     "nombre": "[DN55] / Escritura Publica:Cesación de Comunidad"
   },
   {
-    "id": "55",
-    "nombre": "[DN56] / Derechos Sucesorios:Memoria Testamentaria"
-  },
-  {
     "id": "56",
     "nombre": "[DN59] / Escritura Pública:Partición Extrajudicial"
-  },
-  {
-    "id": "57",
-    "nombre": "[DN61] / Escritura Publica: Declaracio Notarial"
   },
   {
     "id": "58",
@@ -240,52 +152,8 @@
     "nombre": "[DN67] / Escritura Publica: Rectificacion de Medidas"
   },
   {
-    "id": "61",
-    "nombre": "[DP08] / Derechos Sucesorios: Sucesión Intestada"
-  },
-  {
-    "id": "62",
-    "nombre": "[DP10] / Derechos sucesorios: Testamento"
-  },
-  {
-    "id": "63",
-    "nombre": "[DP11] / Derechos sucesorios: Otro"
-  },
-  {
-    "id": "64",
-    "nombre": "[DP12] / Documento Privado: Compra-Venta"
-  },
-  {
-    "id": "65",
-    "nombre": "[DP13] / Documento Privado: Cesión de Derechos Posesorios"
-  },
-  {
-    "id": "66",
-    "nombre": "[DP14] / Documento Privado: Cesión de Derechos Hereditarios"
-  },
-  {
-    "id": "67",
-    "nombre": "[DP15] / Documento Privado: Arriendo"
-  },
-  {
-    "id": "68",
-    "nombre": "[DP16] / Documento Privado: Otro"
-  },
-  {
-    "id": "69",
-    "nombre": "[DP33] / Documento de otro tipo: Otro"
-  },
-  {
-    "id": "70",
-    "nombre": "[DP34] / Sin Documento: Sucesión Intestada"
-  },
-  {
     "id": "71",
     "nombre": "[DP45] / Documento Privado: Minuta de Mejoras"
-  },
-  {
-    "id": "72",
-    "nombre": "[DP63] / Dación en Pago de Deuda"
   },
   {
     "id": "73",
@@ -294,18 +162,6 @@
   {
     "id": "74",
     "nombre": "[NP01] / Existen documentos pero no fueron presentados."
-  },
-  {
-    "id": "75",
-    "nombre": "[PA01] / Compra Venta"
-  },
-  {
-    "id": "76",
-    "nombre": "[PA07] / Arriendo"
-  },
-  {
-    "id": "77",
-    "nombre": "[PA15] / Arriendo"
   },
   {
     "id": "78",
@@ -324,20 +180,12 @@
     "nombre": "[PA23] / Titulo desde 1992 hasta la fecha"
   },
   {
-    "id": "82",
-    "nombre": "[PA24] / Documento de Reforma Agraria: Escritura otorgada por Procuraduria de la Republica"
-  },
-  {
     "id": "83",
     "nombre": "[PA25] / Documento de Reforma Agraria: Constancia de Asignacion"
   },
   {
     "id": "84",
     "nombre": "[PA26] / Documento de Reforma Agraria: Otro"
-  },
-  {
-    "id": "85",
-    "nombre": "[PA27] / Escritura de Donación Ley 8586"
   },
   {
     "id": "86",
@@ -349,15 +197,11 @@
   },
   {
     "id": "88",
-    "nombre": "[PA30] / Documento de Reforma Urbana: Constancia de asignacion"
+    "nombre": "[PA30] / Documento de Reforma Urbana: Constancia de adjudicación"
   },
   {
     "id": "89",
     "nombre": "[PA31] / Documento de Reforma Urbana: Otro"
-  },
-  {
-    "id": "90",
-    "nombre": "[PA33] / Documento de otro tipo: Otro"
   },
   {
     "id": "91",
@@ -373,19 +217,11 @@
   },
   {
     "id": "94",
-    "nombre": "[PA64] / Solvencia Intendencia de la Propiedad"
-  },
-  {
-    "id": "95",
-    "nombre": "[PJ08] / Sucesión Intestada"
+    "nombre": "[PA64] / Solvencia Administrativa"
   },
   {
     "id": "96",
     "nombre": "[PJ09] / Declaratoria de Heredero"
-  },
-  {
-    "id": "97",
-    "nombre": "[PJ10] / Testamento"
   },
   {
     "id": "98",
@@ -404,20 +240,8 @@
     "nombre": "[PJ19] / Titulo Supletorio: Mas de 30 anos de otorgado"
   },
   {
-    "id": "102",
-    "nombre": "[PJ26] / Ratificación de Reforma Agraria: Otro"
-  },
-  {
     "id": "103",
     "nombre": "[PJ32] / Documento de otro tipo: Sentencia judicial de amparo en la posecion"
-  },
-  {
-    "id": "104",
-    "nombre": "[PJ33] / Documento de otro tipo: Otro"
-  },
-  {
-    "id": "105",
-    "nombre": "[PJ61] / Declaración Jurada"
   },
   {
     "id": "106",
@@ -440,20 +264,8 @@
     "nombre": "[PN06] / Escritura Publica: Cesión de Derechos Hereditarios"
   },
   {
-    "id": "111",
-    "nombre": "[PN07] / Arriendo"
-  },
-  {
-    "id": "112",
-    "nombre": "[PN08] / Sucesion Intestada"
-  },
-  {
     "id": "113",
     "nombre": "[PN10] / Escritura Pública: Testamento"
-  },
-  {
-    "id": "114",
-    "nombre": "[PN11] / Otro"
   },
   {
     "id": "115",
@@ -462,10 +274,6 @@
   {
     "id": "116",
     "nombre": "[PN24] / Escritura Pública, Otorg.Procuraduria (Notaria)"
-  },
-  {
-    "id": "117",
-    "nombre": "[PN26] / Documento de Reforma Agraria: Otro"
   },
   {
     "id": "118",
@@ -484,10 +292,6 @@
     "nombre": "[PN55] / Cesación de Comunidad"
   },
   {
-    "id": "122",
-    "nombre": "[PN56] / Memoria Testamentaria"
-  },
-  {
     "id": "123",
     "nombre": "[PN59] / Partición Extrajudicial"
   },
@@ -498,46 +302,6 @@
   {
     "id": "125",
     "nombre": "[PN63] / Dación en Pago de Deuda"
-  },
-  {
-    "id": "126",
-    "nombre": "[PN66] / AUTO DESMEMBRACION"
-  },
-  {
-    "id": "127",
-    "nombre": "[PP01] / Compra Venta"
-  },
-  {
-    "id": "128",
-    "nombre": "[PP02] / Donación"
-  },
-  {
-    "id": "129",
-    "nombre": "[PP04] / Promesa de Venta"
-  },
-  {
-    "id": "130",
-    "nombre": "[PP05] / Cesión de Derechos Posesorios"
-  },
-  {
-    "id": "131",
-    "nombre": "[PP06] / Cesión de Derechos Hereditarios"
-  },
-  {
-    "id": "132",
-    "nombre": "[PP07] / Arriendo"
-  },
-  {
-    "id": "133",
-    "nombre": "[PP08] / Sucesión Intestada"
-  },
-  {
-    "id": "134",
-    "nombre": "[PP10] / Derechos sucesorios: Testamento"
-  },
-  {
-    "id": "135",
-    "nombre": "[PP11] / Derechos Sucesorios: Memoria Testamentaria"
   },
   {
     "id": "136",
@@ -552,16 +316,8 @@
     "nombre": "[PP14] / Documento Privado: Cesión de Derechos Hereditarios"
   },
   {
-    "id": "139",
-    "nombre": "[PP15] / Documento Privado: Arriendo"
-  },
-  {
     "id": "140",
     "nombre": "[PP16] / Documento Privado: Otro"
-  },
-  {
-    "id": "141",
-    "nombre": "[PP33] / Documento de otro tipo: Otro"
   },
   {
     "id": "142",
@@ -590,22 +346,6 @@
   {
     "id": "148",
     "nombre": "[PP46] / Documento Privado: Declaracion Unilateral"
-  },
-  {
-    "id": "149",
-    "nombre": "[PP51] / Permuta"
-  },
-  {
-    "id": "150",
-    "nombre": "[PP61] / Declaracion Jurada"
-  },
-  {
-    "id": "151",
-    "nombre": "[PP63] / Dación en Pago de Deuda"
-  },
-  {
-    "id": "152",
-    "nombre": "[PPE1] / Poder Especial"
   },
   {
     "id": "153",

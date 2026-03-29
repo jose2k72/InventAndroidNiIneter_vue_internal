@@ -165,7 +165,9 @@ const nuevoModel = ModelsFactory.createFicha(ctx);
 
 ## 10. Notas de Mantenimiento Final
 
-*   **Java Version**: El proyecto requiere **JDK 17** para compilar debido a las versiones recientes de Gradle/Android Plugin. Se ha configurado `gradle.properties` localmente para forzar esta versión sin afectar el `JAVA_HOME` del sistema.
+*   **Java Version (CRÍTICO - NO CAMBIAR)**: El proyecto **REQUIERE ESTRICTAMENTE JDK 17** para compilar correctamente (configurado en `gradle.properties`, `app/build.gradle.kts` y `.vscode/settings.json`).
+    **PROHIBIDO CAMBIAR A JDK 21 O SUPERIORES**. 
+    *Razón:* Existe un bug de incompatibilidad entre la herramienta interna `jlink` (introducida a partir de Java 21) y los archivos construidos del SDK de Android 34 (específicamente el archivo `core-for-system-modules.jar`). Si se intenta forzar Java 21, el proceso de Gradle arrojará siempre el fallo `jdk.tools.jlink.plugin.PluginException: ModuleTarget is malformed`. Todo el entorno, plugins y compatibilidades deben permanecer intactos en **Java 17**.
 *   **Splash Screen**: Implementado mediante un "About Dialog" en `MainActivity` que se muestra por 4 segundos al inicio, reemplazando la antigua pantalla de carga.
 *   **Versionamiento Automático**: El `versionName` y `versionCode` se generan automáticamente basándose en timestamp de compilación.
 *   **Cache-Busting**: Se utiliza una estrategia de sufijo en el cargado del WebView para asegurar que los cambios en los archivos `.js` se reflejen inmediatamente sin intervención del usuario.

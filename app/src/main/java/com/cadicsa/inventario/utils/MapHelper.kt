@@ -91,12 +91,14 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
      */
     private fun calculateGroupColor(items: List<com.cadicsa.inventario.DataItem>, lastSavedDataId: Int): Float {
         // Prioridad 1: ¿Contiene el último guardado?
-        if (items.any { it.id == lastSavedDataId }) return 0f // HUE_RED
+        if (items.any { it.id == lastSavedDataId }) return 270f // HUE_VIOLET
 
         // Prioridad 2: ¿Está completo? (Ficha + Entrevistado + SujetoNatural/Juridico)
         var tieneFicha = false
         var tieneEntrevistado = false
         var tieneDuenio = false
+        var esNoEncuestado = false
+        var esUnionPredio = false
 
         items.forEach { item ->
             try {
@@ -106,10 +108,15 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
                     "Ficha" -> tieneFicha = true
                     "Entrevistado" -> tieneEntrevistado = true
                     "SujetoNatural", "SujetoJuridico" -> tieneDuenio = true
+                    "NoEncuestado" -> esNoEncuestado = true
+                    "UnionConPredio" -> esUnionPredio = true
                 }
             } catch (e: Exception) {}
         }
 
+        if (esNoEncuestado) return 0f // HUE_RED
+        if (esUnionPredio) return 180f // HUE_CYAN
+        
         return if (tieneFicha && tieneEntrevistado && tieneDuenio) 120f else 60f // GREEN : YELLOW
     }
 
