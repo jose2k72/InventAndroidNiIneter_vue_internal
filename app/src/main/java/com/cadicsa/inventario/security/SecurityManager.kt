@@ -76,41 +76,29 @@ object SecurityManager {
                 val passwordHash = obj.optString("passwordHash", "").trim()
                 val salt = obj.optString("salt", "").trim()
                 
-                // Regla 2: Completitud
+                // Regla 2: Completitud (Si falta algo, se ignora solo este usuario, no toda la lista)
                 if (userName.isEmpty() || fullName.isEmpty() || initials.isEmpty() || passwordHash.isEmpty() || salt.isEmpty()) {
-                    Log.e(TAG, "Regla Fallida: Campos incompletos.")
-                    return null
+                    Log.w(TAG, "Usuario ignorado por campos incompletos: \$userName")
+                    continue
                 }
                 
                 // Regla 6: Exclusividad MASTER
                 if (userName == "MASTER" || initials == "MASTER") {
-                    Log.e(TAG, "Regla Fallida: Intento de suplantar MASTER en JSON.")
-                    return null
+                    Log.w(TAG, "Intento de suplantar MASTER ignorado.")
+                    continue
+                }
+                
+                // Unicidad (Si ya existe en la lista temporal, lo ignoramos)
+                if (tempUsers.any { it.userName == userName || it.initials == initials }) {
+                    Log.w(TAG, "Usuario duplicado ignorado: \$userName / \$initials")
+                    continue
                 }
                 
                 tempUsers.add(DeviceUser(userName, fullName, initials, passwordHash, salt))
             }
             
-            // Regla 4 & 5: Unicidad
-            val uniqueUserNames = tempUsers.map { it.userName }.toSet()
-            if (uniqueUserNames.size != tempUsers.size) {
-                Log.e(TAG, "Regla Fallida: userName duplicados.")
-                return null
-            }
-            
-            val uniqueInitials = tempUsers.map { it.initials }.toSet()
-            if (uniqueInitials.size != tempUsers.size) {
-                Log.e(TAG, "Regla Fallida: initials duplicadas.")
-                return null
-            }
-            
-            // Regla 7: Obligatoriedad Admin
-            val adminCount = tempUsers.count { it.userName == "ADMIN" }
-            if (adminCount != 1) {
-                Log.e(TAG, "Regla Fallida: Debe existir exactamente 1 ADMIN. Encontrados: \$adminCount")
-                return null
-            }
-            
+            // Regla 7 (Eliminada): Ya no obligamos a que exista un ADMIN.
+            // Retornamos todos los usuarios válidos que hayamos encontrado.
             return tempUsers
 
         } catch (e: Exception) {
