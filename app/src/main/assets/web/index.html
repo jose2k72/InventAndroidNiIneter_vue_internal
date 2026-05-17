@@ -328,9 +328,9 @@
         <!-- Vista Lista -->
         <div v-if="operation === 'List'" class="container">
             <nav class="navbar">
-                <button class="nav-btn" @click="startCreate('Ficha')">
-                    <img src="images/survey.svg" alt="Ficha">
-                    <span>ENCUESTA CATASTRAL</span>
+                <button class="nav-btn" @click="startCreate('Entrevistado')">
+                    <img src="images/interview.svg" alt="Entrevistado">
+                    <span>ENTREVISTADO</span>
                 </button>
                 <button class="nav-btn" @click="startCreate('SujetoNatural')">
                     <img src="images/person.svg" alt="Propietario">
@@ -340,19 +340,21 @@
                     <img src="images/building.svg" alt="Propietario">
                     <span>PROPIETARIO JURÍDICO</span>
                 </button>
-                <button class="nav-btn" @click="startCreate('Entrevistado')">
-                    <img src="images/interview.svg" alt="Entrevistado">
-                    <span>ENTREVISTADO</span>
+                <button class="nav-btn" @click="startCreate('Ficha')">
+                    <img src="images/survey.svg" alt="Ficha">
+                    <span>ENCUESTA CATASTRAL</span>
                 </button>
                 <button class="nav-btn" @click="startCreate('Familiares')">
                     <img src="images/family.svg" alt="Familia">
                     <span>COMPOSICIÓN FAMILIAR</span>
                 </button>
-                <button class="nav-btn" @click="startCreate('NoEncuestado')" style="border-left: 4px solid #dc3545; background: #fff5f5;">
+                <button class="nav-btn" @click="startCreate('NoEncuestado')"
+                    style="border-left: 4px solid #dc3545; background: #fff5f5;">
                     <img src="images/survey.svg" alt="No Encuestado" style="filter: hue-rotate(150deg) saturate(10);">
                     <span style="color: #dc3545; font-weight: bold;">🚫 PREDIO NO ENCUESTADO</span>
                 </button>
-                <button class="nav-btn" @click="startCreate('UnionConPredio')" style="border-left: 4px solid #6200EE; background: #f3e5f5;">
+                <button class="nav-btn" @click="startCreate('UnionConPredio')"
+                    style="border-left: 4px solid #6200EE; background: #f3e5f5;">
                     <img src="images/survey.svg" alt="Unión con Predio" style="filter: hue-rotate(250deg) saturate(5);">
                     <span style="color: #6200EE; font-weight: bold;">🔗 UNIÓN CON PREDIO</span>
                 </button>

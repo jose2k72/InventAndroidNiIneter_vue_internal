@@ -16,6 +16,7 @@ window.WorkflowService = {
 
         // 1. Mapeo de existencia
         const hasNatural = listData.some(item => item.Data?.Type === 'SujetoNatural');
+        const hasJuridico = listData.some(item => item.Data?.Type === 'SujetoJuridico');
         const hasEntrevistado = listData.some(item => item.Data?.Type === 'Entrevistado');
         const hasFicha = listData.some(item => item.Data?.Type === 'Ficha');
         const hasFamiliares = listData.some(item => item.Data?.Type === 'Familiares');
@@ -41,6 +42,25 @@ window.WorkflowService = {
                 icon: '🚫',
                 title: 'Acción no permitida',
                 message: 'No se puede marcar el predio como excepción si ya cuenta con información capturada (Encuesta, Propietario, etc.).'
+            };
+        }
+
+        // 2b. Regla de Mutua Exclusión: Propietario Natural vs Jurídico
+        if (type === 'SujetoJuridico' && hasNatural) {
+            return {
+                allowed: false,
+                icon: '🚫',
+                title: 'Tipo de Propietario incompatible',
+                message: 'No se puede registrar un Propietario Jurídico si ya existe un Propietario Natural o Poseedor registrado en este predio.'
+            };
+        }
+
+        if (type === 'SujetoNatural' && hasJuridico) {
+            return {
+                allowed: false,
+                icon: '🚫',
+                title: 'Tipo de Propietario incompatible',
+                message: 'No se puede registrar un Propietario Natural o Poseedor si ya existe un Propietario Jurídico registrado en este predio.'
             };
         }
 
