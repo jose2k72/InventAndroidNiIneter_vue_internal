@@ -182,4 +182,26 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         }
         return if (result.length > 1) result.dropLast(1).toString() + "]" else "[]"
     }
+
+    fun getDataByObjectId(idObject: Int): List<DataItem> {
+        val items = mutableListOf<DataItem>()
+        readableDatabase.rawQuery("SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER FROM DATOS WHERE IDOBJECT=$idObject", null).use { cursor ->
+            while (cursor.moveToNext()) {
+                items.add(DataItem(
+                    cursor.getInt(0), 
+                    cursor.getString(1) ?: "{}", 
+                    cursor.getString(2) ?: "", 
+                    cursor.getDouble(3), 
+                    cursor.getDouble(4), 
+                    cursor.getDouble(5), 
+                    cursor.getDouble(6), 
+                    cursor.getInt(7), 
+                    cursor.getInt(8), 
+                    cursor.getInt(9), 
+                    cursor.getString(10) ?: "Aceras"
+                ))
+            }
+        }
+        return items
+    }
 }

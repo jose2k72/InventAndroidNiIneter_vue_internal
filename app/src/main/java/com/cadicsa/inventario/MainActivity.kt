@@ -156,52 +156,61 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.setOnMapClickListener { latLng ->
             val dbHelper = DatabaseHelper.getInstance(this)
             
-            // 1. Prioridad: ¿Hay puntos capturados cerca (radio de 3 metros)?
-            val nearbyPoints = dbHelper.getDataByProximity(latLng.latitude, latLng.longitude, 3.0, true)
-            
-            if (nearbyPoints.isNotEmpty()) {
-                // Abrir directamente el registro encontrado (Snapping)
-                openFormActivityForEdit(nearbyPoints[0])
-            } else {
-                // 2. Si no hay puntos cerca, buscar si se interceptó un predio (geometría)
-                val geom = dbHelper.getGeometry(latLng.longitude, latLng.latitude)
-                if (geom != null) {
-                    val mun = dbHelper.getMunicipiosAt(latLng.longitude, latLng.latitude)
-                    val sec = dbHelper.getSectorAt(latLng.longitude, latLng.latitude)
-                    val area = GeometryUtil.calculateArea32616(geom.wkt)
-
-                    // VALIDACIÓN ESTRICTA: No permitir entrar si faltan datos base
-                    if (mun.isNullOrEmpty()) {
-                        Toast.makeText(this, "⚠️ Error: No se pudo identificar el municipio en esta zona", Toast.LENGTH_LONG).show()
-                        return@setOnMapClickListener
-                    }
-                    if (sec.isNullOrEmpty()) {
-                        Toast.makeText(this, "⚠️ Error: No se pudo identificar el sector catastral", Toast.LENGTH_LONG).show()
-                        return@setOnMapClickListener
-                    }
-                    if (geom.localizacion.isNullOrEmpty()) {
-                        Toast.makeText(this, "⚠️ Error: El predio seleccionado no tiene código de localización", Toast.LENGTH_LONG).show()
-                        return@setOnMapClickListener
-                    }
-
-                    val intent = Intent(this, FormActivity::class.java).apply {
-                        putExtra(FormActivity.EXTRA_LATITUDE, latLng.latitude)
-                        putExtra(FormActivity.EXTRA_LONGITUDE, latLng.longitude)
-                        putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
-                        putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
-                        putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
-                        putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
-                        putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
-                        putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
-                        putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
-                        putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
-                        putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
-                        putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
-                    }
-                    startActivity(intent)
+            // 1. Buscar si se interceptó un predio (geometría) en el toque del dedo
+            val geom = dbHelper.getGeometry(latLng.longitude, latLng.latitude)
+            if (geom != null) {
+                // Buscamos si ya existen puntos de datos guardados para este polígono (IDOBJECT)
+                val existingPoints = dbHelper.getDataByObjectId(geom.id)
+                
+                val targetLat: Double
+                val targetLng: Double
+                
+                if (existingPoints.isNotEmpty()) {
+                    // Si ya existen puntos en el predio, tomamos la posición del primero de ellos (consolidada)
+                    targetLat = existingPoints[0].latitud
+                    targetLng = existingPoints[0].longitud
                 } else {
-                    Toast.makeText(this, "Ningún objeto interceptado", Toast.LENGTH_SHORT).show()
+                    // Si no existen puntos, calculamos el Polo de Inaccesibilidad
+                    val pole = GeometryUtil.getPoleOfInaccessibility(geom.jtsGeom!!)
+                    targetLat = pole.latitude
+                    targetLng = pole.longitude
                 }
+
+                val mun = dbHelper.getMunicipiosAt(latLng.longitude, latLng.latitude)
+                val sec = dbHelper.getSectorAt(latLng.longitude, latLng.latitude)
+                val area = GeometryUtil.calculateArea32616(geom.jtsGeom!!)
+
+                // VALIDACIÓN ESTRICTA: No permitir entrar si faltan datos base
+                if (mun.isNullOrEmpty()) {
+                    Toast.makeText(this, "⚠️ Error: No se pudo identificar el municipio en esta zona", Toast.LENGTH_LONG).show()
+                    return@setOnMapClickListener
+                }
+                if (sec.isNullOrEmpty()) {
+                    Toast.makeText(this, "⚠️ Error: No se pudo identificar el sector catastral", Toast.LENGTH_LONG).show()
+                    return@setOnMapClickListener
+                }
+                if (geom.localizacion.isNullOrEmpty()) {
+                    Toast.makeText(this, "⚠️ Error: El predio seleccionado no tiene código de localización", Toast.LENGTH_LONG).show()
+                    return@setOnMapClickListener
+                }
+
+                val intent = Intent(this, FormActivity::class.java).apply {
+                    putExtra(FormActivity.EXTRA_LATITUDE, targetLat)   // Coordenada consolidada o Polo
+                    putExtra(FormActivity.EXTRA_LONGITUDE, targetLng) // Coordenada consolidada o Polo
+                    putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
+                    putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
+                    putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
+                    putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
+                    putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
+                    putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
+                    putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
+                    putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
+                    putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
+                    putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
+                }
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "Ningún objeto interceptado", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -258,7 +267,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         
         // Intentar obtener geometría para el área calculada si es posible
         val geom = dbHelper.getGeometry(lng, lat)
-        val area = if (geom != null) GeometryUtil.calculateArea32616(geom.wkt) else 0.0
+        val area = if (geom != null) GeometryUtil.calculateArea32616(geom.jtsGeom!!) else 0.0
         
         // Validación mínima también aquí para mayor seguridad
         if (mun.isNullOrEmpty() || sec.isNullOrEmpty() || (geom != null && geom.localizacion.isNullOrEmpty())) {
@@ -291,7 +300,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val sec = dbHelper.getSectorAt(item.longitud, item.latitud)
         
         val geom = dbHelper.getGeometry(item.longitud, item.latitud)
-        val area = if (geom != null) GeometryUtil.calculateArea32616(geom.wkt) else 0.0
+        val area = if (geom != null) GeometryUtil.calculateArea32616(geom.jtsGeom!!) else 0.0
 
         val intent = Intent(this, FormActivity::class.java).apply {
             putExtra(FormActivity.EXTRA_LATITUDE, item.latitud)

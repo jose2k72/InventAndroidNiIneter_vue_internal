@@ -208,4 +208,23 @@ object GeometryUtil {
         val geom = wktToGeometry(lineWkt) ?: return emptyList()
         return getPolylineCoordinates(geom)
     }
+
+    /**
+     * Calcula el Polo de Inaccesibilidad (centro del círculo máximo inscrito)
+     * de una geometría poligonal usando JTS.
+     * Retorna una LatLng con la coordenada del polo.
+     */
+    fun getPoleOfInaccessibility(geom: JtsGeometry): com.google.android.gms.maps.model.LatLng {
+        return try {
+            // El algoritmo de círculo máximo inscrito requiere una tolerancia de precisión.
+            // Para WGS84, 0.00001 representa aproximadamente 1 metro, lo cual es excelente y súper rápido.
+            val mic = org.locationtech.jts.algorithm.construct.MaximumInscribedCircle(geom, 0.00001)
+            val center = mic.center
+            com.google.android.gms.maps.model.LatLng(center.y, center.x)
+        } catch (e: Exception) {
+            // Fallback al punto interior garantizado si hay algún error (evita caer fuera del polígono cóncavo)
+            val pt = org.locationtech.jts.algorithm.InteriorPointArea.getInteriorPoint(geom)
+            com.google.android.gms.maps.model.LatLng(pt.y, pt.x)
+        }
+    }
 }
