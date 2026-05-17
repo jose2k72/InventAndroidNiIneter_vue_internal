@@ -33,10 +33,10 @@ object SecurityManager {
         usersList.clear()
         val auxList = loadAuxiliaryList(context)
         if (auxList != null) {
-            val normales = auxList.filter { it.userName != "ADMIN" }.sortedBy { it.fullName }
-            val admin = auxList.find { it.userName == "ADMIN" }
+            val normales = auxList.filter { !it.isAdmin && it.userName != "MASTER" }.sortedBy { it.fullName }
+            val admins = auxList.filter { it.isAdmin && it.userName != "MASTER" }.sortedBy { it.fullName }
             usersList.addAll(normales)
-            if (admin != null) usersList.add(admin)
+            usersList.addAll(admins)
             usersList.add(MASTER_USER)
         } else {
             usersList.add(MASTER_USER)

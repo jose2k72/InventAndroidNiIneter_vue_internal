@@ -77,6 +77,9 @@ class MainDialogHelper(private val activity: AppCompatActivity) {
         val spinner = Spinner(activity)
         val userNames = SecurityManager.usersList.map { it.fullName }
         spinner.adapter = ArrayAdapter(activity, android.R.layout.simple_spinner_dropdown_item, userNames)
+        if (userNames.isNotEmpty()) {
+            spinner.setSelection(0)
+        }
         layout.addView(spinner)
         
         val input = EditText(activity).apply {
