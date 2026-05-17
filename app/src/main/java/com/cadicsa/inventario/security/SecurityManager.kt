@@ -15,7 +15,8 @@ object SecurityManager {
         fullName = "MASTER",
         initials = "MASTER",
         passwordHash = "fj1mttsGau9KTablizcz27W/3WqFXgsfu1Fj+1GYWsk=",
-        salt = "jH8kP2oL6xG9vN4m1Qw==="
+        salt = "jH8kP2oL6xG9vN4m1Qw===",
+        isAdmin = true
     )
 
     // Lista principal a ser usada por la UI para el dropdown
@@ -57,6 +58,7 @@ object SecurityManager {
                 val initials = obj.optString("initials", "").trim().uppercase(Locale.ROOT)
                 val passwordHash = obj.optString("passwordHash", "").trim()
                 val salt = obj.optString("salt", "").trim()
+                val isAdmin = obj.optBoolean("isAdmin", userName == "ADMIN")
                 
                 if (userName.isEmpty() || fullName.isEmpty() || initials.isEmpty() || passwordHash.isEmpty() || salt.isEmpty()) {
                     continue  // no abortar toda la lista por un usuario malformado
@@ -64,7 +66,7 @@ object SecurityManager {
                 if (userName == "MASTER" || initials == "MASTER") {
                     continue  // no permitir suplantar MASTER
                 }
-                tempUsers.add(DeviceUser(userName, fullName, initials, passwordHash, salt))
+                tempUsers.add(DeviceUser(userName, fullName, initials, passwordHash, salt, isAdmin))
             }
             
             // Unicidad de userName e initials
@@ -121,6 +123,7 @@ object SecurityManager {
                 obj.put("initials", user.initials)
                 obj.put("passwordHash", user.passwordHash)
                 obj.put("salt", user.salt)
+                obj.put("isAdmin", user.isAdmin)
                 jsonArray.put(obj)
             }
             

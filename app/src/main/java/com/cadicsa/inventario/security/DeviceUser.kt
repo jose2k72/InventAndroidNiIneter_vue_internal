@@ -5,5 +5,6 @@ data class DeviceUser(
     var fullName: String,
     var initials: String,
     var passwordHash: String,
-    var salt: String
+    var salt: String,
+    var isAdmin: Boolean = false
 )

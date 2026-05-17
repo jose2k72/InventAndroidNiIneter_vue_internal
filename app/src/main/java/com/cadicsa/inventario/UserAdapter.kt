@@ -50,7 +50,7 @@ class UserAdapter(
             onDeleteClick: (DeviceUser) -> Unit
         ) {
             tvFullName.text = user.fullName
-            tvUserName.text = if (user.userName == "ADMIN") "${user.userName} • Administrador" else "${user.userName} • Usuario Normal"
+            tvUserName.text = if (user.isAdmin) "${user.userName} • Administrador" else "${user.userName} • Usuario Normal"
             tvInitials.text = user.initials
             
             // Generate a random stable background color based on username hash

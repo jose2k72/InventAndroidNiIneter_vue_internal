@@ -356,7 +356,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         
         val user = SecurityManager.currentUser
         infoItem?.title = "👤 " + (user?.fullName ?: "Desconocido")
-        val isAdmin = user?.userName == "ADMIN" || user?.userName == "MASTER"
+        val isAdmin = user?.isAdmin == true || user?.userName == "ADMIN" || user?.userName == "MASTER"
         importItem?.isVisible = isAdmin
         adminPassItem?.isVisible = isAdmin
         changePassItem?.isVisible = user?.userName != "MASTER"

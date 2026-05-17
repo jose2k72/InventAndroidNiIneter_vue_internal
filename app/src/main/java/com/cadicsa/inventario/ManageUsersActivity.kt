@@ -109,6 +109,12 @@ class ManageUsersActivity : AppCompatActivity() {
         val etUserName = dialogView.findViewById<TextInputEditText>(R.id.etUserName)
         val etFullName = dialogView.findViewById<TextInputEditText>(R.id.etFullName)
         val etPassword = dialogView.findViewById<TextInputEditText>(R.id.etPassword)
+        val actvRole = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.actvRole)
+
+        // Configurar dropdown de roles
+        val roles = arrayOf("Usuario Normal", "Administrador")
+        val roleAdapter = android.widget.ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, roles)
+        actvRole.setAdapter(roleAdapter)
 
         val isEdit = existingUser != null
         
@@ -120,6 +126,14 @@ class ManageUsersActivity : AppCompatActivity() {
             
             // Ocultar el campo de contraseña en modo edición
             dialogView.findViewById<View>(R.id.tilPassword).visibility = View.GONE
+            
+            val currentRole = if (existingUser?.isAdmin == true) "Administrador" else "Usuario Normal"
+            actvRole.setText(currentRole, false)
+            
+            // Si es el usuario ADMIN de base, no permitir cambiar su rol
+            if (existingUser?.userName == "ADMIN") {
+                dialogView.findViewById<View>(R.id.tilRole).isEnabled = false
+            }
         }
 
         val builder = AlertDialog.Builder(this)
@@ -134,6 +148,7 @@ class ManageUsersActivity : AppCompatActivity() {
             val inputUserName = etUserName.text.toString()
             val inputFullName = etFullName.text.toString()
             val inputPassword = etPassword.text.toString()
+            val inputIsAdmin = actvRole.text.toString() == "Administrador"
 
             if (inputFullName.isBlank()) {
                 etFullName.error = "Campo requerido"
@@ -165,7 +180,8 @@ class ManageUsersActivity : AppCompatActivity() {
                     fullName = normalizedFullName,
                     initials = generatedInitials,
                     passwordHash = "",
-                    salt = SecurityManager.generateSalt()
+                    salt = SecurityManager.generateSalt(),
+                    isAdmin = inputIsAdmin
                 )
                 newUser.passwordHash = SecurityManager.hashPassword(inputPassword, newUser.salt)
                 
@@ -180,6 +196,7 @@ class ManageUsersActivity : AppCompatActivity() {
 
                 existingUser.fullName = normalizedFullName
                 existingUser.initials = generatedInitials
+                existingUser.isAdmin = inputIsAdmin
                 
                 if (inputPassword.isNotBlank()) {
                     existingUser.salt = SecurityManager.generateSalt()
