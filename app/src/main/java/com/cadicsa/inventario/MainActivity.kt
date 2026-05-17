@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -81,7 +82,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (Environment.isExternalStorageManager() && !permissionsGranted) {
+            val hasStorage = Environment.isExternalStorageManager()
+            if (hasStorage && !permissionsGranted) {
                 permissionsGranted = true
                 permissionHelper.requestAllPermissions(multiplePermissionsLauncher) {
                     AppConfig.ensureStorageDirectoryExists()
@@ -106,30 +108,54 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         mapHelper = MapHelper(this, mMap)
-        mapInitialized = true
-        
-        mMap.uiSettings.isZoomControlsEnabled = true
+
         mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
-        
-        // Cargar tiles offline
-        mMap.addTileOverlay(com.google.android.gms.maps.model.TileOverlayOptions().tileProvider(OfflineTileProvider(this)))
+
+        mMap.uiSettings.apply {
+            isZoomControlsEnabled = true
+            isCompassEnabled = true
+            isMyLocationButtonEnabled = false
+        }
+
+        if (DatabaseHelper.isDatabaseAvailable()) {
+            try {
+                val dbHelper = DatabaseHelper.getInstance(this)
+
+                val minZoom = dbHelper.getMinZoom()
+                val maxZoom = dbHelper.getMaxZoom()
+                val initLat  = dbHelper.getInitLat().toDouble()
+                val initLng  = dbHelper.getInitLng().toDouble()
+                val initZoom = dbHelper.getInitZoom().toFloat()
+
+                if (minZoom > 0 && maxZoom > 0) {
+                    mMap.setMinZoomPreference(minZoom.toFloat())
+                    mMap.setMaxZoomPreference(maxZoom.toFloat())
+                }
+
+                val tileProvider = OfflineTileProvider(this, "tiles")
+                tileOverlay = mMap.addTileOverlay(
+                    com.google.android.gms.maps.model.TileOverlayOptions()
+                        .tileProvider(tileProvider)
+                        .zIndex(3000f)
+                )
+
+                if (initLat == 0.0 || initLng == 0.0) {
+                    dialogHelper.showFatalErrorDialog("Errores en los datos de carga de la app (Coordenadas de inicio no encontradas)")
+                    return
+                }
+
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(initLat, initLng), initZoom))
+                mapInitialized = true
+
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error al cargar BD: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(this, "Base de datos no disponible. Verifique permisos.", Toast.LENGTH_LONG).show()
+        }
 
         enableMyLocation()
 
-        // 🟢 VALIDACIÓN ESTRICTA: Cargar ubicación inicial desde Map.db -> config
-        val dbHelper = DatabaseHelper.getInstance(this)
-        val initLat = dbHelper.getInitLat().toDouble()
-        val initLng = dbHelper.getInitLng().toDouble()
-        val initZoom = dbHelper.getInitZoom().toFloat()
-
-        if (initLat == 0.0 || initLng == 0.0) {
-            dialogHelper.showFatalErrorDialog("Errores en los datos de carga de la app (Coordenadas de inicio no encontradas)")
-            return
-        }
-
-        val startLocation = LatLng(initLat, initLng)
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startLocation, initZoom))
-        
         mMap.setOnMapClickListener { latLng ->
             val dbHelper = DatabaseHelper.getInstance(this)
             

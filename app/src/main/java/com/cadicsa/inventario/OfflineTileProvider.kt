@@ -15,8 +15,11 @@ class OfflineTileProvider(
     private val databaseHelper = DatabaseHelper.getInstance(context)
 
     override fun getTile(x: Int, y: Int, z: Int): Tile {
-        val tileData = databaseHelper.getTile(x, y, z, table)
-        
+        val tileData = try {
+            databaseHelper.getTile(x, y, z, table)
+        } catch (e: Exception) {
+            null
+        }
         return if (tileData != null) {
             Tile(256, 256, tileData)
         } else {

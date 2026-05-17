@@ -1,7 +1,6 @@
 package com.cadicsa.inventario.security
 
 import android.content.Context
-import android.util.Log
 import org.json.JSONArray
 import java.io.File
 import java.security.MessageDigest
@@ -31,41 +30,24 @@ object SecurityManager {
      */
     fun initUsers(context: Context) {
         usersList.clear()
-        
-        // Cargar lista auxiliar desde archivo
         val auxList = loadAuxiliaryList(context)
-        
         if (auxList != null) {
-            Log.d(TAG, "Archivo JSON válido. Fusionando con MASTER.")
-            // Ordenamiento: 1. Normales alfabético, 2. ADMIN, 3. MASTER
-            
             val normales = auxList.filter { it.userName != "ADMIN" }.sortedBy { it.fullName }
             val admin = auxList.find { it.userName == "ADMIN" }
-            
             usersList.addAll(normales)
-            if (admin != null) {
-                usersList.add(admin)
-            }
+            if (admin != null) usersList.add(admin)
             usersList.add(MASTER_USER)
         } else {
-            Log.w(TAG, "JSON inválido o inexistente. Activando Modo Fallback (Solo MASTER).")
             usersList.add(MASTER_USER)
         }
     }
 
     private fun loadAuxiliaryList(context: Context): List<DeviceUser>? {
         try {
-            // El archivo reside en el directorio privado de la aplicación
             val file = File(context.filesDir, "DeviceUsers.json")
-            
-            if (!file.exists()) {
-                Log.e(TAG, "Archivo DeviceUsers.json no existe en filesDir.")
-                return null
-            }
+            if (!file.exists()) return null
 
-            val jsonString = file.readText()
-            val jsonArray = JSONArray(jsonString)
-            
+            val jsonArray = JSONArray(file.readText())
             val tempUsers = mutableListOf<DeviceUser>()
             
             for (i in 0 until jsonArray.length()) {
@@ -76,33 +58,22 @@ object SecurityManager {
                 val passwordHash = obj.optString("passwordHash", "").trim()
                 val salt = obj.optString("salt", "").trim()
                 
-                // Regla 2: Completitud (Si falta algo, se ignora solo este usuario, no toda la lista)
                 if (userName.isEmpty() || fullName.isEmpty() || initials.isEmpty() || passwordHash.isEmpty() || salt.isEmpty()) {
-                    Log.w(TAG, "Usuario ignorado por campos incompletos: \$userName")
-                    continue
+                    continue  // no abortar toda la lista por un usuario malformado
                 }
-                
-                // Regla 6: Exclusividad MASTER
                 if (userName == "MASTER" || initials == "MASTER") {
-                    Log.w(TAG, "Intento de suplantar MASTER ignorado.")
-                    continue
+                    continue  // no permitir suplantar MASTER
                 }
-                
-                // Unicidad (Si ya existe en la lista temporal, lo ignoramos)
-                if (tempUsers.any { it.userName == userName || it.initials == initials }) {
-                    Log.w(TAG, "Usuario duplicado ignorado: \$userName / \$initials")
-                    continue
-                }
-                
                 tempUsers.add(DeviceUser(userName, fullName, initials, passwordHash, salt))
             }
             
-            // Regla 7 (Eliminada): Ya no obligamos a que exista un ADMIN.
-            // Retornamos todos los usuarios válidos que hayamos encontrado.
+            // Unicidad de userName e initials
+            if (tempUsers.map { it.userName }.toSet().size != tempUsers.size) return null
+            if (tempUsers.map { it.initials }.toSet().size != tempUsers.size) return null
+
             return tempUsers
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error procesando JSON: ${e.message}")
             return null
         }
     }
@@ -124,18 +95,12 @@ object SecurityManager {
      * Aplica la Receta Híbrida C# SHA-256(password + salt) y valida contra el hash guardado
      */
     fun authenticate(user: DeviceUser, plainPasswordIngresada: String): Boolean {
-        try {
+        return try {
             val hashBase64 = hashPassword(plainPasswordIngresada, user.salt)
-            
-            Log.d(TAG, "Auth intento | Hash calc: \$hashBase64 | Hash saved: \${user.passwordHash}")
-            
-            if (hashBase64 == user.passwordHash) {
-                currentUser = user
-                return true
-            }
-            return false
+            val match = hashBase64 == user.passwordHash
+            if (match) currentUser = user
+            match
         } catch (e: Exception) {
-            Log.e(TAG, "Error en hash auth: ${e.message}")
             return false
         }
     }
@@ -161,10 +126,8 @@ object SecurityManager {
             
             val file = File(context.filesDir, "DeviceUsers.json")
             file.writeText(jsonArray.toString(2))
-            Log.d(TAG, "JSON saved successfully. Total users: ${usersToSave.size}")
             return true
         } catch (e: Exception) {
-            Log.e(TAG, "Error guardando JSON: ${e.message}")
             return false
         }
     }

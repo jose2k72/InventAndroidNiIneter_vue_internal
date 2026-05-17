@@ -55,7 +55,9 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
             return try {
                 val dbFile = File(getDatabasePath())
                 dbFile.exists() && dbFile.canRead()
-            } catch (e: Exception) { false }
+            } catch (e: Exception) {
+                false
+            }
         }
 
     }
@@ -68,6 +70,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+
 
     // ========== CONFIGURACIÓN ==========
 
