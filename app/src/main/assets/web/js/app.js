@@ -375,6 +375,14 @@ const app = createApp({
             }
         });
 
+        // Sincronizar el estado del botón de volver de Toolbar en Android
+        Vue.watch(operation, (newVal) => {
+            if (typeof Android !== 'undefined' && Android.setToolbarBackEnabled) {
+                const isList = newVal === 'List';
+                Android.setToolbarBackEnabled(isList);
+            }
+        }, { immediate: true });
+
         // Inicializar al montar
         onMounted(() => {
             init();
@@ -392,6 +400,18 @@ const app = createApp({
                 openMunicipio   // <- Selector municipio dos niveles
             };
             console.log('✅ Vue app context guardado globalmente (con tracking de fotos)');
+
+            // Registrar manejador inteligente de retroceso para Android
+            window.handleAndroidBack = () => {
+                console.log('🔙 Recibido evento atrás desde Android. Estado actual: ' + operation.value);
+                if (operation.value === 'SelectCatalog') {
+                    cancelCatalog();
+                } else if (operation.value === 'SelectMunicipio') {
+                    cancelMunicipio();
+                } else if (operation.value === 'Edit' || operation.value === 'Create') {
+                    volver();
+                }
+            };
         });
 
         // Iniciar copia de registro

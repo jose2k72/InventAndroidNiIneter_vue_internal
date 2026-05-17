@@ -9,6 +9,15 @@ const FormFicha = {
         <div class="form-container">
             <h2>🏡 Encuesta Catastral</h2>
             
+            <div class="btn-group" style="margin-bottom: 20px;">
+                <button type="button" class="btn btn-success" @click="save">
+                    💾 GUARDAR
+                </button>
+                <button type="button" class="btn btn-secondary" @click="$emit('cancel')">
+                    ↩️ VOLVER
+                </button>
+            </div>
+            
             <!-- SECCIÓN 1: UBICACIÓN E IDENTIFICACIÓN -->
             <div class="section">
                 <h3>📍 Ubicación y Datos Generales</h3>

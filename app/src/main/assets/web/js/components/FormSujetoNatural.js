@@ -9,6 +9,15 @@ const FormSujetoNatural = {
         <div class="form-container">
             <h2>👤 Propietario Natural / Poseedor</h2>
             
+            <div class="btn-group" style="margin-bottom: 20px;">
+                <button type="button" class="btn btn-success" @click="save">
+                    💾 GUARDAR
+                </button>
+                <button type="button" class="btn btn-secondary" @click="$emit('cancel')">
+                    ↩️ VOLVER
+                </button>
+            </div>
+            
             <div class="section">
                 <h3>🆔 Identificación</h3>
                 

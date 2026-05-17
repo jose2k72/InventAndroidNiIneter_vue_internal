@@ -37,6 +37,7 @@ class FormActivity : AppCompatActivity() {
     // Variables para edición
     internal var currentEditingId: Int = -1
     internal var currentEditingData: String = ""
+    private var isBackEnabled = true
 
     companion object {
         const val EXTRA_LATITUDE = "latitude"
@@ -75,6 +76,18 @@ class FormActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+
+        // Registrar callback para botón atrás físico y gestos
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isBackEnabled) {
+                    finish()
+                } else {
+                    // Si está en un formulario, llamamos a la función inteligente de retroceso en JS
+                    binding.webView.evaluateJavascript("if(window.handleAndroidBack) window.handleAndroidBack();", null)
+                }
+            }
+        })
 
         // Habilitar debugging de WebView (para desarrollo)
         android.webkit.WebView.setWebContentsDebuggingEnabled(true)
@@ -145,6 +158,23 @@ class FormActivity : AppCompatActivity() {
                 "if(window.addPhoto) window.addPhoto('$name', '$base64');",
                 null
             )
+        }
+    }
+
+    /**
+     * Habilitar o deshabilitar la navegación atrás desde la Toolbar nativa.
+     * Si se deshabilita, se oculta el ícono de retroceso.
+     */
+    fun setToolbarBackEnabled(enabled: Boolean) {
+        runOnUiThread {
+            isBackEnabled = enabled
+            if (enabled) {
+                supportActionBar?.setDisplayHomeAsUpEnabled(true)
+                binding.toolbar.navigationIcon = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_arrow_back)
+            } else {
+                supportActionBar?.setDisplayHomeAsUpEnabled(false)
+                binding.toolbar.navigationIcon = null
+            }
         }
     }
 }

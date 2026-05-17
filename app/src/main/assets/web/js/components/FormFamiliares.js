@@ -7,6 +7,11 @@ const FormFamiliares = {
                 <h2>👨‍👩‍👧‍👦 Composición Familiar</h2>
             </div>
 
+            <div class="btn-group" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <button class="btn btn-secondary" style="flex: 1; padding: 15px;" @click="$emit('cancel')">VOLVER</button>
+                <button class="btn btn-primary" style="flex: 1; padding: 15px;" @click="save">💾 GUARDAR</button>
+            </div>
+
             <div v-for="(fam, index) in formData.Familiares" :key="index" class="section document-item">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px;">
                     <h3 style="margin: 0; color: #1565C0;">Integrante #{{ index + 1 }}: {{ fam.FirstName }} {{ fam.FirstSurName }}</h3>

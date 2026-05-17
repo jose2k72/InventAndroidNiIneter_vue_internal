@@ -9,6 +9,15 @@ const FormNoEncuestado = {
         <div class="form-container">
             <h2>🚫 Predio No Encuestado</h2>
             
+            <div class="btn-group" style="margin-bottom: 20px;">
+                <button type="button" class="btn btn-success" @click="save">
+                    💾 GUARDAR REGISTRO
+                </button>
+                <button type="button" class="btn btn-secondary" @click="$emit('cancel')">
+                    ↩️ VOLVER
+                </button>
+            </div>
+            
             <div class="section glass-card">
                 <h3>📝 Registro de Visita</h3>
                 

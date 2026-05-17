@@ -243,5 +243,10 @@ class AndroidBridge(activity: FormActivity) {
             "[]"
         }
     }
+
+    @JavascriptInterface
+    fun setToolbarBackEnabled(enabled: Boolean) {
+        activity?.setToolbarBackEnabled(enabled)
+    }
 }
 

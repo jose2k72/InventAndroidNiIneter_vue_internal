@@ -9,6 +9,15 @@ const FormUnionConPredio = {
         <div class="form-container">
             <h2 style="color: #6200EE;">🔗 Unión con Predio Master</h2>
             
+            <div class="btn-group" style="margin-bottom: 20px;">
+                <button type="button" class="btn btn-success" @click="save">
+                    💾 GUARDAR UNIFICACIÓN
+                </button>
+                <button type="button" class="btn btn-secondary" @click="$emit('cancel')">
+                    ↩️ VOLVER
+                </button>
+            </div>
+            
             <div class="section glass-card">
                 <h3>📋 Datos de Unificación</h3>
                 
