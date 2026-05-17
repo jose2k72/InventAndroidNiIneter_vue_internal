@@ -19,7 +19,7 @@ object SpatialHelper {
 
     fun getGeometry(db: SQLiteDatabase, lng: Double, lat: Double, layer: String = "Predios"): Geometry? {
         val query = """
-            SELECT id, YCentroid, XCentroid, LOCALIZACION, idLayer, idPredio, wkt 
+            SELECT id, YCentroid, XCentroid, LOCALIZACION, idLayer, idPredio, wkb 
             FROM objects 
             WHERE layer = '$layer' COLLATE NOCASE
             AND minX < ${SpatialNormalizer.format(lng)} AND minY < ${SpatialNormalizer.format(lat)} 
@@ -30,15 +30,16 @@ object SpatialHelper {
         try {
             if (cursor.moveToFirst()) {
                 do {
-                    val wktPolygon = cursor.getString(6) ?: continue
-                    if (GeometryUtil.isPointInPolygon(lat, lng, wktPolygon)) {
+                    val wkbBytes = cursor.getBlob(6) ?: continue
+                    val geom = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    if (GeometryUtil.isPointInPolygon(lat, lng, geom)) {
                         return Geometry(
                             id = cursor.getInt(0),
                             localizacion = cursor.getString(3) ?: "",
                             layer = layer,
                             idLayer = cursor.getInt(4),
                             idPredio = cursor.getInt(5),
-                            wkt = wktPolygon
+                            jtsGeom = geom
                         )
                     }
                 } while (cursor.moveToNext())
@@ -53,7 +54,7 @@ object SpatialHelper {
 
     fun getMunicipiosAt(db: SQLiteDatabase, lng: Double, lat: Double): String? {
         val query = """
-            SELECT LOCALIZACION, wkt 
+            SELECT LOCALIZACION, wkb 
             FROM objects 
             WHERE (layer = 'Municipios' OR layer = 'Municipio') COLLATE NOCASE
             AND minX < ${SpatialNormalizer.format(lng)} AND minY < ${SpatialNormalizer.format(lat)} 
@@ -65,8 +66,9 @@ object SpatialHelper {
         try {
             if (cursor.moveToFirst()) {
                 do {
-                    val wktPolygon = cursor.getString(1) ?: continue
-                    if (GeometryUtil.isPointInPolygon(lat, lng, wktPolygon)) {
+                    val wkbBytes = cursor.getBlob(1) ?: continue
+                    val geom = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    if (GeometryUtil.isPointInPolygon(lat, lng, geom)) {
                         val result = cursor.getString(0)
                         android.util.Log.d("SpatialHelper", "Municipio encontrado: $result")
                         return result
@@ -84,7 +86,7 @@ object SpatialHelper {
 
     fun getSectorAt(db: SQLiteDatabase, lng: Double, lat: Double): String? {
         val query = """
-            SELECT LOCALIZACION, wkt 
+            SELECT LOCALIZACION, wkb 
             FROM objects 
             WHERE (layer = 'Sectores' OR layer = 'Sector') COLLATE NOCASE
             AND minX < ${SpatialNormalizer.format(lng)} AND minY < ${SpatialNormalizer.format(lat)} 
@@ -96,8 +98,9 @@ object SpatialHelper {
         try {
             if (cursor.moveToFirst()) {
                 do {
-                    val wktPolygon = cursor.getString(1) ?: continue
-                    if (GeometryUtil.isPointInPolygon(lat, lng, wktPolygon)) {
+                    val wkbBytes = cursor.getBlob(1) ?: continue
+                    val geom = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    if (GeometryUtil.isPointInPolygon(lat, lng, geom)) {
                         val result = cursor.getString(0)
                         android.util.Log.d("SpatialHelper", "Sector encontrado: $result")
                         return result
@@ -151,16 +154,16 @@ object SpatialHelper {
     }
 
     fun getDataInPolygon(db: SQLiteDatabase, predioId: Int): String {
-        var wktPredioString = ""
-        db.rawQuery("SELECT wkt FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->
+        var wkbPredioBytes: ByteArray? = null
+        db.rawQuery("SELECT wkb FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->
             if (cursor.moveToFirst()) {
-                wktPredioString = cursor.getString(0) ?: ""
+                wkbPredioBytes = cursor.getBlob(0)
             }
         }
         
-        if (wktPredioString.isEmpty()) return "[]"
+        if (wkbPredioBytes == null || wkbPredioBytes!!.isEmpty()) return "[]"
 
-        val geomPredio = GeometryUtil.wktToGeometry(wktPredioString) ?: return "[]"
+        val geomPredio = GeometryUtil.wkbToGeometry(wkbPredioBytes) ?: return "[]"
         val envelope = geomPredio.envelopeInternal
         
         val query = """
@@ -176,7 +179,7 @@ object SpatialHelper {
             while (cursor.moveToNext()) {
                 val lat = cursor.getDouble(3)
                 val lon = cursor.getDouble(4)
-                if (GeometryUtil.isPointInPolygon(lat, lon, wktPredioString)) {
+                if (GeometryUtil.isPointInPolygon(lat, lon, geomPredio)) {
                     result.append("{\"Id\":${cursor.getString(0)},")
                     result.append("\"Data\": ${cursor.getString(1)},")
                     result.append("\"IdObject\":$predioId,")
@@ -192,18 +195,18 @@ object SpatialHelper {
     }
 
     fun getDataInAdjacentPolygons(db: SQLiteDatabase, predioId: Int): String {
-        var wktOrignString = ""
-        db.rawQuery("SELECT wkt FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->
-            if (cursor.moveToFirst()) wktOrignString = cursor.getString(0) ?: ""
+        var wkbOrignBytes: ByteArray? = null
+        db.rawQuery("SELECT wkb FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->
+            if (cursor.moveToFirst()) wkbOrignBytes = cursor.getBlob(0)
         }
-        if (wktOrignString.isEmpty()) return "[]"
+        if (wkbOrignBytes == null || wkbOrignBytes!!.isEmpty()) return "[]"
         
-        val geomOrigen = GeometryUtil.wktToGeometry(wktOrignString) ?: return "[]"
+        val geomOrigen = GeometryUtil.wkbToGeometry(wkbOrignBytes) ?: return "[]"
         val envelope = geomOrigen.envelopeInternal
         val expansion = 0.00045 // ~50m
         
         val queryCandidatos = """
-            SELECT id, wkt, LOCALIZACION 
+            SELECT id, wkb, LOCALIZACION 
             FROM objects 
             WHERE layer = 'Predios' COLLATE NOCASE
             AND id != $predioId
@@ -217,10 +220,10 @@ object SpatialHelper {
         db.rawQuery(queryCandidatos, null).use { cursor ->
             while (cursor.moveToNext()) {
                 val idC = cursor.getInt(0)
-                val wktC = cursor.getString(1) ?: continue
-                val geomC = GeometryUtil.wktToGeometry(wktC) ?: continue
+                val wkbC = cursor.getBlob(1) ?: continue
+                val geomC = GeometryUtil.wkbToGeometry(wkbC) ?: continue
                 if (geomOrigen.intersects(geomC)) {
-                    val dir = GeometryUtil.getRelativeDirectionBetweenPolygons(wktOrignString, wktC)
+                    val dir = GeometryUtil.getRelativeDirectionFromJts(geomOrigen, geomC)
                     prediosConfirmados.add(PredioInfo(idC, geomC, cursor.getString(2) ?: "", dir))
                 }
             }
@@ -256,9 +259,7 @@ object SpatialHelper {
 
     fun getSiguienteConsecutivo(db: SQLiteDatabase, lat: Double, lng: Double): Int {
         val predio = getGeometry(db, lng, lat, "Predios") ?: return 1
-        val wktPredio = predio.wkt
-        if (wktPredio.isEmpty()) return 1
-        val geomPredio = GeometryUtil.wktToGeometry(wktPredio) ?: return 1
+        val geomPredio = predio.jtsGeom ?: return 1
         val envelope = geomPredio.envelopeInternal
         
         val query = "SELECT DATOS, LATITUD, LONGITUD FROM DATOS WHERE LATITUD BETWEEN ${SpatialNormalizer.format(envelope.minY)} AND ${SpatialNormalizer.format(envelope.maxY)} AND LONGITUD BETWEEN ${SpatialNormalizer.format(envelope.minX)} AND ${SpatialNormalizer.format(envelope.maxX)}"
@@ -279,6 +280,10 @@ object SpatialHelper {
 
     fun getAdjacentRoutes(db: SQLiteDatabase, polygonWkt: String, umbralLocal: Double = 15.0, umbralNacional: Double = 25.0): List<AdjacentRoute> {
         val basePredioWgs84 = GeometryUtil.wktToGeometry(polygonWkt) ?: return emptyList()
+        return getAdjacentRoutes(db, basePredioWgs84, umbralLocal, umbralNacional)
+    }
+
+    fun getAdjacentRoutes(db: SQLiteDatabase, basePredioWgs84: JtsGeometry, umbralLocal: Double = 15.0, umbralNacional: Double = 25.0): List<AdjacentRoute> {
         val basePredioCrtm05 = GeometryUtil.projectGeometryToCRTM05(basePredioWgs84) ?: return emptyList()
         val envelope = basePredioWgs84.envelopeInternal
         val expansion = 0.00045 // ~50m
@@ -304,14 +309,15 @@ object SpatialHelper {
 
     private fun findAndCacheRoutes(db: SQLiteDatabase, layerName: String, minX: Double, minY: Double, maxX: Double, maxY: Double, predioCRTM05: JtsGeometry, umbralMetros: Double): List<CachedRoute> {
         val res = mutableListOf<CachedRoute>()
-        val query = "SELECT id, LOCALIZACION, wkt FROM objects WHERE layer = '$layerName' COLLATE NOCASE AND maxX >= ${SpatialNormalizer.format(minX)} AND minX <= ${SpatialNormalizer.format(maxX)} AND maxY >= ${SpatialNormalizer.format(minY)} AND minY <= ${SpatialNormalizer.format(maxY)}"
+        val query = "SELECT id, LOCALIZACION, wkb FROM objects WHERE layer = '$layerName' COLLATE NOCASE AND maxX >= ${SpatialNormalizer.format(minX)} AND minX <= ${SpatialNormalizer.format(maxX)} AND maxY >= ${SpatialNormalizer.format(minY)} AND minY <= ${SpatialNormalizer.format(maxY)}"
         db.rawQuery(query, null).use { cursor ->
             while (cursor.moveToNext()) {
-                val wkt = cursor.getString(2) ?: continue
-                val geomWGS84 = GeometryUtil.wktToGeometry(wkt) ?: continue
+                val wkb = cursor.getBlob(2) ?: continue
+                val geomWGS84 = GeometryUtil.wkbToGeometry(wkb) ?: continue
                 val geomCRTM05 = GeometryUtil.projectGeometryToCRTM05(geomWGS84) ?: continue
                 val dist = predioCRTM05.distance(geomCRTM05)
                 if (dist <= umbralMetros) {
+                    val wkt = geomWGS84.toText()
                     res.add(CachedRoute(cursor.getInt(0), cursor.getString(1) ?: "", layerName, wkt, geomWGS84, geomCRTM05, dist))
                 }
             }
@@ -323,11 +329,11 @@ object SpatialHelper {
         val points = org.locationtech.jts.operation.distance.DistanceOp(predioGeom, rutaGeom).nearestPoints()
         val connectionLine = org.locationtech.jts.geom.GeometryFactory().createLineString(points)
         val env = connectionLine.envelopeInternal
-        val query = "SELECT id, wkt FROM objects WHERE layer = 'Predios' COLLATE NOCASE AND minX < ${SpatialNormalizer.format(env.maxX)} AND maxX > ${SpatialNormalizer.format(env.minX)} AND minY < ${SpatialNormalizer.format(env.maxY)} AND maxY > ${SpatialNormalizer.format(env.minY)}"
+        val query = "SELECT id, wkb FROM objects WHERE layer = 'Predios' COLLATE NOCASE AND minX < ${SpatialNormalizer.format(env.maxX)} AND maxX > ${SpatialNormalizer.format(env.minX)} AND minY < ${SpatialNormalizer.format(env.maxY)} AND maxY > ${SpatialNormalizer.format(env.minY)}"
         db.rawQuery(query, null).use { cursor ->
             while (cursor.moveToNext()) {
-                val obsWkt = cursor.getString(1)
-                val obsGeom = GeometryUtil.wktToGeometry(obsWkt) ?: continue
+                val obsWkb = cursor.getBlob(1) ?: continue
+                val obsGeom = GeometryUtil.wkbToGeometry(obsWkb) ?: continue
                 if (connectionLine.intersects(obsGeom) && !predioGeom.intersects(obsGeom)) return true
             }
         }

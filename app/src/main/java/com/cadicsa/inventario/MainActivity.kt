@@ -40,9 +40,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     
     // ID del último dato guardado en esta sesión
     private var lastSavedDataId: Int = -1
-    
-    private var showRutasLocales = false
-    private var showRutasNacionales = false
 
     private val defaultLocation = LatLng(9.9458, -84.0628)
     private val defaultZoom = 17f
@@ -227,12 +224,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
             true
-        }
-
-        mMap.setOnCameraIdleListener {
-            if (showRutasLocales || showRutasNacionales) {
-                mapHelper?.loadRoutesInViewport(showRutasLocales, showRutasNacionales)
-            }
         }
 
         mapHelper?.loadCapturedPoints(lastSavedDataId)

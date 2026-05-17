@@ -8,6 +8,7 @@ import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Point
 import org.locationtech.jts.geom.Polygon
 import org.locationtech.jts.geom.Geometry as JtsGeometry
+import org.locationtech.jts.io.WKBReader
 import org.locationtech.jts.io.WKTReader
 
 /**
@@ -18,6 +19,7 @@ object GeometryUtil {
     
     private val geometryFactory = GeometryFactory()
     private val wktReader = WKTReader(geometryFactory)
+    private val wkbReader = WKBReader(geometryFactory)
     
     /**
      * Convierte WKT (Well-Known Text) a Geometría JTS
@@ -27,6 +29,19 @@ object GeometryUtil {
             wktReader.read(wkt)
         } catch (e: Exception) {
             android.util.Log.e("GeometryUtil", "Error parseando WKT: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Convierte WKB (Well-Known Binary) a Geometría JTS
+     */
+    fun wkbToGeometry(wkb: ByteArray?): JtsGeometry? {
+        if (wkb == null || wkb.isEmpty()) return null
+        return try {
+            wkbReader.read(wkb)
+        } catch (e: Exception) {
+            android.util.Log.e("GeometryUtil", "Error parseando WKB: ${e.message}")
             null
         }
     }
@@ -135,9 +150,13 @@ object GeometryUtil {
         }
     }
 
+    fun calculateArea32616(geom: JtsGeometry): Double {
+        return projectGeometryTo32616(geom)?.area ?: 0.0
+    }
+
     fun calculateArea32616(wkt: String): Double {
         val geom = wktToGeometry(wkt) ?: return 0.0
-        return projectGeometryTo32616(geom)?.area ?: 0.0
+        return calculateArea32616(geom)
     }
     
     // --- Delegación a RoutingHelper ---
@@ -167,8 +186,7 @@ object GeometryUtil {
         return line.intersects(obs)
     }
     
-    fun getPolylineCoordinates(lineWkt: String): List<List<com.google.android.gms.maps.model.LatLng>> {
-        val geom = wktToGeometry(lineWkt) ?: return emptyList()
+    fun getPolylineCoordinates(geom: JtsGeometry): List<List<com.google.android.gms.maps.model.LatLng>> {
         val result = mutableListOf<List<com.google.android.gms.maps.model.LatLng>>()
         try {
             when (geom) {
@@ -184,5 +202,10 @@ object GeometryUtil {
             }
         } catch (e: Exception) {}
         return result
+    }
+
+    fun getPolylineCoordinates(lineWkt: String): List<List<com.google.android.gms.maps.model.LatLng>> {
+        val geom = wktToGeometry(lineWkt) ?: return emptyList()
+        return getPolylineCoordinates(geom)
     }
 }
