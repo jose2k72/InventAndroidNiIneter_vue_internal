@@ -70,3 +70,19 @@ Este archivo establece las reglas de estandarización para el desarrollo, refact
     *   Siempre que sea posible, en la creación o refactorización de clases, aplicar los principios de ingeniería de software **DRY** (Don't Repeat Yourself) y **SOLID**.
     *   *Objetivo*: Mantener la mantenibilidad, escalabilidad y legibilidad del sistema a largo plazo.
 
+
+## 💻 Configuración de Workspace y Proyecto Principal
+
+1.  **Proyecto Principal**:
+    *   Este directorio (`D:\SRC.PROJECTS\NI.INETER.CADIC\SRC.ANDROID\src.android.ineter.vue.internal`) es el **PROYECTO PRINCIPAL DE TRABAJO**.
+    *   Cualquier comando de compilación, instalación, búsqueda o edición de archivos debe apuntar y ejecutarse sobre este directorio.
+
+2.  **Variante de la Aplicación (INETER CADIC)**:
+    *   **Identificador de la Aplicación (`applicationId`)**: `com.cadicsa.inventario.ni.ineter_cadic`.
+    *   **Nombre de la Aplicación (`app_name`)**: `Inv. NI INETER CADIC`.
+    *   **Directorio de Almacenamiento**: `CADIC.NI.INETER_CADIC` (ubicado en `/storage/emulated/0/CADIC.NI.INETER_CADIC/` en la memoria del dispositivo).
+    *   **Google Maps API Key**: `AIzaSyC3UHHNbQPN5_JoKmqIv97ui8Ucow4Hj2g` (API key sin restricciones de aplicación).
+
+3.  **Control de Versiones**:
+    *   Repositorio local: `D:\SRC.PROJECTS\NI.INETER.CADIC\SRC.ANDROID\src.android.ineter.vue.internal\.git`
+    *   Repositorio remoto (GitHub): `https://github.com/jose2k72/InventAndroidNiIneter_vue_internal.git` (Rama `master`).
