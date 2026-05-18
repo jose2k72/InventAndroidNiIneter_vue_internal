@@ -286,10 +286,10 @@ const app = createApp({
                     SyncService.deleteData(id);
 
                     // 3. Ejecutar posibles borrados en cascada (reglas de negocio)
-                    const cascadeId = WorkflowService.executeCascadeDeletion(itemToDelete.Data?.Type, listData.value);
+                    const cascadeId = WorkflowService.executeCascadeDeletion(itemToDelete.Data?.Type, listData.value, id);
 
-                    // 4. Actualizar UI
-                    listData.value = listData.value.filter(item => item.Id !== id && item.Id !== cascadeId);
+                    // 4. Actualizar UI (usando != para evitar fallos de tipo String vs Number en los IDs)
+                    listData.value = listData.value.filter(item => item.Id != id && item.Id != cascadeId);
                 }
             });
         };

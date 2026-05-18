@@ -162,10 +162,11 @@ window.WorkflowService = {
      * @param {Array} listData - Lista reactiva de Vue
      * @returns {Number|null} ID del registro eliminado en cascada (si hubo)
      */
-    executeCascadeDeletion: function (deletedType, listData) {
+    executeCascadeDeletion: function (deletedType, listData, deletedId) {
         // Caso: Familiares dependen de Propietario Natural
         if (deletedType === 'SujetoNatural') {
-            const stillHasNatural = listData.some(x => x.Data?.Type === 'SujetoNatural');
+            // Excluimos explícitamente el elemento que se está borrando para tener certeza absoluta (usando != para evitar fallos por tipo String vs Number)
+            const stillHasNatural = listData.some(x => x.Data?.Type === 'SujetoNatural' && (deletedId === undefined || x.Id != deletedId));
 
             if (!stillHasNatural) {
                 const famIdx = listData.findIndex(x => x.Data?.Type === 'Familiares');
