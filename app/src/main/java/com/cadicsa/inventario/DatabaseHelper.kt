@@ -76,7 +76,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     fun getEncuestador(): String {
         readableDatabase.rawQuery("SELECT VALOR FROM CONFIG WHERE VARIABLE='ENCUESTADOR'", null).use { cursor ->
-            return if (cursor.moveToFirst()) cursor.getString(0) else ""
+            return if (cursor.moveToFirst()) cursor.getString(0) ?: "" else ""
         }
     }
 
@@ -136,7 +136,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     fun getData(id: Int): String {
         readableDatabase.rawQuery("SELECT DATOS FROM DATOS WHERE ID=$id", null).use { cursor ->
-            return if (cursor.moveToFirst()) cursor.getString(0) else ""
+            return if (cursor.moveToFirst()) cursor.getString(0) ?: "" else ""
         }
     }
 

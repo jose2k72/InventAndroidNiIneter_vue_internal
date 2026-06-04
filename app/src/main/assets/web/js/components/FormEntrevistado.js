@@ -68,7 +68,8 @@ const FormEntrevistado = {
                     </div>
                     <div class="form-group">
                         <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. Identificación *</label>
-                        <input type="text" v-model="formData.Identificacion">
+                        <input type="text" v-model="formData.Identificacion" @blur="validarIdentificacion" :placeholder="placeholderIdentificacion">
+                        <small v-if="errors.IdentificacionMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.IdentificacionMsg }}</small>
                     </div>
                 </div>
 
@@ -85,22 +86,26 @@ const FormEntrevistado = {
                 <div class="coords-grid">
                     <div class="form-group">
                         <label :style="{color: errors.FirstName ? 'red' : 'inherit', fontWeight: errors.FirstName ? 'bold' : 'normal'}">Primer Nombre *</label>
-                        <input type="text" v-model="formData.FirstName" placeholder="Ej: Juan">
+                        <input type="text" v-model="formData.FirstName" placeholder="Ej: Juan" @blur="validarNombre('FirstName')">
+                        <small v-if="errors.FirstNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.FirstNameMsg }}</small>
                     </div>
                     <div class="form-group">
-                        <label>Segundo Nombre</label>
-                        <input type="text" v-model="formData.SecondName" placeholder="Ej: Antonio">
+                        <label :style="{color: errors.SecondName ? 'red' : 'inherit', fontWeight: errors.SecondName ? 'bold' : 'normal'}">Segundo Nombre</label>
+                        <input type="text" v-model="formData.SecondName" placeholder="Ej: Antonio" @blur="validarNombre('SecondName')">
+                        <small v-if="errors.SecondNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.SecondNameMsg }}</small>
                     </div>
                 </div>
 
                 <div class="coords-grid">
                     <div class="form-group">
                         <label :style="{color: errors.FirstSurName ? 'red' : 'inherit', fontWeight: errors.FirstSurName ? 'bold' : 'normal'}">Primer Apellido *</label>
-                        <input type="text" v-model="formData.FirstSurName" placeholder="Ej: Pérez">
+                        <input type="text" v-model="formData.FirstSurName" placeholder="Ej: Pérez" @blur="validarNombre('FirstSurName')">
+                        <small v-if="errors.FirstSurNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.FirstSurNameMsg }}</small>
                     </div>
                     <div class="form-group">
-                        <label>Segundo Apellido</label>
-                        <input type="text" v-model="formData.SecondSurName" placeholder="Ej: García">
+                        <label :style="{color: errors.SecondSurName ? 'red' : 'inherit', fontWeight: errors.SecondSurName ? 'bold' : 'normal'}">Segundo Apellido</label>
+                        <input type="text" v-model="formData.SecondSurName" placeholder="Ej: García" @blur="validarNombre('SecondSurName')">
+                        <small v-if="errors.SecondSurNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.SecondSurNameMsg }}</small>
                     </div>
                 </div>
 
@@ -114,7 +119,8 @@ const FormEntrevistado = {
                     </div>
                     <div class="form-group">
                         <label :style="{color: errors.Age ? 'red' : 'inherit', fontWeight: errors.Age ? 'bold' : 'normal'}">Edad *</label>
-                        <input type="number" v-model.number="formData.Age" min="0">
+                        <input type="number" v-model.number="formData.Age" min="1" max="99" @blur="validarEdad">
+                        <small v-if="errors.AgeMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.AgeMsg }}</small>
                     </div>
                 </div>
 
@@ -144,8 +150,13 @@ const FormEntrevistado = {
                 </div>
             </div>
 
-            <div class="section">
-                <h3>🏠 Residencia</h3>
+            <div class="section" v-if="formData.RelacionConParcelaCatalog === 1">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin: 0;">🏠 Residencia</h3>
+                    <button type="button" class="btn-detect-dir" @click="detectarDireccion">
+                        <span>🔍 Autodetectar Residencia</span>
+                    </button>
+                </div>
 
                 <!-- Municipio: selector visual de dos niveles -->
                 <div class="form-group">
@@ -319,6 +330,20 @@ const FormEntrevistado = {
                 formData._RelacionPropietarioName = '';
                 relacionPropietarioName.value = '';
                 delete errors.RelacionInformantePropietarioCatalog;
+            } else {
+                formData.ResidenceMunicipioCatalog = null;
+                formData._CodDepto = null;
+                formData._DeptoNombre = null;
+                formData._MuniNombre = null;
+                formData.ResidenceCaserio = '';
+                formData.ResidenceBarrioComarca = '';
+                formData.ResidenceDireccion = '';
+                deptoDisplay.value = null;
+                muniDisplay.value = null;
+                delete errors.ResidenceMunicipioCatalog;
+                delete errors.ResidenceCaserio;
+                delete errors.ResidenceBarrioComarca;
+                delete errors.ResidenceDireccion;
             }
             if (newVal !== 5) {
                 formData.RelacionConParcelaOtroText = '';
@@ -326,17 +351,130 @@ const FormEntrevistado = {
             }
         });
 
-        // Limpiar "Otro" si se cambia el tipo de identificación
+        // Limpiar "Otro" si se cambia el tipo de identificación y revalidar
         Vue.watch(() => formData.TipoIdentificacionCatalog, (newVal) => {
             if (newVal != 6) {
                 formData.TipoIdentificacionOtroText = '';
                 delete errors.TipoIdentificacionOtroText;
             }
+            if (formData.Identificacion?.trim()) {
+                validarIdentificacion();
+            }
         });
+
+        Vue.watch(() => formData.Identificacion, (newVal, oldVal) => {
+            if (errors.IdentificacionMsg && newVal !== oldVal?.toUpperCase()) {
+                delete errors.Identificacion;
+                delete errors.IdentificacionMsg;
+            }
+        });
+
+        const placeholderIdentificacion = Vue.computed(() => {
+            const tipo = formData.TipoIdentificacionCatalog;
+            if (tipo == 1) return 'Ej: 000-000000-0000A'; // Cédula
+            if (tipo == 2) return 'Ej: 000000000000 (Solo números)'; // Residencia
+            if (tipo == 4) return 'Ej: A0000000000000'; // RUC
+            return 'Escriba su identificación...'; // Pasaporte, Notario, Otro
+        });
+
+        const validarIdentificacion = () => {
+            if (!formData.Identificacion?.trim()) {
+                delete errors.IdentificacionMsg;
+                return true; 
+            }
+
+            const tipo = formData.TipoIdentificacionCatalog;
+            // Auto-conversión a mayúsculas
+            let valor = formData.Identificacion.trim().toUpperCase();
+            formData.Identificacion = valor;
+
+            let esValido = true;
+            let mensaje = '';
+
+            if (!tipo) return true; 
+
+            if (tipo == 1) { 
+                // Cédula: Quitar guiones temporales y evaluar
+                const valorSinGuiones = valor.replace(/-/g, '');
+                if (/^\d{13}[A-Z]$/.test(valorSinGuiones)) {
+                    esValido = true;
+                    // Auto-formatear poniendo los guiones
+                    formData.Identificacion = valorSinGuiones.replace(/^(\d{3})(\d{6})(\d{4}[A-Z])$/, '$1-$2-$3');
+                } else {
+                    esValido = false;
+                    mensaje = 'Cédula inválida (14 caracteres alfanuméricos requeridos)';
+                }
+            } else if (tipo == 2) { 
+                // Residencia: 12 números exactos
+                esValido = /^\d{12}$/.test(valor); 
+                mensaje = 'Residencia inválida (Debe tener exactamente 12 números)';
+            } else if (tipo == 4) { 
+                // RUC: 1 Letra + 12 dígitos
+                esValido = /^[A-Z]\d{12}$/.test(valor); 
+                mensaje = 'RUC inválido (1 letra seguida de 12 números)';
+            } else { 
+                // Otros
+                esValido = /^[A-Z0-9\-]+$/.test(valor);
+                mensaje = 'Formato inválido (Solo letras y números)';
+            }
+
+            if (!esValido) {
+                errors.Identificacion = true;
+                errors.IdentificacionMsg = mensaje;
+            } else {
+                delete errors.Identificacion;
+                delete errors.IdentificacionMsg;
+            }
+            return esValido;
+        };
 
         // Limpieza de errores de ubicación compartida
         Vue.watch(() => formData.ResidenceCaserio, (val) => { if (val?.trim()) { delete errors.ResidenceCaserio; delete errors.ResidenceBarrioComarca; } });
         Vue.watch(() => formData.ResidenceBarrioComarca, (val) => { if (val?.trim()) { delete errors.ResidenceCaserio; delete errors.ResidenceBarrioComarca; } });
+        
+        Vue.watch(() => formData.FirstName, (newVal, oldVal) => { if (errors.FirstNameMsg && newVal !== oldVal?.toUpperCase()) { delete errors.FirstName; delete errors.FirstNameMsg; } });
+        Vue.watch(() => formData.SecondName, (newVal, oldVal) => { if (errors.SecondNameMsg && newVal !== oldVal?.toUpperCase()) { delete errors.SecondName; delete errors.SecondNameMsg; } });
+        Vue.watch(() => formData.FirstSurName, (newVal, oldVal) => { if (errors.FirstSurNameMsg && newVal !== oldVal?.toUpperCase()) { delete errors.FirstSurName; delete errors.FirstSurNameMsg; } });
+        Vue.watch(() => formData.SecondSurName, (newVal, oldVal) => { if (errors.SecondSurNameMsg && newVal !== oldVal?.toUpperCase()) { delete errors.SecondSurName; delete errors.SecondSurNameMsg; } });
+        Vue.watch(() => formData.Age, () => { if (errors.AgeMsg) { delete errors.Age; delete errors.AgeMsg; } });
+
+        const validarEdad = () => {
+            if (formData.Age === null || formData.Age === undefined || formData.Age === '') {
+                delete errors.AgeMsg;
+                return true; 
+            }
+            if (formData.Age <= 0 || formData.Age > 99) {
+                errors.Age = true;
+                errors.AgeMsg = 'Debe ser > 0 y máx 2 dígitos';
+                return false;
+            } else {
+                delete errors.Age;
+                delete errors.AgeMsg;
+                return true;
+            }
+        };
+
+        const validarNombre = (campo) => {
+            let valor = formData[campo];
+            if (!valor?.trim()) {
+                delete errors[campo + 'Msg'];
+                return true; 
+            }
+            
+            valor = valor.trim().toUpperCase();
+            formData[campo] = valor;
+
+            const regex = /^[A-ZÁÉÍÓÚÑ\s]+$/;
+            if (!regex.test(valor)) {
+                errors[campo] = true;
+                errors[campo + 'Msg'] = 'Formato inválido (Solo letras)';
+                return false;
+            } else {
+                delete errors[campo];
+                delete errors[campo + 'Msg'];
+                return true;
+            }
+        };
 
         const pedirRelacionPropietarioGlobal = () => {
             if (typeof vueAppContext !== 'undefined' && typeof vueAppContext.openCatalog === 'function') {
@@ -410,22 +548,36 @@ const FormEntrevistado = {
             if (!formData.Identificacion?.trim()) {
                 errors.Identificacion = true;
                 errorList.push('No. Identificación');
+            } else if (!validarIdentificacion()) {
+                errorList.push('Formato de Identificación Inválido');
             }
             if (!formData.FirstName?.trim()) {
                 errors.FirstName = true;
                 errorList.push('Primer Nombre');
+            } else if (!validarNombre('FirstName')) {
+                errorList.push('Formato Primer Nombre');
+            }
+            if (formData.SecondName?.trim() && !validarNombre('SecondName')) {
+                errorList.push('Formato Segundo Nombre');
             }
             if (!formData.FirstSurName?.trim()) {
                 errors.FirstSurName = true;
                 errorList.push('Primer Apellido');
+            } else if (!validarNombre('FirstSurName')) {
+                errorList.push('Formato Primer Apellido');
+            }
+            if (formData.SecondSurName?.trim() && !validarNombre('SecondSurName')) {
+                errorList.push('Formato Segundo Apellido');
             }
             if (!formData.GenderCatalog) {
                 errors.GenderCatalog = true;
                 errorList.push('Género');
             }
-            if (formData.Age === null || formData.Age === undefined || formData.Age === '' || formData.Age < 0) {
+            if (formData.Age === null || formData.Age === undefined || formData.Age === '') {
                 errors.Age = true;
-                errorList.push('Edad (debe ser >= 0)');
+                errorList.push('Edad');
+            } else if (!validarEdad()) {
+                errorList.push('Edad Inválida');
             }
             if (!formData.CivilStateCatalog) {
                 errors.CivilStateCatalog = true;
@@ -439,18 +591,20 @@ const FormEntrevistado = {
                 errors.ProfessionOtroText = true;
                 errorList.push('Especificar Profesión');
             }
-            if (!formData.ResidenceMunicipioCatalog) {
-                errors.ResidenceMunicipioCatalog = true;
-                errorList.push('Municipio (ID catalog)');
-            }
-            if (!formData.ResidenceCaserio?.trim() && !formData.ResidenceBarrioComarca?.trim()) {
-                errors.ResidenceCaserio = true;
-                errors.ResidenceBarrioComarca = true;
-                errorList.push('Caserío o Barrio/Comarca');
-            }
-            if (!formData.ResidenceDireccion?.trim()) {
-                errors.ResidenceDireccion = true;
-                errorList.push('Dirección');
+            if (formData.RelacionConParcelaCatalog === 1) {
+                if (!formData.ResidenceMunicipioCatalog) {
+                    errors.ResidenceMunicipioCatalog = true;
+                    errorList.push('Municipio (ID catalog)');
+                }
+                if (!formData.ResidenceCaserio?.trim() && !formData.ResidenceBarrioComarca?.trim()) {
+                    errors.ResidenceCaserio = true;
+                    errors.ResidenceBarrioComarca = true;
+                    errorList.push('Caserío o Barrio/Comarca');
+                }
+                if (!formData.ResidenceDireccion?.trim()) {
+                    errors.ResidenceDireccion = true;
+                    errorList.push('Dirección');
+                }
             }
 
             if (errorList.length > 0) {
@@ -466,6 +620,97 @@ const FormEntrevistado = {
             emit('save', Vue.toRaw(formData));
         };
 
+        const dirMap = {
+            'N': 'Norte', 'S': 'Sur', 'E': 'Este', 'O': 'Oeste',
+            'NE': 'Noreste', 'NO': 'Noroeste', 'SE': 'Sureste', 'SO': 'Suroeste'
+        };
+
+        const copiarResidencia = (d) => {
+            if (d.Direccion) formData.ResidenceDireccion = d.Direccion;
+            if (d.Caserio) formData.ResidenceCaserio = d.Caserio;
+            if (d.BarrioComarca) formData.ResidenceBarrioComarca = d.BarrioComarca;
+            if (d.MunicipioCatalog) {
+                formData.ResidenceMunicipioCatalog = d.MunicipioCatalog;
+                formData._CodDepto = d._CodDepto || null;
+                formData._DeptoNombre = d._DeptoNombre || null;
+                formData._MuniNombre = d._MuniNombre || null;
+                
+                deptoDisplay.value = d._DeptoNombre ? { cod: d._CodDepto || '', nombre: d._DeptoNombre } : null;
+                muniDisplay.value = d._MuniNombre ? { cod: String(d.MunicipioCatalog).slice(-2), nombre: d._MuniNombre } : null;
+            }
+        };
+
+        const detectarDireccion = () => {
+            const targetIdObject = (typeof Android !== 'undefined' && Android.getIdObject) 
+                ? Android.getIdObject() 
+                : (typeof vueAppContext !== 'undefined' && vueAppContext.listData ? vueAppContext.listData.value.find(item => item.Data?.Type === 'Ficha')?.Data?.IdObject : null);
+
+            if (typeof Android !== 'undefined' && Android.getDataInAdjacentPolygons && targetIdObject) {
+                try {
+                    const rawJson = Android.getDataInAdjacentPolygons(targetIdObject);
+                    const adyacentes = JSON.parse(rawJson || "[]");
+                    
+                    const fichasVecinas = adyacentes
+                        .filter(item => {
+                            const d = item.Data;
+                            return d && d.Type === 'Ficha' && (d.Direccion?.trim() || d.Caserio?.trim() || d.BarrioComarca?.trim());
+                        })
+                        .map(item => ({
+                            data: item.Data,
+                            localizacion: item.LocalizacionPredio,
+                            direccionRelativa: item.DireccionRelativa
+                        }));
+                    
+                    if (fichasVecinas.length === 0) {
+                        Android.showAlert('⚠️ No se encontraron encuestas colindantes con datos de dirección.');
+                    } else {
+                        let listHtml = '<div class="detect-options-list">';
+                        fichasVecinas.forEach((item, idx) => {
+                            const d = item.data;
+                            const dirFriendly = dirMap[item.direccionRelativa] || item.direccionRelativa;
+                            const desc = `${d.Direccion || ''} (${d.Caserio || ''} - ${d.BarrioComarca || ''})`.trim();
+                            
+                            listHtml += `
+                                <button type="button" class="detect-option-item" onclick="window._tempSelectFicha(${idx})">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <strong style="color: #6200EE; font-size: 0.95rem;">📍 Al ${dirFriendly} (${item.localizacion})</strong>
+                                    </div>
+                                    <span style="font-size: 0.85em; color: #444; line-height: 1.4; white-space: normal; display: block;">
+                                        ${d.NombreFinca ? `<strong>Finca:</strong> ${d.NombreFinca}<br>` : ''}
+                                        ${desc}
+                                    </span>
+                                </button>
+                            `;
+                        });
+                        listHtml += '</div>';
+
+                        window._tempSelectFicha = (idx) => {
+                            copiarResidencia(fichasVecinas[idx].data);
+                            const overlay = document.querySelector('.confirm-modal-overlay');
+                            if (overlay) overlay.remove();
+                            delete window._tempSelectFicha;
+                            Android.showAlert('✅ Dirección de residencia copiada.');
+                        };
+
+                        window.showConfirmModal({
+                            icon: '🔍',
+                            title: 'Elegir Ficha Vecina Colindante',
+                            message: listHtml,
+                            confirmText: '',
+                            cancelText: 'Cancelar',
+                            onCancel: () => {
+                                delete window._tempSelectFicha;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error al autodetectar dirección:', e);
+                }
+            } else {
+                alert('La detección de dirección solo está disponible en la tablet con datos colindantes.');
+            }
+        };
+
         return {
             formData,
             errors,
@@ -477,7 +722,12 @@ const FormEntrevistado = {
             deptoDisplay,
             muniDisplay,
             pedirMunicipioGlobal,
-            save
+            placeholderIdentificacion,
+            validarIdentificacion,
+            validarNombre,
+            validarEdad,
+            save,
+            detectarDireccion
         };
     }
 };

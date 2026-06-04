@@ -20,7 +20,12 @@ const FormFicha = {
             
             <!-- SECCIÓN 1: UBICACIÓN E IDENTIFICACIÓN -->
             <div class="section">
-                <h3>📍 Ubicación y Datos Generales</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin: 0;">📍 Ubicación y Datos Generales</h3>
+                    <button type="button" class="btn-detect-dir" @click="detectarDireccion">
+                        <span>🔍 Autodetectar Dirección</span>
+                    </button>
+                </div>
                 
                 <div v-if="formData.NoEncuesta" class="id-display-box">
                     <span class="label">ID Encuesta:</span>
@@ -729,6 +734,87 @@ const FormFicha = {
             return isValid;
         };
 
+        const dirMap = {
+            'N': 'Norte', 'S': 'Sur', 'E': 'Este', 'O': 'Oeste',
+            'NE': 'Noreste', 'NO': 'Noroeste', 'SE': 'Sureste', 'SO': 'Suroeste'
+        };
+
+        const copiarDireccion = (d) => {
+            if (d.Direccion) formData.Direccion = d.Direccion;
+            if (d.Caserio) formData.Caserio = d.Caserio;
+            if (d.BarrioComarca) formData.BarrioComarca = d.BarrioComarca;
+            if (d.NombreFinca) formData.NombreFinca = d.NombreFinca;
+        };
+
+        const detectarDireccion = () => {
+            if (typeof Android !== 'undefined' && Android.getDataInAdjacentPolygons && formData.IdObject) {
+                try {
+                    const rawJson = Android.getDataInAdjacentPolygons(formData.IdObject);
+                    const adyacentes = JSON.parse(rawJson || "[]");
+                    
+                    // Filtrar y mapear las fichas vecinales reteniendo su localización y dirección relativa
+                    const fichasVecinas = adyacentes
+                        .filter(item => {
+                            const d = item.Data;
+                            return d && d.Type === 'Ficha' && (d.Direccion?.trim() || d.Caserio?.trim() || d.BarrioComarca?.trim());
+                        })
+                        .map(item => ({
+                            data: item.Data,
+                            localizacion: item.LocalizacionPredio,
+                            direccionRelativa: item.DireccionRelativa
+                        }));
+                    
+                    if (fichasVecinas.length === 0) {
+                        Android.showAlert('⚠️ No se encontraron encuestas colindantes con datos de dirección.');
+                    } else {
+                        // Construir lista con contexto geográfico
+                        let listHtml = '<div class="detect-options-list">';
+                        fichasVecinas.forEach((item, idx) => {
+                            const d = item.data;
+                            const dirFriendly = dirMap[item.direccionRelativa] || item.direccionRelativa;
+                            const desc = `${d.Direccion || ''} (${d.Caserio || ''} - ${d.BarrioComarca || ''})`.trim();
+                            
+                            listHtml += `
+                                <button type="button" class="detect-option-item" onclick="window._tempSelectFicha(${idx})">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <strong style="color: #6200EE; font-size: 0.95rem;">📍 Al ${dirFriendly} (${item.localizacion})</strong>
+                                    </div>
+                                    <span style="font-size: 0.85em; color: #444; line-height: 1.4; white-space: normal; display: block;">
+                                        ${d.NombreFinca ? `<strong>Finca:</strong> ${d.NombreFinca}<br>` : ''}
+                                        ${desc}
+                                    </span>
+                                </button>
+                            `;
+                        });
+                        listHtml += '</div>';
+
+                        window._tempSelectFicha = (idx) => {
+                            copiarDireccion(fichasVecinas[idx].data);
+                            const overlay = document.querySelector('.confirm-modal-overlay');
+                            if (overlay) overlay.remove();
+                            delete window._tempSelectFicha;
+                            Android.showAlert('✅ Dirección copiada.');
+                        };
+
+                        window.showConfirmModal({
+                            icon: '🔍',
+                            title: 'Elegir Ficha Vecina Colindante',
+                            message: listHtml,
+                            confirmText: '', // Ocultado por CSS
+                            cancelText: 'Cancelar',
+                            onCancel: () => {
+                                delete window._tempSelectFicha;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error al autodetectar dirección:', e);
+                }
+            } else {
+                alert('La detección de dirección solo está disponible en la tablet con datos colindantes.');
+            }
+        };
+
         const save = () => {
             if (validate()) emit('save', JSON.parse(JSON.stringify(formData)));
             else {
@@ -740,9 +826,64 @@ const FormFicha = {
         return {
             formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName, descripcionUsoName,
             pedirMunicipioGlobal, pedirDescripcionUsoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
-            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save
+            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion
         };
     }
 };
 
 window.app.component('form-ficha', FormFicha);
+
+// Inyección dinámica de estilos para el botón de detección de dirección y el listado modal
+const styleFicha = document.createElement('style');
+styleFicha.innerHTML = `
+    .btn-detect-dir {
+        background-color: #f3e5f5;
+        color: #6200EE;
+        border: 1px solid #6200EE;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-detect-dir:hover {
+        background-color: #6200EE;
+        color: white;
+    }
+    .detect-options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 15px;
+        max-height: 250px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    .detect-option-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px 12px;
+        text-align: left;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s ease;
+        display: block;
+    }
+    .detect-option-item:hover {
+        border-color: #6200EE;
+        background-color: #f3e5f5;
+    }
+    /* Ocultar el botón "Confirmar" predeterminado cuando se muestra esta lista */
+    .confirm-modal-message:has(.detect-options-list) + .confirm-modal-buttons #modal-confirm {
+        display: none !important;
+    }
+    .confirm-modal-message:has(.detect-options-list) + .confirm-modal-buttons {
+        justify-content: center !important;
+    }
+`;
+document.head.appendChild(styleFicha);
