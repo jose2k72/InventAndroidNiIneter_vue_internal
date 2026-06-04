@@ -194,6 +194,47 @@ object SpatialHelper {
         return if (resultStr.length > 1) resultStr.dropLast(1) + "]" else "[]"
     }
 
+    fun getPropietariosDelPredio(db: SQLiteDatabase, predioId: Int): String {
+        var wkbPredioBytes: ByteArray? = null
+        db.rawQuery("SELECT wkb FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->
+            if (cursor.moveToFirst()) {
+                wkbPredioBytes = cursor.getBlob(0)
+            }
+        }
+        
+        if (wkbPredioBytes == null || wkbPredioBytes!!.isEmpty()) return "[]"
+
+        val geomPredio = GeometryUtil.wkbToGeometry(wkbPredioBytes) ?: return "[]"
+        val envelope = geomPredio.envelopeInternal
+        
+        val query = """
+            SELECT id, LOCALIZACION, wkb 
+            FROM objects 
+            WHERE layer = 'Propietarios' COLLATE NOCASE
+              AND minX BETWEEN ${SpatialNormalizer.format(envelope.minX)} AND ${SpatialNormalizer.format(envelope.maxX)} 
+              AND minY BETWEEN ${SpatialNormalizer.format(envelope.minY)} AND ${SpatialNormalizer.format(envelope.maxY)}
+        """.trimIndent()
+        
+        val cursor = db.rawQuery(query, null)
+        val jsonArray = org.json.JSONArray()
+        try {
+            while (cursor.moveToNext()) {
+                val wkbBytes = cursor.getBlob(2) ?: continue
+                val geomOwner = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                if (geomPredio.intersects(geomOwner)) {
+                    val obj = org.json.JSONObject()
+                    obj.put("id", cursor.getInt(0))
+                    obj.put("nombre", cursor.getString(1) ?: "")
+                    jsonArray.put(obj)
+                }
+            }
+        } finally {
+            cursor.close()
+        }
+        
+        return jsonArray.toString()
+    }
+
     fun getDataInAdjacentPolygons(db: SQLiteDatabase, predioId: Int): String {
         var wkbOrignBytes: ByteArray? = null
         db.rawQuery("SELECT wkb FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->

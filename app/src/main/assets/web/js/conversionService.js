@@ -7,10 +7,9 @@ window.ConversionService = {
     /**
      * Crea un Entrevistado clonando datos de un Propietario Natural o Poseedor
      * @param {Object} propietarioObj - El objeto contenedor del propietario
-     * @param {Object} context - Metadatos de auditoría y ubicación
-     * @returns {Number|null} Nuevo ID asignado
+     * @returns {Object|null} Objeto Entrevistado mapeado en memoria
      */
-    propietarioAEntrevistado: function (propietarioObj, context) {
+    propietarioAEntrevistado: function (propietarioObj) {
         if (!propietarioObj || !propietarioObj.Data) return null;
 
         const origen = propietarioObj.Data;
@@ -33,17 +32,15 @@ window.ConversionService = {
             nuevo._RelacionPropietarioName = '';
         }
 
-        // 4. Ejecutar guardado silencioso (-1 para nuevo)
-        return SyncService.saveData(nuevo, -1, context);
+        return nuevo;
     },
 
     /**
      * Crea un Propietario Natural o Poseedor clonando datos de un Entrevistado
      * @param {Object} entrevistadoObj - El objeto contenedor del entrevistado
-     * @param {Object} context - Metadatos de auditoría y ubicación
-     * @returns {Number|null} Nuevo ID asignado
+     * @returns {Object|null} Objeto SujetoNatural mapeado en memoria
      */
-    entrevistadoAPropietario: function (entrevistadoObj, context) {
+    entrevistadoAPropietario: function (entrevistadoObj) {
         if (!entrevistadoObj || !entrevistadoObj.Data) return null;
 
         const origen = entrevistadoObj.Data;
@@ -64,10 +61,9 @@ window.ConversionService = {
             nuevo._RelacionPropietarioName = origen._RelacionPropietarioName || '';
         } else {
             nuevo.RelacionConPropietarioCatalog = 0;
-            nuevo._RelacionPropietarioName = '';
+            nuevo._RelacionConPropietarioName = '';
         }
 
-        // 4. Ejecutar guardado silencioso (-1 para nuevo)
-        return SyncService.saveData(nuevo, -1, context);
+        return nuevo;
     }
 };

@@ -107,6 +107,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     fun getDataByProximity(lat: Double, lng: Double, radiusInMeters: Double, limitToOne: Boolean): List<DataItem> = SpatialHelper.getDataByProximity(readableDatabase, lat, lng, radiusInMeters, limitToOne)
     fun getDataInPolygon(predioId: Int): String = SpatialHelper.getDataInPolygon(readableDatabase, predioId)
     fun getDataInAdjacentPolygons(predioId: Int): String = SpatialHelper.getDataInAdjacentPolygons(readableDatabase, predioId)
+    fun getPropietariosDelPredio(predioId: Int): String = SpatialHelper.getPropietariosDelPredio(readableDatabase, predioId)
     fun getSiguienteConsecutivo(lat: Double, lng: Double): Int = SpatialHelper.getSiguienteConsecutivo(readableDatabase, lat, lng)
     fun getAdjacentRoutes(polygonWkt: String, umbralLocal: Double = 15.0, umbralNacional: Double = 25.0): List<AdjacentRoute> = SpatialHelper.getAdjacentRoutes(readableDatabase, polygonWkt, umbralLocal, umbralNacional)
 

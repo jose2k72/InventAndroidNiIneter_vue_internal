@@ -43,6 +43,47 @@ const FormSujetoNatural = {
                 </div>
             </div>
 
+            <!-- Propietarios Catastrales Detectados en el Mapa -->
+            <div class="section" v-if="propietariosDisponibles.length > 0">
+                <h3>👥 Propietarios Catastrales en Mapa</h3>
+                <div style="margin-bottom: 12px; padding: 10px; background-color: #E3F2FD; border: 1px solid #90CAF9; border-radius: 8px; font-size: 0.9rem; color: #0D47A1;">
+                    Se detectaron <strong>{{ propietariosDisponibles.length }}</strong> propietario(s) de tipo Persona Natural en el predio. Si alguno corresponde al propietario actual, selecciónelo para rellenar nombres y apellidos.
+                </div>
+                <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                    <div v-for="prop in propietariosDisponibles" :key="prop.id" 
+                         style="background: white; border: 1px solid #BBDEFB; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div>
+                            <div style="font-weight: bold; color: #1976D2; font-size: 1rem; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                                <span>👤 {{ prop.nombre }}</span>
+                                <span style="font-size: 0.75rem; background-color: #E8F5E9; color: #2E7D32; padding: 2px 6px; border-radius: 4px; font-weight: bold;">Natural</span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: #555; margin-bottom: 8px; background: #F9F9F9; padding: 6px; border-radius: 4px;">
+                                <strong>Llenado tentativo:</strong>
+                                <div style="display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; margin-top: 4px; padding-left: 6px; border-left: 2px solid #90CAF9;">
+                                    <span style="color: #666;">Nombres:</span><strong>{{ previewNames(prop.nombre, prop.invertido).first }} {{ previewNames(prop.nombre, prop.invertido).second }}</strong>
+                                    <span style="color: #666;">Apellidos:</span><strong>{{ previewNames(prop.nombre, prop.invertido).firstSur }} {{ previewNames(prop.nombre, prop.invertido).secondSur }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; border-top: 1px solid #F0F0F0; padding-top: 8px;">
+                            <button type="button" @click="seleccionarPropietarioCatastral(prop)" 
+                                    style="flex: 1; padding: 6px 12px; background-color: #1976D2; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                                Seleccionar
+                            </button>
+                            <button type="button" @click="toggleInvertir(prop)" 
+                                    style="padding: 6px 10px; background-color: #ECEFF1; color: #37474F; border: 1px solid #CFD8DC; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"
+                                    title="Invertir orden (Apellidos primero)">
+                                🔄 Apellidos primero
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" @click="limpiarNombres()" 
+                        style="margin-top: 12px; width: 100%; padding: 8px; background-color: #ECEFF1; color: #37474F; border: 1px solid #CFD8DC; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    ❌ Descartar selección / Limpiar nombres
+                </button>
+            </div>
+
             <div class="section">
                 <h3>📝 Datos Personales</h3>
                 
@@ -309,8 +350,143 @@ const FormSujetoNatural = {
             }
         };
 
+        const propietariosDisponibles = Vue.ref([]);
+
+        const esEmpresa = (nombre) => {
+            const raw = nombre.toUpperCase();
+            const palabrasClave = [
+                '\\bS\\.?A\\.?\\b', '\\bLTDA\\b', '\\bLIMITADA\\b', '\\bC\\.?A\\.?\\b',
+                '\\bS\\.?R\\.?L\\.?\\b', '\\bINC\\b', '\\bCORP\\b', '\\bCOOPERATIVA\\b',
+                '\\bASOCIACION\\b', '\\bFUNDACION\\b', '\\bMINISTERIO\\b', '\\bALCALDIA\\b',
+                '\\bEMPRESA\\b', '\\bCONSORCIO\\b', '\\bINVERSIONES\\b', '\\bS\\.?A\\.?U\\.?\\b',
+                '\\bINSTITUTO\\b', '\\bASOC\\b', '\\bSOCIEDAD\\b', '\\bESTADO\\b',
+                '\\bGOBIERNO\\b', '\\bIGLESIA\\b', '\\bPROYECTO\\b', '\\bS\\.?F\\.?\\b'
+            ];
+            const regex = new RegExp(palabrasClave.join('|'), 'i');
+            return regex.test(raw);
+        };
+
+        const parseNombreCompleto = (fullName, invertido = false) => {
+            let raw = fullName.trim().toUpperCase();
+            let parts = raw.split(/\s+/).filter(p => p.length > 0);
+            
+            let firstName = '';
+            let secondName = '';
+            let firstSurName = '';
+            let secondSurName = '';
+
+            if (parts.length === 1) {
+                firstName = parts[0];
+            } else if (parts.length === 2) {
+                if (invertido) {
+                    firstSurName = parts[0];
+                    firstName = parts[1];
+                } else {
+                    firstName = parts[0];
+                    firstSurName = parts[1];
+                }
+            } else {
+                if (invertido) {
+                    firstSurName = parts[0];
+                    secondSurName = parts[1];
+                    firstName = parts[2];
+                    if (parts.length > 3) {
+                        secondName = parts.slice(3).join(' ');
+                    }
+                } else {
+                    firstName = parts[0];
+                    secondSurName = parts[parts.length - 1];
+                    firstSurName = parts[parts.length - 2];
+                    if (parts.length > 3) {
+                        secondName = parts.slice(1, parts.length - 2).join(' ');
+                    }
+                }
+            }
+            return { first: firstName, second: secondName, firstSur: firstSurName, secondSur: secondSurName };
+        };
+
+        const previewNames = (nombre, invertido) => {
+            return parseNombreCompleto(nombre, invertido);
+        };
+
+        const toggleInvertir = (prop) => {
+            prop.invertido = !prop.invertido;
+            propietariosDisponibles.value = [...propietariosDisponibles.value];
+        };
+
+        const seleccionarPropietarioCatastral = (prop) => {
+            const parsed = parseNombreCompleto(prop.nombre, prop.invertido);
+            
+            formData.FirstName = parsed.first;
+            formData.SecondName = parsed.second;
+            formData.FirstSurName = parsed.firstSur;
+            formData.SecondSurName = parsed.secondSur;
+
+            delete errors.FirstName;
+            delete errors.FirstNameMsg;
+            delete errors.SecondName;
+            delete errors.SecondNameMsg;
+            delete errors.FirstSurName;
+            delete errors.FirstSurNameMsg;
+            delete errors.SecondSurName;
+            delete errors.SecondSurNameMsg;
+
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast('✅ Nombres y apellidos copiados.');
+            }
+        };
+
+        const limpiarNombres = () => {
+            formData.FirstName = '';
+            formData.SecondName = '';
+            formData.FirstSurName = '';
+            formData.SecondSurName = '';
+
+            delete errors.FirstName;
+            delete errors.FirstNameMsg;
+            delete errors.SecondName;
+            delete errors.SecondNameMsg;
+            delete errors.FirstSurName;
+            delete errors.FirstSurNameMsg;
+            delete errors.SecondSurName;
+            delete errors.SecondSurNameMsg;
+
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast('ℹ️ Campos de nombres limpiados.');
+            }
+        };
+
+        const cargarPropietariosCatastrales = () => {
+            const predioId = (typeof Android !== 'undefined' && Android.getIdObject) ? Android.getIdObject() : null;
+            if (!predioId) {
+                propietariosDisponibles.value = [];
+                return;
+            }
+            if (typeof Android !== 'undefined' && Android.getPropietariosDelPredio) {
+                try {
+                    const rawJson = Android.getPropietariosDelPredio(predioId);
+                    const allOwners = JSON.parse(rawJson || '[]');
+                    // Para SujetoNatural, descartar lo que suene a empresa
+                    propietariosDisponibles.value = allOwners
+                        .filter(o => o.nombre && !esEmpresa(o.nombre))
+                        .map(o => ({ ...o, invertido: false }));
+                } catch(e) {
+                    console.error("Error al cargar propietarios", e);
+                    propietariosDisponibles.value = [];
+                }
+            } else {
+                // Mock para navegador
+                propietariosDisponibles.value = [
+                    { id: 990, nombre: "BRUNILDA ROBLES ARTOLA", invertido: false },
+                    { id: 991, nombre: "ALCALDIA DE MANAGUA", invertido: false },
+                    { id: 992, nombre: "JOSE MARTIN MENDOZA PEREZ", invertido: false }
+                ].filter(o => !esEmpresa(o.nombre));
+            }
+        };
+
         Vue.onMounted(() => {
             cargarCatalogos();
+            cargarPropietariosCatastrales();
         });
 
         // Llamada a la app global usando el contexto global asegurado vueAppContext
@@ -415,8 +591,6 @@ const FormSujetoNatural = {
         // Limpieza de errores al escribir
         Vue.watch(() => formData.PerfilPropietarioOtroText, (val) => { if (val?.trim()) delete errors.PerfilPropietarioOtroText; });
         Vue.watch(() => formData.PerfilPropietarioCarnet, (val) => { if (val?.trim()) delete errors.PerfilPropietarioCarnet; });
-        Vue.watch(() => formData.ResidenceCaserio, (val) => { if (val?.trim()) { delete errors.ResidenceCaserio; delete errors.ResidenceBarrioComarca; } });
-        Vue.watch(() => formData.ResidenceBarrioComarca, (val) => { if (val?.trim()) { delete errors.ResidenceCaserio; delete errors.ResidenceBarrioComarca; } });
         
         Vue.watch(() => formData.FirstName, (newVal, oldVal) => { if (errors.FirstNameMsg && newVal !== oldVal?.toUpperCase()) { delete errors.FirstName; delete errors.FirstNameMsg; } });
         Vue.watch(() => formData.SecondName, (newVal, oldVal) => { if (errors.SecondNameMsg && newVal !== oldVal?.toUpperCase()) { delete errors.SecondName; delete errors.SecondNameMsg; } });
@@ -601,11 +775,6 @@ const FormSujetoNatural = {
                 errors.ResidenceMunicipioCatalog = true;
                 errorList.push('Municipio (ID catalog)');
             }
-            if (!formData.ResidenceCaserio?.trim() && !formData.ResidenceBarrioComarca?.trim()) {
-                errors.ResidenceCaserio = true;
-                errors.ResidenceBarrioComarca = true;
-                errorList.push('Caserío o Barrio/Comarca');
-            }
             if (!formData.ResidenceDireccion?.trim()) {
                 errors.ResidenceDireccion = true;
                 errorList.push('Dirección');
@@ -749,7 +918,12 @@ const FormSujetoNatural = {
             validarNombre,
             validarEdad,
             save,
-            detectarDireccion
+            detectarDireccion,
+            propietariosDisponibles,
+            previewNames,
+            toggleInvertir,
+            seleccionarPropietarioCatastral,
+            limpiarNombres
         };
     }
 };

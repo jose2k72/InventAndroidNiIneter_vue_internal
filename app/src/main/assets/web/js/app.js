@@ -307,13 +307,25 @@ const app = createApp({
                 message: '¿Desea crear un Entrevistado automáticamente con los datos de este Propietario Natural?',
                 confirmText: 'Sí, crear',
                 onConfirm: () => {
-                    const nuevoId = ConversionService.propietarioAEntrevistado(propietarioObj, getContext());
-                    init();
-                    if (nuevoId) {
-                        const item = listData.value.find(i => i.Id === nuevoId);
-                        if (item) {
-                            editItem(item);
-                        }
+                    const nuevoData = ConversionService.propietarioAEntrevistado(propietarioObj);
+                    if (nuevoData) {
+                        // Enriquecer con metadatos de sesión y espaciales activos en caliente
+                        const ctx = getContext();
+                        nuevoData.Fecha = ctx.fechaActual;
+                        nuevoData.Encuestador = ctx.encuestador;
+                        nuevoData.IdObject = ctx.idObject;
+                        nuevoData.Localizacion = ctx.localizacion;
+                        nuevoData.LatLng = {
+                            Lat: ctx.latLng.lat,
+                            Lng: ctx.latLng.lng
+                        };
+                        nuevoData.LocalProj = {
+                            x: ctx.localProj.x,
+                            y: ctx.localProj.y
+                        };
+
+                        pendingCopyData.value = nuevoData;
+                        startCreate('Entrevistado');
                     }
                 }
             });
@@ -327,13 +339,25 @@ const app = createApp({
                 message: '¿Desea crear un Propietario Natural automáticamente con los datos de este Entrevistado?',
                 confirmText: 'Sí, crear',
                 onConfirm: () => {
-                    const nuevoId = ConversionService.entrevistadoAPropietario(entrevistadoObj, getContext());
-                    init();
-                    if (nuevoId) {
-                        const item = listData.value.find(i => i.Id === nuevoId);
-                        if (item) {
-                            editItem(item);
-                        }
+                    const nuevoData = ConversionService.entrevistadoAPropietario(entrevistadoObj);
+                    if (nuevoData) {
+                        // Enriquecer con metadatos de sesión y espaciales activos en caliente
+                        const ctx = getContext();
+                        nuevoData.Fecha = ctx.fechaActual;
+                        nuevoData.Encuestador = ctx.encuestador;
+                        nuevoData.IdObject = ctx.idObject;
+                        nuevoData.Localizacion = ctx.localizacion;
+                        nuevoData.LatLng = {
+                            Lat: ctx.latLng.lat,
+                            Lng: ctx.latLng.lng
+                        };
+                        nuevoData.LocalProj = {
+                            x: ctx.localProj.x,
+                            y: ctx.localProj.y
+                        };
+
+                        pendingCopyData.value = nuevoData;
+                        startCreate('SujetoNatural');
                     }
                 }
             });

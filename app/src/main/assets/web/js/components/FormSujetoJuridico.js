@@ -17,6 +17,35 @@ const FormSujetoJuridico = {
                     ↩️ VOLVER
                 </button>
             </div>
+
+            <!-- Propietarios Catastrales Jurídicos Detectados en el Mapa -->
+            <div class="section" v-if="propietariosDisponibles.length > 0">
+                <h3>🏢 Empresas Propietarias en Mapa</h3>
+                <div style="margin-bottom: 12px; padding: 10px; background-color: #E3F2FD; border: 1px solid #90CAF9; border-radius: 8px; font-size: 0.9rem; color: #0D47A1;">
+                    Se detectaron <strong>{{ propietariosDisponibles.length }}</strong> entidad(es)/empresa(s) en el predio. Si alguna corresponde al propietario actual, selecciónela para rellenar la Razón Social.
+                </div>
+                <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                    <div v-for="prop in propietariosDisponibles" :key="prop.id" 
+                         style="background: white; border: 1px solid #BBDEFB; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div>
+                            <div style="font-weight: bold; color: #0D47A1; font-size: 1.05rem; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                                <span>🏢 {{ prop.nombre }}</span>
+                                <span style="font-size: 0.75rem; background-color: #E3F2FD; color: #0D47A1; padding: 2px 6px; border-radius: 4px; font-weight: bold;">Empresa</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; border-top: 1px solid #F0F0F0; padding-top: 8px;">
+                            <button type="button" @click="seleccionarPropietarioCatastral(prop)" 
+                                    style="flex: 1; padding: 6px 12px; background-color: #0D47A1; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                                Seleccionar Razón Social
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" @click="descartarPropietarioCatastral()" 
+                        style="margin-top: 12px; width: 100%; padding: 8px; background-color: #ECEFF1; color: #37474F; border: 1px solid #CFD8DC; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    ❌ Descartar selección / Limpiar Razón Social
+                </button>
+            </div>
             
             <div class="section">
                 <h3>🆔 Identificación y Razón Social</h3>
@@ -156,8 +185,67 @@ const FormSujetoJuridico = {
             }
         };
 
+        const propietariosDisponibles = Vue.ref([]);
+
+        const esEmpresa = (nombre) => {
+            const raw = nombre.toUpperCase();
+            const palabrasClave = [
+                '\\bS\\.?A\\.?\\b', '\\bLTDA\\b', '\\bLIMITADA\\b', '\\bC\\.?A\\.?\\b',
+                '\\bS\\.?R\\.?L\\.?\\b', '\\bINC\\b', '\\bCORP\\b', '\\bCOOPERATIVA\\b',
+                '\\bASOCIACION\\b', '\\bFUNDACION\\b', '\\bMINISTERIO\\b', '\\bALCALDIA\\b',
+                '\\bEMPRESA\\b', '\\bCONSORCIO\\b', '\\bINVERSIONES\\b', '\\bS\\.?A\\.?U\\.?\\b',
+                '\\bINSTITUTO\\b', '\\bASOC\\b', '\\bSOCIEDAD\\b', '\\bESTADO\\b',
+                '\\bGOBIERNO\\b', '\\bIGLESIA\\b', '\\bPROYECTO\\b', '\\bS\\.?F\\.?\\b'
+            ];
+            const regex = new RegExp(palabrasClave.join('|'), 'i');
+            return regex.test(raw);
+        };
+
+        const seleccionarPropietarioCatastral = (prop) => {
+            formData.RazonSocial = prop.nombre;
+            delete errors.RazonSocial;
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast('✅ Razón Social copiada.');
+            }
+        };
+
+        const descartarPropietarioCatastral = () => {
+            formData.RazonSocial = '';
+            delete errors.RazonSocial;
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast('ℹ️ Razón Social limpiada.');
+            }
+        };
+
+        const cargarPropietariosCatastrales = () => {
+            const predioId = (typeof Android !== 'undefined' && Android.getIdObject) ? Android.getIdObject() : null;
+            if (!predioId) {
+                propietariosDisponibles.value = [];
+                return;
+            }
+            if (typeof Android !== 'undefined' && Android.getPropietariosDelPredio) {
+                try {
+                    const rawJson = Android.getPropietariosDelPredio(predioId);
+                    const allOwners = JSON.parse(rawJson || '[]');
+                    // Para Jurídico, solo mostrar lo que sea empresa
+                    propietariosDisponibles.value = allOwners.filter(o => o.nombre && esEmpresa(o.nombre));
+                } catch(e) {
+                    console.error("Error al cargar propietarios", e);
+                    propietariosDisponibles.value = [];
+                }
+            } else {
+                // Mock para navegador/pruebas
+                propietariosDisponibles.value = [
+                    { id: 990, nombre: "BRUNILDA ROBLES ARTOLA" },
+                    { id: 991, nombre: "ALCALDIA DE MANAGUA" },
+                    { id: 992, nombre: "JOSE MARTIN MENDOZA PEREZ" }
+                ].filter(o => esEmpresa(o.nombre));
+            }
+        };
+
         Vue.onMounted(() => {
             cargarCatalogos();
+            cargarPropietariosCatastrales();
         });
 
 
@@ -273,7 +361,10 @@ const FormSujetoJuridico = {
             errors,
             catalogos,
             totalMiembros,
-            save
+            save,
+            propietariosDisponibles,
+            seleccionarPropietarioCatastral,
+            descartarPropietarioCatastral
         };
     }
 };

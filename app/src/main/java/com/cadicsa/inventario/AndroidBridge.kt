@@ -245,6 +245,17 @@ class AndroidBridge(activity: FormActivity) {
     }
 
     @JavascriptInterface
+    fun getPropietariosDelPredio(predioId: Int): String {
+        val act = activity ?: return "[]"
+        return try {
+            DatabaseHelper.getInstance(act).getPropietariosDelPredio(predioId)
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidBridge", "Error en getPropietariosDelPredio: ${e.message}")
+            "[]"
+        }
+    }
+
+    @JavascriptInterface
     fun setToolbarBackEnabled(enabled: Boolean) {
         activity?.setToolbarBackEnabled(enabled)
     }

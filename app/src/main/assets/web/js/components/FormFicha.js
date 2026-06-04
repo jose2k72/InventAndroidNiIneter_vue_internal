@@ -440,8 +440,6 @@ const FormFicha = {
         });
 
         // Limpieza de errores al escribir
-        Vue.watch(() => formData.Caserio, (val) => { if (val?.trim()) { delete errors.Caserio; delete errors.BarrioComarca; } });
-        Vue.watch(() => formData.BarrioComarca, (val) => { if (val?.trim()) { delete errors.Caserio; delete errors.BarrioComarca; } });
         Vue.watch(() => formData.Direccion, (val) => { if (val?.trim()) delete errors.Direccion; });
         Vue.watch(() => formData.DescripcionUsoCatalog, (val) => { if (val) delete errors.DescripcionUsoCatalog; });
         Vue.watch(() => formData.DescripcionUsoOtroText, (val) => { if (val?.trim()) delete errors.DescripcionUsoOtroText; });
@@ -689,11 +687,6 @@ const FormFicha = {
             if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; isValid = false; }
 
             if (!formData.Direccion?.trim()) { errors.Direccion = true; isValid = false; }
-            if (!formData.Caserio?.trim() && !formData.BarrioComarca?.trim()) {
-                errors.Caserio = true;
-                errors.BarrioComarca = true;
-                isValid = false; 
-            }
             if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
             if (!formData.DescripcionUsoCatalog) { errors.DescripcionUsoCatalog = true; isValid = false; }

@@ -4,12 +4,38 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
-## [2026-06-04] - Precarga y Actualizaciones Continuas de GPS
+## [2026-06-04] - Firma Digital, Precarga de GPS y Habilitación de Residencia para Poseedores
+
+### ✍️ Firma Digital del Entrevistado
+- **Captura Táctil de Firma**: Integración de un lienzo `<canvas>` HTML5 interactivo al final del formulario del Entrevistado (`FormEntrevistado.js`) para capturar la firma física del encuestado en el dispositivo.
+- **Soporte Táctil y Ratón**: Control de trazos optimizado mediante eventos táctiles (`touchstart`, `touchmove`, `touchend`) y eventos de ratón de respaldo (fallback).
+- **Almacenamiento Base64**: La firma se convierte a formato de imagen PNG Base64 y se almacena directamente en la propiedad `FirmaBase64` del JSON de la encuesta, persistiendo en la base de datos SQLite sin requerir alteraciones al esquema ni al backend nativo.
+- **Validación Obligatoria**: Marcado del título de la sección en rojo y validación restrictiva en el botón Guardar para exigir obligatoriamente la firma antes de guardar la ficha de entrevistado.
+- **Gestión de Firma**: Botones interactivos para **Limpiar** el lienzo, **Confirmar Firma**, **Volver a firmar** (verificación de firma previa) o **Cancelar** edición.
 
 ### 🛰️ Optimización del Ciclo de Vida y Geolocalización
 - **Precarga Silenciosa al Inicio**: Creación de `preloadLocationSilently()` en `MainActivity.kt` para inicializar el GPS en segundo plano durante `onCreate` y `onResume`, evitando arranques fríos de coordenadas en `0.0`.
 - **Actualizaciones Continuas de Ubicación**: Integración de un `LocationCallback` que actualiza la posición cada **15 segundos** (intervalo mínimo de 5 segundos) con alta precisión (`Priority.PRIORITY_HIGH_ACCURACY`). La consulta continua se activa en `onResume` y se apaga en `onPause` para optimizar la duración de la batería del dispositivo.
 - **Posicionamiento Instantáneo**: Modificación de `getCurrentLocation()` para centrar la cámara del mapa sin esperas (0 segundos de delay) cuando la app ya posee coordenadas del flujo de actualización en memoria, refrescando la señal de forma paralela.
+- ⚠️ **Nota de Verificación de Campo (Cambio de Locación)**: Para comprobar la precisión del GPS y la correcta ejecución del callback de 15 segundos en segundo plano, se requiere realizar pruebas desplazándose físicamente de locación para observar la fluidez de refresco y la propagación de coordenadas en el mapa y formularios.
+
+### 📋 Reglas de Negocio en Formularios (FormEntrevistado.js, FormSujetoNatural.js, FormFicha.js)
+- **Flujo de Conversión de Registros en Memoria**: Refactorización de las funciones de conversión en `conversionService.js` y `app.js` para que la creación bidireccional (Propietario a Entrevistado y Entrevistado a Propietario) se realice enteramente en memoria temporal (`pendingCopyData`) en vez de persistir de forma prematura a SQLite. Esto garantiza que si el usuario cancela con "VOLVER", no se registre ningún dato no deseado en la base de datos.
+- **Habilitación de Residencia para Poseedores**: Se expandió la visibilidad y validación obligatoria de la sección de **Residencia** (Municipio, Caserío, Barrio/Comarca y Dirección) para que aplique tanto a **Propietarios (ID 1)** como a **Poseedores (ID 2)**.
+- **Watcher y Limpieza en Caliente**: Modificación del Watcher de la relación con la parcela para evitar limpiar los datos residenciales si el informante es Poseedor, manteniéndose activo el borrado automático únicamente para otras categorías de terceros.
+- **Remoción de Obligatoriedad de Caserío y Barrio/Comarca**: Se eliminó la regla de validación colectiva que exigía rellenar obligatoriamente al menos uno de estos dos campos en Fichas, Sujetos Naturales y Entrevistados, quedando ambos campos como completamente opcionales.
+
+### 🗺️ Búsqueda Espacial e Integración de Propietarios Catastrales
+- **Consulta Espacial por WKB (JTS)**: Implementación de `getPropietariosDelPredio(predioId)` en `SpatialHelper.kt` y `DatabaseHelper.kt`. Resuelve la intersección de la geometría del predio con las geometrías tipo punto de la capa `Propietarios` utilizando JTS y el campo `wkb` SQLite.
+- **Puente JavaScript**: Exposición de la consulta a través de `@JavascriptInterface` en `AndroidBridge.kt`.
+- **Detección e Identificación de Empresas**: Creación de una expresión regular basada en prefijos/sufijos jurídicos comunes de Nicaragua para clasificar propietarios como naturales o empresas/entidades.
+- **Filtrado Inteligente por Formulario**:
+  - En `FormEntrevistado.js` y `FormSujetoNatural.js` (personas naturales) se filtran y muestran únicamente los propietarios de tipo **Persona Natural**, ocultando por completo las empresas.
+  - En `FormSujetoJuridico.js` (personas jurídicas) se muestran únicamente los propietarios de tipo **Empresa/Entidad**.
+- **Previsualización y Rotación Inteligente de Nombres**:
+  - Presentación de tarjetas interactivas de propietarios con vista previa en tiempo real de cómo se rellenarán los campos `FirstName`, `SecondName`, `FirstSurName` y `SecondSurName`.
+  - Soporte para nombres con apellidos primero (ej: `MARTINEZ JUANA`) mediante el botón `🔄 Apellidos primero` que invierte el orden del parseo en tiempo real.
+  - Inclusión de un botón para **Descartar/Limpiar** la selección sin alterar los campos en caso de cancelación.
 
 ---
 
