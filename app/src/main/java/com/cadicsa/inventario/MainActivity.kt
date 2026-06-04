@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+        updateActionBarTitle()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         binding.fabGps.setOnClickListener { getCurrentLocation() }
@@ -90,6 +91,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         
         lastSavedDataId = getSharedPreferences("app_prefs", MODE_PRIVATE).getInt("last_saved_data_id", -1)
+        updateActionBarTitle()
         if (mapInitialized) {
             tileOverlay?.clearTileCache()
             mapHelper?.loadCapturedPoints(lastSavedDataId)
@@ -143,6 +145,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(initLat, initLng), initZoom))
                 mapInitialized = true
+                updateActionBarTitle()
 
             } catch (e: Exception) {
                 Toast.makeText(this, "Error al cargar BD: ${e.message}", Toast.LENGTH_LONG).show()
@@ -368,6 +371,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             R.id.menu_change_password -> { dialogHelper.showChangePasswordDialog(); true }
             R.id.menu_admin_passwords -> { startActivity(Intent(this, ManageUsersActivity::class.java)); true }
             R.id.menu_import_users -> { importDeviceUsersFile(); true }
+            R.id.menu_statistics -> { dialogHelper.showStatisticsDialog(); true }
             R.id.menu_about -> { dialogHelper.showAboutDialog(30); true }
             R.id.menu_exit -> { exitApp(); true }
             else -> super.onOptionsItemSelected(item)
@@ -402,5 +406,29 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             },
             onCancel = { checkAuthentication() }
         )
+    }
+
+    private fun updateActionBarTitle() {
+        try {
+            val appTitle = getString(R.string.app_name)
+            binding.toolbarTitle.text = appTitle
+            
+            val subtitleText = if (DatabaseHelper.isDatabaseAvailable()) {
+                val dbHelper = DatabaseHelper.getInstance(this)
+                val todayCount = dbHelper.getTodayStatisticsCount()
+                "Hoy: $todayCount"
+            } else {
+                "Hoy: --"
+            }
+            binding.toolbarSubtitle.text = subtitleText
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try {
+                binding.toolbarTitle.text = getString(R.string.app_name)
+                binding.toolbarSubtitle.text = ""
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
     }
 }

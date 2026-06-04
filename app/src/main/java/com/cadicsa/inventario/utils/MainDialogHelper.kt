@@ -289,4 +289,22 @@ class MainDialogHelper(private val activity: AppCompatActivity) {
             }
             .show()
     }
+
+    /**
+     * Diálogo de estadísticas diarias
+     */
+    fun showStatisticsDialog() {
+        try {
+            val dbHelper = DatabaseHelper.getInstance(activity)
+            val stats = dbHelper.getDailyStatistics()
+            
+            AlertDialog.Builder(activity)
+                .setTitle("Estadísticas Diarias")
+                .setMessage(stats)
+                .setPositiveButton("Aceptar", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(activity, "Error cargando estadísticas: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
 }

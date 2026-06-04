@@ -44,6 +44,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_statistics"
+        android:title="Estadísticas Diarias"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_about"
         android:title="Acerca de"
         android:icon="@android:drawable/ic_menu_info_details"

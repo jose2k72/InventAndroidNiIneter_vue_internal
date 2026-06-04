@@ -27,16 +27,31 @@
                 android:layout_height="wrap_content"
                 android:text="@string/app_name"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:layout_marginEnd="8dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/toolbarSubtitle"
                 app:layout_constraintEnd_toStartOf="@id/toolbarCompany"
-                app:layout_constraintHorizontal_chainStyle="spread_inside" />
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <!-- Subtítulo / Estadísticas hoy -->
+            <TextView
+                android:id="@+id/toolbarSubtitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColor="#E0E0E0"
+                android:textSize="12sp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/toolbarTitle"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/toolbarCompany" />
             
             <!-- Nombre de la empresa (derecha) -->
             <TextView

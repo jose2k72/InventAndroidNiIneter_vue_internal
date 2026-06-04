@@ -204,4 +204,87 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         }
         return items
     }
+
+    /**
+     * Obtiene el mapa de estadísticas agrupadas por día con filtrado espacial de 3 metros
+     */
+    fun getDailyStatisticsMap(): Map<String, Int> {
+        val query = """
+            SELECT substr(FECHA, 1, 10) as Dia, LATITUD, LONGITUD 
+            FROM DATOS 
+            ORDER BY substr(FECHA, 7, 4) || substr(FECHA, 4, 2) || substr(FECHA, 1, 2) ASC, substr(FECHA, 12) ASC
+        """.trimIndent()
+        
+        val db = readableDatabase
+        val cursor = db.rawQuery(query, null)
+        
+        data class Point(val dia: String, val lat: Double, val lon: Double)
+        val representativos = mutableListOf<Point>()
+        val countsByDay = mutableMapOf<String, Int>()
+        val results = FloatArray(1)
+        
+        try {
+            while (cursor.moveToNext()) {
+                val dia = cursor.getString(0) ?: "Desconocido"
+                val lat = cursor.getDouble(1)
+                val lon = cursor.getDouble(2)
+                
+                var isDuplicate = false
+                for (rep in representativos) {
+                    val dLat = Math.abs(lat - rep.lat)
+                    val dLon = Math.abs(lon - rep.lon)
+                    
+                    if (dLat < 0.00005 && dLon < 0.00005) {
+                        android.location.Location.distanceBetween(lat, lon, rep.lat, rep.lon, results)
+                        if (results[0] <= 3.0f) {
+                            isDuplicate = true
+                            break
+                        }
+                    }
+                }
+                
+                if (!isDuplicate) {
+                    representativos.add(Point(dia, lat, lon))
+                    countsByDay[dia] = countsByDay.getOrDefault(dia, 0) + 1
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseHelper", "Error calculando estadísticas espaciales: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+        
+        return countsByDay
+    }
+
+    /**
+     * Obtener estadísticas de datos capturados agrupados por día con filtrado espacial de 3 metros
+     */
+    fun getDailyStatistics(): String {
+        val countsByDay = getDailyStatisticsMap()
+        
+        val sortedDays = countsByDay.keys.sortedByDescending { dia ->
+            if (dia.length >= 10) {
+                "${dia.substring(6, 10)}${dia.substring(3, 5)}${dia.substring(0, 2)}"
+            } else {
+                dia
+            }
+        }
+        
+        val resultString = StringBuilder()
+        for (dia in sortedDays) {
+            resultString.append("📅 $dia: ${countsByDay[dia]} entradas\n")
+        }
+        
+        val finalResult = resultString.toString()
+        return if (finalResult.isEmpty()) "No hay datos registrados aún." else finalResult.trim()
+    }
+
+    /**
+     * Obtiene la cantidad de puntos válidos para el día actual
+     */
+    fun getTodayStatisticsCount(): Int {
+        val todayStr = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.US).format(java.util.Date())
+        return getDailyStatisticsMap()[todayStr] ?: 0
+    }
 }
