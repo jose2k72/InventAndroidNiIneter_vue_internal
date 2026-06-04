@@ -50,22 +50,25 @@ Para asegurar la compatibilidad con el backend (.NET C#), los campos de catálog
 
 ---
 
-## 🗺 Visualización en el Mapa
+## 🗺 Visualización en el Mapa y Barra de Título
 
 ### 4. Marcadores y Reglas de Agrupamiento
 - **Agrupamiento por Proximidad (Snapping)**: Los registros individuales no se muestran si están a menos de **3 metros** de otro. Se agrupan bajo un único marcador que representa la "Unidad de Propiedad de Hecho".
-- **Semáforo de Estado**:
-  - **Violeta (Hue 270°)**: Es el punto de última interacción o guardado en la sesión actual (Sustituye al anterior color rojo para mejor visibilidad).
+- **Semáforo de Estado (Pines 3D)**:
   - **Rojo (Hue 0°)**: Predio marcado como **No Encuestado** (Indica una incidencia técnica o social que impidió la encuesta).
   - **Cian (Hue 180°)**: Predio con **Unión con Master** (Indica que este objeto es dependiente y hereda la información de un polígono colindante).
   - **Verde (Hue 120°)**: El predio está completo (Ciclo operativo estándar: Tiene al menos 1 Ficha, 1 Entrevistado y 1 Dueño).
   - **Amarillo (Hue 60°)**: El predio tiene datos pero el ciclo operativo está incompleto.
+- **Resaltado del Último Registro Guardado**: Se restaura el pin nativo según su estado operativo de color, pero se superpone dinámicamente un **punto negro de 6dp** (ojo del marcador) en el centro de la cabeza del pin (anclaje `0.5f, 5.0f`), permitiendo una identificación inmediata del último cambio sin alterar la simbología de colores base.
 
 - **Capas Vectoriales**:
   - **Predios**: Bordes amarillos (#FFD600), relleno transparente para lectura de fondo.
   - **Sector**: Contorno azul grueso (8dp, #1565C0).
 
-### 4. Interacciones de Usuario
+### 5. Barra de Título Dinámica (Action Bar)
+- **Indicador de Avance**: La barra superior de la aplicación muestra el título de la aplicación y un subtítulo que indica el avance de encuestas del día en tiempo real (`Hoy: X`), obtenidas tras aplicar el filtro espacial de 3 metros.
+
+### 6. Interacciones de Usuario
 1. **Clic en Parcela**: Inicia el flujo de captura si no hay datos previos (Inyecta Municipio y Sector automáticamente).
 2. **Punto en Sector Incorrecto**: Mostrar advertencia visual y sonora si las coordenadas caen fuera del límite del sector asignado.
 3. **Selección de Colindantes**: Menú flotante al tocar vértices compartidos para identificar propietarios vecinos.

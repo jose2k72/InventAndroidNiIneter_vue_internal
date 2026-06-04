@@ -17,7 +17,7 @@ Todas las reglas de flujo son validadas centralizadamente por el `WorkflowServic
 - **Auto-relleno**: Al iniciar desde el mapa, se hereda área y municipio automáticamente vía `ModelsFactory`.
 
 ### 1.3 Jerarquía de Datos
-- **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único **"Sujeto Natural"**, el sistema ejecuta un borrado en cascada automático de su composición familiar vinculada.
+- **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único **"Sujeto Natural"**, el sistema ejecuta un borrado en cascada automático de su composición familiar vinculada. *(Corregido para excluir explícitamente mediante el ID el propietario en proceso de eliminación y evitar falsos positivos de tenencia al evaluar con comparaciones de tipo flexible `!=`)*.
 - **Validación de Borrado**: No se permite eliminar al **Entrevistado** si ya existe una **Ficha** (Encuesta) vinculada, protegiendo la integridad referencial.
 - **Relación Entrevistado-Propietario**: Si el entrevistado es el mismo propietario, el sistema permite una creación silenciosa para evitar doble entrada de datos mediante el `ConversionService`.
 - **Candidatos Master (Unificación)**: Un predio solo puede ser Master si ya tiene información registrada y esta pertenece a un **único cluster** espacial (una sola acumulación de puntos a menos de 3 metros).
@@ -68,8 +68,11 @@ El ciclo de vida de las fotografías está estrictamente controlado por las acci
 ## 3. Lógica Espacial y Localización
 
 ### 3.1 Localización de Predios
-- Se utiliza el motor **JTS (Java Topology Suite)** para garantizar que cada registro de inventario esté vinculado correctamente a un polígono catastral.
-- El sistema detecta automáticamente el código de ubicación (`LOCALIZACION`) y el ID del objeto al momento del clic.
+- **Motor Espacial en Memoria**: Se utiliza la librería **JTS (Java Topology Suite)** para realizar de manera síncrona en memoria todas las validaciones y consultas espaciales (como verificar que las coordenadas caigan dentro de un polígono).
+- **Formato WKB**: Para optimizar el rendimiento y la memoria, las geometrías de predios se almacenan como blobs binarios (`WKB`) en la base de datos `Map.db`, reemplazando el uso anterior de texto `WKT`.
+- **Posicionamiento y Consolidación**: 
+  - Al presionar el mapa sobre un predio vacío, la encuesta se inicializa en el **Polo de Inaccesibilidad (PIA)** de JTS (el punto interior más lejano a los bordes) para asegurar una ubicación coherente del marcador.
+  - Si el predio ya contiene datos de encuestas previas, el nuevo registro hereda de manera obligatoria la coordenada exacta del primer registro (consolidación espacial por predio), agrupando todos los marcadores del polígono en un solo punto en el mapa.
 
 ### 3.2 Capas Operativas
 - **Predios**: Capa base para la consulta y vinculación.

@@ -4,6 +4,40 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-06-03] - Estadísticas Diarias, Polo de Inaccesibilidad y Autocompletado de Direcciones
+
+### 📊 Estadísticas Diarias y Resumen de Avance
+- **Cálculo con Filtrado Espacial**: Implementación en `DatabaseHelper.kt` de un conteo de datos agrupados por día con filtrado de proximidad espacial de 3 metros, previniendo duplicados por ediciones o múltiples registros en un mismo predio.
+- **Visualización en Action Bar**: Reducción del tamaño del título e incorporación de un subtítulo dinámico (`Hoy: X`) en la barra superior (`activity_main.xml` y `MainActivity.kt`) para mostrar el avance diario en tiempo real.
+- **Historial Completo**: Creación de una opción "Estadísticas Diarias" en el menú principal (`main_menu.xml` y `MainDialogHelper.kt`) para desplegar en un modal el historial cronológico descendente de encuestas.
+
+### 📍 Consolidación Espacial y Centrado por Polo de Inaccesibilidad (PIA)
+- **Centrado Inteligente**: El sistema calcula y posiciona el marcador inicial en el **Polo de Inaccesibilidad (PIA)** de JTS para predios nuevos sin datos, garantizando una ubicación óptima (punto interior más lejano a los bordes).
+- **Consolidación Catastral**: Si un predio ya contiene registros previos, la coordenada del nuevo punto se consolida heredando de forma obligatoria la posición del primer elemento, agrupando los marcadores en un único punto en el mapa.
+- **Eliminación de Snapping de Toque**: Remoción de la prioridad de proximidad de 3m en toques del mapa, reemplazándola por la detección e interceptación geométrica del polígono predial.
+
+### ⚡ Motor Espacial Binario (WKB + JTS)
+- **Migración a Well-Known Binary**: Sustitución del formato de texto `WKT` por formato binario `WKB` (almacenado como `BLOB` en la base de datos sqlite) para las geometrías de predios.
+- **Consultas Espaciales en Memoria**: Ejecución de las operaciones geométricas y validación de adyacencias mediante el procesamiento directo en memoria de objetos nativos JTS deserializados de WKB.
+
+### 📍 Autocompletado de Dirección Residencial por Colindancia
+- **Detección de Vecinos**: Incorporación del botón de autodetección en el formulario de `FormSujetoNatural.js`.
+- **Copiado Inteligente**: Consulta predios colindantes mediante `Android.getDataInAdjacentPolygons`, muestra su dirección relativa (N, S, E, O) y copia automáticamente los datos de dirección (`Direccion`, `Caserio`, `BarrioComarca` y `MunicipioCatalog`) al seleccionar la encuesta colindante.
+
+### 🎨 Simbología de Mapa y Marcador del Último Registro
+- **Restauración de Pines 3D**: Retorno al uso de pines 3D nativos coloreados según su estado operativo (Verde = Completo, Amarillo = Incompleto, Rojo = No Encuestado, Cian = Unión).
+- **Indicador del Último Guardado**: Superposición dinámica de un punto negro de 6dp ("ojito") en el centro de la cabeza del marcador correspondiente al último registro guardado de la sesión, eliminando la variante de color violeta.
+
+### 👥 Gestión de Roles y Pantalla de Login
+- **Roles en Listados y Formularios**: Agregado el rol de usuario ("Administrador" o "Usuario Normal") en la lista de gestión de usuarios y en el formulario de edición de cuentas.
+- **Orden Jerárquico**: Agrupamiento en el login de la aplicación para mostrar primero usuarios normales, seguidos de administradores, y la cuenta "master" al final.
+
+### 🛡️ Usabilidad de Formularios y Reglas de Negocio
+- **Bloqueo del Botón Atrás Nativo**: Desactivación del botón físico "Atrás" de Android en formularios para evitar pérdida accidental de cambios, duplicando los botones de acción para guardar/cancelar explícitos.
+- **Fix en Borrado en Cascada de Familiares**: Solución de un error en `workflowService.js` al eliminar el último propietario de un predio; ahora se excluye formalmente el `deletedId` usando comparaciones flexibles de tipo (`!=`) para limpiar la composición familiar vinculada.
+
+---
+
 ## [2026-03-29] - Control de Excepciones y Unificación Espacial
 
 ### 🔗 Unión con Predio Master (Englobamiento)
@@ -113,4 +147,4 @@ Consulte aquí el historial detallado del proyecto:
 - [Febrero 2026](changelog/CHANGELOG_2026_02.md) - Composición familiar, selectores globales y lógica espacial.
 
 ---
-*Última actualización: 2026-03-10*
+*Última actualización: 2026-06-03*

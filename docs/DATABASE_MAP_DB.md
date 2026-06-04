@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS objects (
     layer TEXT,
     idLayer INTEGER,
     idPredio INTEGER,
-    wkt TEXT
+    wkb BLOB
 )
 ```
 
@@ -83,13 +83,13 @@ CREATE TABLE IF NOT EXISTS objects (
 | `layer` | TEXT | Capa a la que pertenece (ej: "Predios", "Edificaciones") |
 | `idLayer` | INTEGER | ID numérico de la capa |
 | `idPredio` | INTEGER | ID del predio asociado |
-| `wkt` | TEXT | Geometría en formato WKT (Well-Known Text) |
+| `wkb` | BLOB | Geometría en formato binario WKB (Well-Known Binary) |
 
 #### Uso Principal
 
 Esta tabla se usa para:
 1. **Detección de clic en mapa**: Al hacer clic, se buscan objetos cuyo bounding box contenga el punto.
-2. **Verificación de punto en polígono**: Se parsea el campo `wkt` y se verifica si el punto está dentro del polígono usando la librería **JTS (Java Topology Suite)** en el backend.
+2. **Verificación de punto en polígono**: Se lee el campo `wkb` y se verifica si el punto está dentro del polígono en memoria mediante objetos JTS deserializados.
 
 ---
 
@@ -265,7 +265,7 @@ Los tiles siguen el sistema TMS (Tile Map Service) o similar:
 La base de datos `Map.db` se entrega **pre-poblada** con:
 - Tabla `config`: Valores iniciales (`InitLat`, `InitLng`, `ENCUESTADOR`).
 - Tabla `tiles`: Tiles de mapa offline pre-descargados.
-- Tabla `objects`: Geometrías de predios con sus bounding boxes y WKT.
+- Tabla `objects`: Geometrías de predios con sus bounding boxes y WKB.
 
 La tabla `DATOS` inicia vacía y se llena con los formularios capturados.
 

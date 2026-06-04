@@ -17,6 +17,11 @@ Esta tabla muestra todos los registros de inventario (Encuestas Catastrales, Pro
  - **Optimización**: Utiliza caché de geometrías pre-procesadas e índices espaciales en memoria para una respuesta instantánea, incluso con geometrías complejas.
  - **Utilidad**: Provee una referencia rápida de lo que hay alrededor y permite "clonar" datos de vecinos para no empezar desde cero si las condiciones son similares.
  
+### 1.3 Autodetectar Dirección Colindante
+Permite autocompletar la dirección del propietario en el formulario de Sujeto Natural copiándola de un predio adyacente.
+- **Lógica**: Consulta las encuestas registradas en predios vecinos mediante `Android.getDataInAdjacentPolygons`.
+- **Interacción**: Despliega un listado con las fichas vecinas encontradas, su dirección relativa (N, S, E, O) y sus datos descriptivos. Al seleccionar una de ellas, el sistema copia automáticamente los campos de `Dirección`, `Caserío`, `Barrio/Comarca` y `Municipio` al formulario en curso.
+
  ---
  
  ## 2. Acciones de Edición y Gestión
@@ -49,11 +54,16 @@ Esta tabla muestra todos los registros de inventario (Encuestas Catastrales, Pro
  - **Consistencia Visual**: Las tablas se muestran siempre para dar estructura al formulario. Si no hay datos disponibles, se indica claramente con el mensaje "No hay datos...".
  - **Tracking de Fotos**: El sistema mantiene un control estricto de qué fotos son nuevas, cuáles venían de la base de datos y cuáles han sido marcadas para borrar, procesando los cambios físicos solo al dar clic en "GUARDAR".
  
+### 3.2 Posicionamiento Inteligente en Mapa
+El sistema ha mejorado la lógica de captura al presionar sobre un polígono del mapa:
+- **Centrado en el Polo de Inaccesibilidad (PIA)**: Si el predio seleccionado no posee encuestas creadas, se calcula el punto interior más lejano a los bordes del polígono (`GeometryUtil.getPoleOfInaccessibility`) para situar de forma óptima el pin en el mapa.
+- **Consolidación Catastral Forzada**: Si el predio ya cuenta con registros previos, cualquier nueva encuesta para ese mismo polígono hereda obligatoriamente la coordenada de latitud y longitud del primer registro, evitando la superposición desordenada de múltiples pins dentro de un mismo predio.
+
  ---
  
  ## 4. Resumen Técnico para Soporte
  
- - **Motor Geométrico**: JTS (Java Topology Suite) v1.19.0.
- - **Formatos Soportados**: WKT (Well-Known Text) para geometrías.
+ - **Motor Geométrico**: JTS (Java Topology Suite) v1.19.0 ejecutándose síncronamente en memoria.
+ - **Formatos Soportados**: WKB (Well-Known Binary) en blobs sqlite para almacenamiento; deserializado dinámicamente en objetos JTS para cálculos.
  - **Sistema de Coordenadas**: WGS84 (GPS) para almacenamiento y CRTM05 (Costa Rica) para visualización en el formulario (reproyección en tiempo real con Proj4J).
- - **Rendimiento**: Caché de geometrías (JTS) y filtrado de oclusión optimizado para rutas (buffer 2m).
+ - **Rendimiento**: Filtrado y oclusión espacial optimizado con geometrías cacheadas en memoria y filtrado por delimitación de bounding box (`minX`, `minY`, `maxX`, `maxY`).
