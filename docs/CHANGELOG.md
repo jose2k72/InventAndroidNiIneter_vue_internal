@@ -4,6 +4,15 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-06-04] - Precarga y Actualizaciones Continuas de GPS
+
+### 🛰️ Optimización del Ciclo de Vida y Geolocalización
+- **Precarga Silenciosa al Inicio**: Creación de `preloadLocationSilently()` en `MainActivity.kt` para inicializar el GPS en segundo plano durante `onCreate` y `onResume`, evitando arranques fríos de coordenadas en `0.0`.
+- **Actualizaciones Continuas de Ubicación**: Integración de un `LocationCallback` que actualiza la posición cada **15 segundos** (intervalo mínimo de 5 segundos) con alta precisión (`Priority.PRIORITY_HIGH_ACCURACY`). La consulta continua se activa en `onResume` y se apaga en `onPause` para optimizar la duración de la batería del dispositivo.
+- **Posicionamiento Instantáneo**: Modificación de `getCurrentLocation()` para centrar la cámara del mapa sin esperas (0 segundos de delay) cuando la app ya posee coordenadas del flujo de actualización en memoria, refrescando la señal de forma paralela.
+
+---
+
 ## [2026-06-03] - Estadísticas Diarias, Polo de Inaccesibilidad y Autocompletado de Direcciones
 
 ### 🛰️ Optimización de Captura GPS y Fallback de Cobertura

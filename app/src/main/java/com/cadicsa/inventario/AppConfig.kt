@@ -16,6 +16,12 @@ import java.util.*
 object AppConfig {
     
     /**
+     * Habilita el servidor de depuración HTTP para consultas SQLite en caliente.
+     * IMPORTANTE: Cambiar a 'false' en compilaciones de producción.
+     */
+    const val DEBUG_DB_SERVER_ENABLED = true
+    
+    /**
      * Nombre del directorio de almacenamiento en la SD externa
      * Se configura desde build.gradle.kts mediante buildConfigField
      * 

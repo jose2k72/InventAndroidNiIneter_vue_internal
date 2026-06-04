@@ -10,6 +10,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -24,6 +28,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityMainBinding
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var locationCallback: LocationCallback? = null
     
     // Helpers
     private val permissionHelper = PermissionHelper(this)
@@ -52,6 +57,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             permissionsGranted = true
             AppConfig.ensureStorageDirectoryExists()
             initializeMap()
+            preloadLocationSilently()
+            startLocationUpdates()
         } else {
             Toast.makeText(this, "Permisos necesarios no concedidos", Toast.LENGTH_LONG).show()
             initializeMap()
@@ -68,12 +75,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         binding.fabGps.setOnClickListener { getCurrentLocation() }
         
+        if (permissionHelper.hasLocationPermission()) {
+            preloadLocationSilently()
+            startLocationUpdates()
+        }
+        
         permissionHelper.checkManageExternalStoragePermission {
             permissionsGranted = true
             permissionHelper.requestAllPermissions(multiplePermissionsLauncher) {
                 AppConfig.ensureStorageDirectoryExists()
                 initializeMap()
+                preloadLocationSilently()
+                startLocationUpdates()
             }
+        }
+
+        if (AppConfig.DEBUG_DB_SERVER_ENABLED) {
+            DebugDbServer.start(this)
         }
     }
 
@@ -86,8 +104,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 permissionHelper.requestAllPermissions(multiplePermissionsLauncher) {
                     AppConfig.ensureStorageDirectoryExists()
                     initializeMap()
+                    preloadLocationSilently()
+                    startLocationUpdates()
                 }
             }
+        }
+        if (permissionHelper.hasLocationPermission()) {
+            preloadLocationSilently()
+            startLocationUpdates()
         }
         
         lastSavedDataId = getSharedPreferences("app_prefs", MODE_PRIVATE).getInt("last_saved_data_id", -1)
@@ -96,6 +120,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             tileOverlay?.clearTileCache()
             mapHelper?.loadCapturedPoints(lastSavedDataId)
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopLocationUpdates()
     }
 
     private fun initializeMap() {
@@ -275,11 +304,88 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun getCurrentLocation() {
+    private fun preloadLocationSilently() {
         if (permissionHelper.hasLocationPermission()) {
             try {
-                Toast.makeText(this, "Buscando señal GPS...", Toast.LENGTH_SHORT).show()
-                // 1. Intentar ubicación fresca (GPS activo)
+                // 1. Obtener la última ubicación en caché (rápido y sin delay)
+                fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
+                    if (cachedLocation != null) {
+                        currentLatitude = cachedLocation.latitude
+                        currentLongitude = cachedLocation.longitude
+                        Log.d("MainActivity", "Precarga GPS (Caché): $currentLatitude, $currentLongitude")
+                    }
+                }
+                
+                // 2. Calentar la antena GPS/servicios de ubicación en segundo plano
+                fusedLocationClient.getCurrentLocation(
+                    com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                    null
+                ).addOnSuccessListener { freshLocation ->
+                    if (freshLocation != null) {
+                        currentLatitude = freshLocation.latitude
+                        currentLongitude = freshLocation.longitude
+                        Log.d("MainActivity", "Precarga GPS (Fresco): $currentLatitude, $currentLongitude")
+                    }
+                }
+            } catch (e: SecurityException) {
+                Log.e("MainActivity", "Error de seguridad en precarga GPS: ${e.message}")
+            }
+        }
+    }
+
+    private fun startLocationUpdates() {
+        if (permissionHelper.hasLocationPermission()) {
+            try {
+                if (locationCallback == null) {
+                    locationCallback = object : LocationCallback() {
+                        override fun onLocationResult(locationResult: LocationResult) {
+                            for (location in locationResult.locations) {
+                                if (location != null) {
+                                    currentLatitude = location.latitude
+                                    currentLongitude = location.longitude
+                                    Log.d("MainActivity", "Actualización GPS: $currentLatitude, $currentLongitude, Precisión: ${location.accuracy}m")
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                val locationRequest = LocationRequest.Builder(
+                    Priority.PRIORITY_HIGH_ACCURACY,
+                    15000 // 15 segundos
+                ).apply {
+                    setMinUpdateIntervalMillis(5000) // Mínimo 5 segundos
+                    setWaitForAccurateLocation(false)
+                }.build()
+
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback!!,
+                    android.os.Looper.getMainLooper()
+                )
+                Log.d("MainActivity", "Actualizaciones de ubicación activadas (15s)")
+            } catch (e: SecurityException) {
+                Log.e("MainActivity", "Error al iniciar actualizaciones de ubicación: ${e.message}")
+            }
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        locationCallback?.let {
+            fusedLocationClient.removeLocationUpdates(it)
+            Log.d("MainActivity", "Actualizaciones de ubicación desactivadas")
+        }
+    }
+
+    private fun getCurrentLocation() {
+        if (permissionHelper.hasLocationPermission()) {
+            // Si ya tenemos una ubicación válida en memoria (precarga o actualizaciones), centrar instantáneamente
+            if (currentLatitude != 0.0 && currentLongitude != 0.0) {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLatitude, currentLongitude), 19f))
+            }
+            try {
+                Toast.makeText(this, "Refrescando señal GPS...", Toast.LENGTH_SHORT).show()
+                // Intentar obtener ubicación fresca de forma paralela
                 fusedLocationClient.getCurrentLocation(
                     com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
                     null
@@ -288,8 +394,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         currentLatitude = freshLocation.latitude
                         currentLongitude = freshLocation.longitude
                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLatitude, currentLongitude), 19f))
-                    } else {
-                        // 2. Fallback a caché si no hay cobertura
+                    } else if (currentLatitude == 0.0 || currentLongitude == 0.0) {
+                        // Fallback a caché solo si no teníamos coordenadas válidas en memoria
                         fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
                             if (cachedLocation != null) {
                                 currentLatitude = cachedLocation.latitude
@@ -302,15 +408,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         }
                     }
                 }.addOnFailureListener { e ->
-                    // 3. Fallback a caché en caso de error en petición activa
-                    fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
-                        if (cachedLocation != null) {
-                            currentLatitude = cachedLocation.latitude
-                            currentLongitude = cachedLocation.longitude
-                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLatitude, currentLongitude), 19f))
-                            Toast.makeText(this, "Usando ubicación en caché (Error GPS: ${e.message})", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(this, "Error de GPS y sin ubicación en caché: ${e.message}", Toast.LENGTH_LONG).show()
+                    // Fallback a caché si falla el refresco y no teníamos coordenadas válidas en memoria
+                    if (currentLatitude == 0.0 || currentLongitude == 0.0) {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
+                            if (cachedLocation != null) {
+                                currentLatitude = cachedLocation.latitude
+                                currentLongitude = cachedLocation.longitude
+                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLatitude, currentLongitude), 19f))
+                                Toast.makeText(this, "Usando ubicación en caché (Error GPS: ${e.message})", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(this, "Error de GPS y sin ubicación en caché: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 }
@@ -488,6 +596,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             } catch (ex: Exception) {
                 ex.printStackTrace()
             }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (AppConfig.DEBUG_DB_SERVER_ENABLED) {
+            DebugDbServer.stop()
         }
     }
 }
