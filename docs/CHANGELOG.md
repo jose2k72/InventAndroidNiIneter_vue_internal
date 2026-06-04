@@ -6,6 +6,11 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ## [2026-06-03] - Estadísticas Diarias, Polo de Inaccesibilidad y Autocompletado de Direcciones
 
+### 🛰️ Optimización de Captura GPS y Fallback de Cobertura
+- **Petición Activa del Botón**: Refactorización de la lógica del botón `fabGps` (`getCurrentLocation()`) en `MainActivity.kt` para forzar una consulta activa de GPS en tiempo real (`getCurrentLocation`), resolviendo los fallos silenciosos por caché vacía (`lastLocation == null`) en dispositivos nuevos o recién inicializados.
+- **Fallback Resiliente**: Ante falta de cobertura satelital (retorno de valor nulo o fallo de petición activa), el sistema hace fallback automático a la ubicación en caché (`lastLocation`), mostrando notificaciones Toast informativas al usuario sobre el estado de la señal.
+- **Calentamiento Silencioso de Inicio**: Inicialización de una petición de GPS en segundo plano al cargar el mapa (`enableMyLocation`) para actualizar de forma temprana las variables de coordenadas globales e iniciar la caché de posicionamiento del sistema de forma transparente.
+
 ### 📊 Estadísticas Diarias y Resumen de Avance
 - **Cálculo con Filtrado Espacial**: Implementación en `DatabaseHelper.kt` de un conteo de datos agrupados por día con filtrado de proximidad espacial de 3 metros, previniendo duplicados por ediciones o múltiples registros en un mismo predio.
 - **Visualización en Action Bar**: Reducción del tamaño del título e incorporación de un subtítulo dinámico (`Hoy: X`) en la barra superior (`activity_main.xml` y `MainActivity.kt`) para mostrar el avance diario en tiempo real.

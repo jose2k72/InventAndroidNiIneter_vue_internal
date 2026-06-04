@@ -245,21 +245,80 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun enableMyLocation() {
         if (permissionHelper.hasLocationPermission()) {
-            try { mMap.isMyLocationEnabled = true } catch (e: SecurityException) {}
+            try { 
+                mMap.isMyLocationEnabled = true 
+                // Obtener ubicación fresca silenciosamente, con fallback a caché
+                fusedLocationClient.getCurrentLocation(
+                    com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                    null
+                ).addOnSuccessListener { freshLocation ->
+                    if (freshLocation != null) {
+                        currentLatitude = freshLocation.latitude
+                        currentLongitude = freshLocation.longitude
+                    } else {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
+                            if (cachedLocation != null) {
+                                currentLatitude = cachedLocation.latitude
+                                currentLongitude = cachedLocation.longitude
+                            }
+                        }
+                    }
+                }.addOnFailureListener {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
+                        if (cachedLocation != null) {
+                            currentLatitude = cachedLocation.latitude
+                            currentLongitude = cachedLocation.longitude
+                        }
+                    }
+                }
+            } catch (e: SecurityException) {}
         }
     }
 
     private fun getCurrentLocation() {
         if (permissionHelper.hasLocationPermission()) {
             try {
-                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                    if (location != null) {
-                        currentLatitude = location.latitude
-                        currentLongitude = location.longitude
+                Toast.makeText(this, "Buscando señal GPS...", Toast.LENGTH_SHORT).show()
+                // 1. Intentar ubicación fresca (GPS activo)
+                fusedLocationClient.getCurrentLocation(
+                    com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                    null
+                ).addOnSuccessListener { freshLocation ->
+                    if (freshLocation != null) {
+                        currentLatitude = freshLocation.latitude
+                        currentLongitude = freshLocation.longitude
                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLatitude, currentLongitude), 19f))
+                    } else {
+                        // 2. Fallback a caché si no hay cobertura
+                        fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
+                            if (cachedLocation != null) {
+                                currentLatitude = cachedLocation.latitude
+                                currentLongitude = cachedLocation.longitude
+                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLatitude, currentLongitude), 19f))
+                                Toast.makeText(this, "Usando ubicación en caché (sin cobertura GPS actual)", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(this, "No se pudo obtener la ubicación. Verifique que el GPS esté activo.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }.addOnFailureListener { e ->
+                    // 3. Fallback a caché en caso de error en petición activa
+                    fusedLocationClient.lastLocation.addOnSuccessListener { cachedLocation ->
+                        if (cachedLocation != null) {
+                            currentLatitude = cachedLocation.latitude
+                            currentLongitude = cachedLocation.longitude
+                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLatitude, currentLongitude), 19f))
+                            Toast.makeText(this, "Usando ubicación en caché (Error GPS: ${e.message})", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "Error de GPS y sin ubicación en caché: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
-            } catch (e: SecurityException) {}
+            } catch (e: SecurityException) {
+                Toast.makeText(this, "Error de permisos: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "Permiso de ubicación no concedido", Toast.LENGTH_SHORT).show()
         }
     }
 
