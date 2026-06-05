@@ -276,7 +276,9 @@ const app = createApp({
             if (!itemToDelete) return;
 
             // 1. Validar reglas de negocio para borrado
-            const deletion = WorkflowService.validateDeletion(itemToDelete.Data?.Type, listData.value);
+            const currentLoc = localizacion.value || (typeof Android !== 'undefined' ? Android.getLocalizacion() : '');
+            const currentIdObj = typeof Android !== 'undefined' ? Android.getIdObject() : null;
+            const deletion = WorkflowService.validateDeletion(itemToDelete.Data?.Type, listData.value, currentLoc, currentIdObj);
             if (!deletion.allowed) {
                 showConfirmModal({
                     icon: '⚠️', title: 'Acción impedida',

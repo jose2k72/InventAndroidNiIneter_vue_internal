@@ -17,6 +17,11 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 - **Botón Limpiar**: Se reemplazó el botón Aceptar por el botón **LIMPIAR** (en color rojo `#d32f2f`) en el footer. Al pulsarse, emite `{ id: null, name: '' }` para reiniciar la propiedad del formulario a su estado original (vacío) y vuelve automáticamente al formulario.
 - **Copia de Respaldo**: Creación de `CatalogoSelectorGrandeOld.js` para resguardar la versión previa con flujo de confirmación explícita (selección y aceptación por separado).
 
+### 🔗 Restricciones y Reglas de Integridad en Unión con Predio (workflowService.js, app.js)
+- **Filtro de No Encuestados**: Modificación de la función `getMasterCandidates` en `workflowService.js` para limpiar y descartar de la lista de candidatos Master a todos los predios colindantes que posean un registro de tipo `NoEncuestado`. Esto evita que se unifique un predio a uno que no cuenta con información de campo levantada.
+- **Protección de Datos del Predio Master**: Modificación del método `validateDeletion` en `workflowService.js` y de `deleteItem` en `app.js` para prevenir la eliminación del último registro de datos en un predio que sirve como Master.
+- **Alerta de Dependencias**: Al intentar borrar el último dato de un predio Master, la acción se bloquea e informa al usuario mediante un modal detallando la lista de las localizaciones de los predios colindantes que se encuentran unificados a él.
+
 ### 📋 Ajustes de Flujo y Valores por Defecto en Fichas
 - **Flujo Espacial Unificado**: Refactorización de la lógica táctil de `MainActivity.kt` para unificar el comportamiento de clics sobre el polígono cartográfico y clics sobre marcadores preexistentes. Ambos resuelven e inyectan de forma idéntica los datos espaciales (municipio, sector, manzana, lote).
 - **Valores por Defecto**: Configuración inicial automática en `modelsFactory.js` para que toda nueva ficha inicie con Tipo de Encuesta = **Parcela Unificada** y Uso del Predio = **Privado**.

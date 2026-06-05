@@ -143,7 +143,7 @@ window.WorkflowService = {
      * @param {Array} listData - Lista completa de datos actuales
      * @returns {Object} { allowed: boolean, message: string }
      */
-    validateDeletion: function (type, listData) {
+    validateDeletion: function (type, listData, localizacionActual, idObject) {
         const hasEncuesta = listData.some(item => item.Data?.Type === 'Ficha');
 
         if (hasEncuesta && type === 'Entrevistado') {
@@ -151,6 +151,27 @@ window.WorkflowService = {
                 allowed: false,
                 message: 'No puede eliminar al Entrevistado porque existe una Encuesta Catastral vinculada.'
             };
+        }
+
+        // Evitar dejar un predio Master sin datos si tiene predios dependientes unificados
+        if (listData.length === 1 && typeof Android !== 'undefined' && Android.getDataInAdjacentPolygons && idObject && localizacionActual) {
+            try {
+                const rawJson = Android.getDataInAdjacentPolygons(idObject);
+                const adyacentes = JSON.parse(rawJson || "[]");
+                const unidos = adyacentes.filter(item => 
+                    item.Data?.Type === 'UnionConPredio' && 
+                    item.Data?.LocalizacionMaster === localizacionActual
+                );
+                if (unidos.length > 0) {
+                    const locsDependientes = [...new Set(unidos.map(item => item.LocalizacionPredio || item.Data?.Localizacion))];
+                    return {
+                        allowed: false,
+                        message: `No se puede eliminar el último registro. Este predio es Master para la unificación de los siguientes predios: ${locsDependientes.join(', ')}.`
+                    };
+                }
+            } catch (e) {
+                console.error('Error al validar dependencias de unificación en delete:', e);
+            }
         }
 
         return { allowed: true };
@@ -208,6 +229,13 @@ window.WorkflowService = {
             Object.keys(gruposPorPredio).forEach(loc => {
                 const registros = gruposPorPredio[loc];
                 if (registros.length === 0) return;
+
+                // Descartar si el predio vecino está marcado como No Encuestado
+                const tieneNoEncuestado = registros.some(r => r.Data?.Type === 'NoEncuestado');
+                if (tieneNoEncuestado) {
+                    console.log(`🚫 Predio ${loc} descartado por estar marcado como No Encuestado.`);
+                    return;
+                }
 
                 // Agrupar registros por proximidad (3 metros)
                 const clustersInNeighbor = [];
