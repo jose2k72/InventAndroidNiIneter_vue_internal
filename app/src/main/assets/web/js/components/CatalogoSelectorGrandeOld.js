@@ -86,7 +86,7 @@ const CatalogoSelectorGrande = {
                 <div
                     v-for="item in paginados"
                     :key="item.id"
-                    @click="seleccionarYConfirmar(item)"
+                    @click="seleccionar(item)"
                     :style="{
                         display: 'flex',
                         alignItems: 'center',
@@ -145,22 +145,23 @@ const CatalogoSelectorGrande = {
                 >CANCELAR</button>
 
                 <button
-                    @click="limpiar"
-                    style="
-                        flex: 1;
-                        padding: 16px 0;
-                        font-size: 15px;
-                        font-weight: bold;
-                        border-radius: 8px;
-                        border: none;
-                        background: #d32f2f;
-                        color: #fff;
-                        cursor: pointer;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        -webkit-appearance: none;
-                    "
-                >LIMPIAR</button>
+                    @click="aceptar"
+                    :disabled="!seleccion"
+                    :style="{
+                        flex: '1',
+                        padding: '16px 0',
+                        fontSize: '15px',
+                        fontWeight: 'bold',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: seleccion ? '#1565C0' : '#bbdefb',
+                        color: '#fff',
+                        cursor: seleccion ? 'pointer' : 'not-allowed',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        WebkitAppearance: 'none'
+                    }"
+                >ACEPTAR</button>
             </div>
         </div>
     `,
@@ -224,14 +225,14 @@ const CatalogoSelectorGrande = {
         );
 
         // ── Acciones del usuario ────────────────────────────────────────────
-        const seleccionarYConfirmar = (item) => {
+        const seleccionar = (item) => {
             seleccion.value = item;
-            emit('select', { id: item.id, name: item.nombre });
         };
 
-        const limpiar = () => {
-            seleccion.value = null;
-            emit('select', { id: null, name: '' });
+        const aceptar = () => {
+            if (seleccion.value) {
+                emit('select', { id: seleccion.value.id, name: seleccion.value.nombre });
+            }
         };
 
         // ── Scroll infinito con IntersectionObserver ────────────────────────
@@ -280,8 +281,8 @@ const CatalogoSelectorGrande = {
             listaRef,
             inputRef,
             triggerRef,
-            seleccionarYConfirmar,
-            limpiar
+            seleccionar,
+            aceptar
         };
     }
 };

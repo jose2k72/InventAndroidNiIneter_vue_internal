@@ -12,6 +12,11 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 - **Aislamiento y Sincronización**: La foto del frente se previsualiza mediante su propia tarjeta dedicada en el formulario (cargada dinámicamente con `Android.loadPhotoAsBase64`), quedando excluida de la galería de fotos adicionales para evitar duplicación. A nivel de base de datos se guarda en su propio campo de texto.
 - **Validación Restrictiva**: Se incorporó a la validación de guardado (`validate()`) el requisito obligatorio de capturar la foto de frente del predio antes de permitir guardar la encuesta.
 
+### 🔍 Selector de Catálogo Rápido (CatalogoSelectorGrande.js)
+- **Selección Instantánea**: Modificación del comportamiento táctil de la lista. Al hacer clic sobre cualquier ítem, se selecciona y confirma automáticamente, retornando al formulario de edición y eliminando la necesidad de presionar el botón Aceptar.
+- **Botón Limpiar**: Se reemplazó el botón Aceptar por el botón **LIMPIAR** (en color rojo `#d32f2f`) en el footer. Al pulsarse, emite `{ id: null, name: '' }` para reiniciar la propiedad del formulario a su estado original (vacío) y vuelve automáticamente al formulario.
+- **Copia de Respaldo**: Creación de `CatalogoSelectorGrandeOld.js` para resguardar la versión previa con flujo de confirmación explícita (selección y aceptación por separado).
+
 ### 📋 Ajustes de Flujo y Valores por Defecto en Fichas
 - **Flujo Espacial Unificado**: Refactorización de la lógica táctil de `MainActivity.kt` para unificar el comportamiento de clics sobre el polígono cartográfico y clics sobre marcadores preexistentes. Ambos resuelven e inyectan de forma idéntica los datos espaciales (municipio, sector, manzana, lote).
 - **Valores por Defecto**: Configuración inicial automática en `modelsFactory.js` para que toda nueva ficha inicie con Tipo de Encuesta = **Parcela Unificada** y Uso del Predio = **Privado**.
