@@ -92,8 +92,8 @@ const FormFicha = {
                     <div class="form-group">
                         <label>Manzana / Lote</label>
                         <div style="display: flex; gap: 5px;">
-                            <input type="text" v-model="formData.Manzana" placeholder="Mza" style="width: 40%;">
-                            <input type="text" v-model="formData.NumeroLote" placeholder="Lote" style="width: 60%;">
+                            <input type="text" v-model="formData.Manzana" placeholder="Mza" style="width: 40%; background-color: #f5f5f5;" readonly>
+                            <input type="text" v-model="formData.NumeroLote" placeholder="Lote" style="width: 60%; background-color: #f5f5f5;" readonly>
                         </div>
                     </div>
                 </div>
@@ -134,8 +134,8 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra *</label>
-                    <div class="selector-display" @click="pedirOrigenTierraGlobal" :style="{borderColor: errors.OrigenTierraCatalog ? '#d32f2f' : '#ccc'}">
+                    <label>Origen de la Tierra</label>
+                    <div class="selector-display" @click="pedirOrigenTierraGlobal">
                         <span v-if="origenTierraName" style="color: #1565C0; font-weight: 600;">{{ origenTierraName }}</span>
                         <span v-else style="color: #757575;">Seleccione origen...</span>
                         <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
@@ -149,7 +149,7 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label :style="{color: errors.ResenaHistorica ? 'red' : 'inherit', fontWeight: errors.ResenaHistorica ? 'bold' : 'normal'}">Reseña Histórica *</label>
+                    <label>Reseña Histórica</label>
                     <textarea v-model="formData.ResenaHistorica" rows="9" placeholder="Documentación histórica del predio..."></textarea>
                 </div>
 
@@ -372,14 +372,33 @@ const FormFicha = {
                 </div>
             </div>
 
-            <!-- Fotografías -->
-            <div class="section">
-                <h3>📸 Fotografías ({{ fotos.length }})</h3>
-                <button type="button" class="btn btn-camera" style="width: 100%; margin-bottom: 10px;" @click="capturarFoto">
-                    📷 CAPTURAR FOTO
+            <!-- Foto del Frente del Predio (Obligatoria) -->
+            <div class="section" style="border: 2px dashed #1565C0; border-radius: 8px; padding: 15px; background-color: #fafdff;">
+                <h3 :style="{color: errors.FotoFrente ? 'red' : '#1565C0'}">📸 Foto del Frente del Predio *</h3>
+                
+                <div v-if="fotoFrenteBase64" class="photo-item" style="max-width: 250px; margin: 0 auto 10px auto;">
+                    <img :src="fotoFrenteBase64" class="photo-thumbnail" style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px;">
+                    <div class="photo-info" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                        <span class="photo-name" style="font-size: 0.8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">{{ formData.FotoFrente }}</span>
+                        <button type="button" class="btn-delete" @click="eliminarFotoFrente">🗑️</button>
+                    </div>
+                </div>
+                <div v-else style="text-align: center; padding: 15px; border: 1px dashed #ccc; border-radius: 6px; margin-bottom: 10px; background-color: #fff;">
+                    <span style="color: #d32f2f; font-size: 0.85rem; font-weight: 500;">⚠️ Se requiere capturar la foto del frente.</span>
+                </div>
+                <button type="button" class="btn btn-camera" style="width: 100%; background-color: #1565C0; color: white;" @click="capturarFotoFrente">
+                    📷 CAPTURAR FOTO FRENTE *
                 </button>
-                <div v-if="fotos.length > 0" class="photos-grid">
-                    <div v-for="(foto, index) in fotos" :key="index" class="photo-item">
+            </div>
+
+            <!-- Fotografías Adicionales -->
+            <div class="section">
+                <h3>📸 Fotografías Adicionales ({{ fotosGenerales.length }})</h3>
+                <button type="button" class="btn btn-camera" style="width: 100%; margin-bottom: 10px;" @click="capturarFoto">
+                    📷 CAPTURAR FOTO ADICIONAL
+                </button>
+                <div v-if="fotosGenerales.length > 0" class="photos-grid">
+                    <div v-for="(foto, index) in fotosGenerales" :key="index" class="photo-item">
                         <img :src="foto.data" class="photo-thumbnail" @click="verFoto(foto)">
                         <div class="photo-info">
                             <span class="photo-name">{{ foto.name }}</span>
@@ -414,11 +433,12 @@ const FormFicha = {
 
                     const muni = String(formData.MunicipioCatalog || '0000').padStart(4, '0');
                     const sector = String(formData.IdSector || '000').padStart(3, '0');
+                    const lote = String(formData.NumeroLote || '000').padStart(3, '0');
                     const loc = (formData.Localizacion || 'SIN_LOC').replace(/\s+/g, '_').toUpperCase();
                     const cons = String(next).padStart(3, '0');
 
 
-                    formData.NoEncuesta = `${muni}_${sector}_${loc}_${cons}`;
+                    formData.NoEncuesta = `${muni}_${sector}_${loc}_${lote}`;
                     
                     // Inicializar valores automáticos para la vista
                     formData.ParcelaCatastrada = formData.Localizacion || '';
@@ -435,7 +455,7 @@ const FormFicha = {
         });
 
         // Autorecalculo si cambian datos base en registro nuevo
-        Vue.watch(() => [formData.MunicipioCatalog, formData.IdSector, formData.Localizacion], () => {
+        Vue.watch(() => [formData.MunicipioCatalog, formData.IdSector, formData.NumeroLote, formData.Localizacion], () => {
             if (formData.Consecutivo) generarNoEncuesta();
         });
 
@@ -677,6 +697,63 @@ const FormFicha = {
 
         const agregarDocumento = () => { formData.Documentos.push({ DocumentoCatalog: 0, AutorNotario: '', FechaDocumento: null, _DocumentoName: '' }); };
         const quitarDocumento = (index) => { formData.Documentos.splice(index, 1); };
+        const fotoFrenteBase64 = Vue.ref('');
+
+        const cargarFotoFrente = () => {
+            if (formData.FotoFrente && typeof Android !== 'undefined' && typeof Android.loadPhotoAsBase64 === 'function') {
+                const b64 = Android.loadPhotoAsBase64(formData.FotoFrente);
+                if (b64) {
+                    fotoFrenteBase64.value = 'data:image/jpeg;base64,' + b64;
+                } else {
+                    fotoFrenteBase64.value = '';
+                }
+            } else {
+                fotoFrenteBase64.value = '';
+            }
+        };
+
+        Vue.watch(() => formData.FotoFrente, cargarFotoFrente, { immediate: true });
+
+        const fotosGenerales = Vue.computed(() => {
+            if (!props.fotos) return [];
+            return props.fotos.filter(f => f.name !== formData.FotoFrente);
+        });
+
+        const capturarFotoFrente = () => emit('camera-frente');
+
+        const eliminarFotoFrente = () => {
+            if (typeof window.showConfirmModal === 'function') {
+                window.showConfirmModal({
+                    icon: '📷',
+                    title: '¿Eliminar foto del frente?',
+                    message: 'Esta foto será eliminada físicamente.',
+                    confirmText: 'Sí, eliminar',
+                    cancelText: 'Cancelar',
+                    onConfirm: () => {
+                        if (typeof Android !== 'undefined' && typeof Android.deletePhotoFile === 'function') {
+                            Android.deletePhotoFile(formData.FotoFrente);
+                        }
+                        if (window.deletePhoto) {
+                            window.deletePhoto(formData.FotoFrente);
+                        } else {
+                            formData.FotoFrente = '';
+                        }
+                    }
+                });
+            } else {
+                if (confirm('¿Desea eliminar la foto del frente?')) {
+                    if (typeof Android !== 'undefined' && typeof Android.deletePhotoFile === 'function') {
+                        Android.deletePhotoFile(formData.FotoFrente);
+                    }
+                    if (window.deletePhoto) {
+                        window.deletePhoto(formData.FotoFrente);
+                    } else {
+                        formData.FotoFrente = '';
+                    }
+                }
+            }
+        };
+
         const capturarFoto = () => emit('camera');
         const verFoto = (foto) => { if (typeof Android !== 'undefined' && Android.showPhoto) Android.showPhoto(foto.name); };
         const eliminarFoto = (filename) => { if (window.deletePhoto) window.deletePhoto(filename); };
@@ -687,12 +764,11 @@ const FormFicha = {
             if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; isValid = false; }
 
             if (!formData.Direccion?.trim()) { errors.Direccion = true; isValid = false; }
+            if (!formData.FotoFrente) { errors.FotoFrente = true; isValid = false; }
             if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
             if (!formData.DescripcionUsoCatalog) { errors.DescripcionUsoCatalog = true; isValid = false; }
             if (formData.DescripcionUsoCatalog === 5 && !formData.DescripcionUsoOtroText?.trim()) { errors.DescripcionUsoOtroText = true; isValid = false; }
-            if (!formData.OrigenTierraCatalog) { errors.OrigenTierraCatalog = true; isValid = false; }
-            if (!formData.ResenaHistorica?.trim()) { errors.ResenaHistorica = true; isValid = false; }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
             if (formData.PresentaDocumentos) {
                 if (!formData.Documentos?.length) { errors.Documentos = true; isValid = false; }
@@ -819,7 +895,8 @@ const FormFicha = {
         return {
             formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName, descripcionUsoName,
             pedirMunicipioGlobal, pedirDescripcionUsoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
-            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion
+            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion,
+            fotoFrenteBase64, fotosGenerales, capturarFotoFrente, eliminarFotoFrente
         };
     }
 };

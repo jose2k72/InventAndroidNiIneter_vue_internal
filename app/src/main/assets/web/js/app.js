@@ -42,6 +42,8 @@ const app = createApp({
         const areaCalculada = ref(0);
         const municipioInterceptado = ref('');
         const sectorInterceptado = ref('');
+        const manzanaInterceptada = ref('');
+        const loteInterceptado = ref('');
 
         // Lista de datos guardados
         const listData = ref([]);
@@ -60,6 +62,8 @@ const app = createApp({
 
         // Referencia para copia de datos
         const pendingCopyData = ref(null);
+
+        const tomandoFotoFrente = ref(false);
 
         // Helper para obtener el contexto de auditoria y ubicación
         const getContext = () => ({
@@ -103,13 +107,17 @@ const app = createApp({
                     areaCalculada.value = Android.getAreaCalculada ? Android.getAreaCalculada() : 0;
                     municipioInterceptado.value = Android.getMunicipioInterceptado ? Android.getMunicipioInterceptado() : '';
                     sectorInterceptado.value = Android.getSectorInterceptado ? Android.getSectorInterceptado() : '';
+                    manzanaInterceptada.value = Android.getManzanaInterceptada ? Android.getManzanaInterceptada() : '';
+                    loteInterceptado.value = Android.getLoteInterceptado ? Android.getLoteInterceptado() : '';
 
                     console.log('📍 Datos capturados de Android:', {
                         lat: latLng.lat,
                         lng: latLng.lng,
                         loc: localizacion.value,
                         muni: municipioInterceptado.value,
-                        sec: sectorInterceptado.value
+                        sec: sectorInterceptado.value,
+                        mza: manzanaInterceptada.value,
+                        lote: loteInterceptado.value
                     });
 
                     // 2. REPROYECCIÓN A UTM 16N (Para visualización y formularios legacy)
@@ -175,7 +183,9 @@ const app = createApp({
                     formData.value = ModelsFactory.createFicha(ctx, {
                         area: areaCalculada.value,
                         muni: municipioInterceptado.value, // Se pasa como string
-                        sector: sectorInterceptado.value
+                        sector: sectorInterceptado.value,
+                        manzana: manzanaInterceptada.value,
+                        lote: loteInterceptado.value
                     });
                 } else if (type === 'SujetoNatural') {
                     formData.value = ModelsFactory.createSujetoNatural(ctx);
@@ -386,9 +396,24 @@ const app = createApp({
         };
 
         // Abrir cámara
-        const openCamera = () => {
+        const openCamera = (isFrente = false) => {
+            tomandoFotoFrente.value = isFrente;
             if (typeof Android !== 'undefined') {
-                Android.Camera();
+                let noEncuesta = '';
+                if (formData.value && formData.value.NoEncuesta) {
+                    noEncuesta = formData.value.NoEncuesta;
+                } else if (listData.value) {
+                    const ficha = listData.value.find(item => item.Data && item.Data.Type === 'Ficha');
+                    if (ficha && ficha.Data && ficha.Data.NoEncuesta) {
+                        noEncuesta = ficha.Data.NoEncuesta;
+                    }
+                }
+
+                if (noEncuesta) {
+                    Android.Camera(noEncuesta);
+                } else {
+                    Android.Camera();
+                }
             } else {
                 console.log('Cámara no disponible en modo desarrollo');
             }
@@ -433,7 +458,8 @@ const app = createApp({
                 listData,
                 updateData,
                 openCatalog,    // <- Selector catálogo grande (Profesión, etc.)
-                openMunicipio   // <- Selector municipio dos niveles
+                openMunicipio,  // <- Selector municipio dos niveles
+                tomandoFotoFrente
             };
             console.log('✅ Vue app context guardado globalmente (con tracking de fotos)');
 
@@ -584,6 +610,8 @@ const app = createApp({
             municipioParams,
             onMunicipioSelect,
             cancelMunicipio,
+            manzanaInterceptada,
+            loteInterceptado,
 
             // Acciones
 

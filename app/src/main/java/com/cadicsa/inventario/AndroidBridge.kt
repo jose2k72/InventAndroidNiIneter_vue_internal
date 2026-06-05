@@ -69,6 +69,12 @@ class AndroidBridge(activity: FormActivity) {
     fun getSectorInterceptado(): String = activity?.sectorCatalog ?: ""
 
     @JavascriptInterface
+    fun getManzanaInterceptada(): String = activity?.manzanaCatalog ?: ""
+
+    @JavascriptInterface
+    fun getLoteInterceptado(): String = activity?.loteCatalog ?: ""
+
+    @JavascriptInterface
     fun getIdObject(): Int {
         val id = activity?.idObject ?: 0
         return if (id > 0) id else (System.currentTimeMillis() / 1000).toInt()

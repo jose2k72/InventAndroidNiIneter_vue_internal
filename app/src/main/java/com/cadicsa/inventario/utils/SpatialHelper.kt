@@ -116,6 +116,68 @@ object SpatialHelper {
         return null
     }
 
+    fun getManzanaForPredio(db: SQLiteDatabase, geomPredio: org.locationtech.jts.geom.Geometry): String? {
+        val envelope = geomPredio.envelopeInternal
+        val query = """
+            SELECT LOCALIZACION, wkb 
+            FROM objects 
+            WHERE layer = 'Sectores' COLLATE NOCASE
+            AND minX <= ${SpatialNormalizer.format(envelope.maxX)} AND maxX >= ${SpatialNormalizer.format(envelope.minX)}
+            AND minY <= ${SpatialNormalizer.format(envelope.maxY)} AND maxY >= ${SpatialNormalizer.format(envelope.minY)}
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, null)
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val wkbBytes = cursor.getBlob(1) ?: continue
+                    val geomManzana = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    if (geomManzana.intersects(geomPredio)) {
+                        val result = cursor.getString(0)
+                        android.util.Log.d("SpatialHelper", "Manzana encontrada por intersección de predio: $result")
+                        return result
+                    }
+                } while (cursor.moveToNext())
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SpatialHelper", "Error en getManzanaForPredio: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+        return null
+    }
+
+    fun getLoteForPredio(db: SQLiteDatabase, geomPredio: org.locationtech.jts.geom.Geometry): String? {
+        val envelope = geomPredio.envelopeInternal
+        val query = """
+            SELECT LOCALIZACION, wkb 
+            FROM objects 
+            WHERE layer = 'PredNumber' COLLATE NOCASE
+            AND minX <= ${SpatialNormalizer.format(envelope.maxX)} AND maxX >= ${SpatialNormalizer.format(envelope.minX)}
+            AND minY <= ${SpatialNormalizer.format(envelope.maxY)} AND maxY >= ${SpatialNormalizer.format(envelope.minY)}
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, null)
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val wkbBytes = cursor.getBlob(1) ?: continue
+                    val geomLote = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    if (geomPredio.intersects(geomLote)) {
+                        val result = cursor.getString(0)
+                        android.util.Log.d("SpatialHelper", "Lote encontrado por intersección de predio: $result")
+                        return result
+                    }
+                } while (cursor.moveToNext())
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SpatialHelper", "Error en getLoteForPredio: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+        return null
+    }
+
     fun getDataByProximity(db: SQLiteDatabase, lat: Double, lng: Double, radiusInMeters: Double, limitToOne: Boolean): List<DataItem> {
         val items = mutableListOf<DataItem>()
         val delta = radiusInMeters / 111000.0 

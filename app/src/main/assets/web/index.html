@@ -448,7 +448,7 @@
 
             <!-- Formularios INETER -->
             <form-ficha v-if="formType === 'Ficha'" :data="formData" :localizacion="localizacion" :fotos="fotos"
-                @save="sendData" @cancel="volver" @camera="openCamera"></form-ficha>
+                @save="sendData" @cancel="volver" @camera="openCamera(false)" @camera-frente="openCamera(true)"></form-ficha>
             <form-sujeto-natural v-if="formType === 'SujetoNatural'" :data="formData" @save="sendData" @cancel="volver"
                 @camera="openCamera"></form-sujeto-natural>
             <form-sujeto-juridico v-if="formType === 'SujetoJuridico'" :data="formData" @save="sendData"

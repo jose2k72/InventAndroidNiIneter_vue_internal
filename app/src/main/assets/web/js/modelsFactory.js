@@ -19,7 +19,7 @@ window.ModelsFactory = {
         IdSector: mapData?.sector || '',
         ParcelaCatastrada: '',
         ParcelaSegregada: '',
-        TipoEncuestaCatalog: null,
+        TipoEncuestaCatalog: 1, // 1 = Parcela Unificada
         NombreFinca: '',
         OrigenTierraCatalog: null,
         OrigenTierraOtroText: '',
@@ -27,9 +27,9 @@ window.ModelsFactory = {
         Direccion: '',
         Caserio: '',
         BarrioComarca: '',
-        Manzana: '',
-        NumeroLote: '',
-        TipoUsoCatalog: null,
+        Manzana: mapData?.manzana || '',
+        NumeroLote: mapData?.lote || '',
+        TipoUsoCatalog: 1, // 1 = Privado
         DescripcionUsoCatalog: null,
         DescripcionUsoOtroText: '',
         AreaEstimada: mapData?.area || null,
@@ -67,6 +67,7 @@ window.ModelsFactory = {
         LatLng: { Lat: ctx?.lat || 0, Lng: ctx?.lng || 0 },
         LocalProj: { x: ctx?.x || 0, y: ctx?.y || 0 },
         Imagenes: '',
+        FotoFrente: '',
 
         // Helpers UI
         _MuniNombre: '', _DeptoNombre: '', _CodDepto: '',

@@ -33,6 +33,8 @@ class FormActivity : AppCompatActivity() {
     internal var gpsLatitude: Double = 0.0
     internal var gpsLongitude: Double = 0.0
     internal var localizacion: String = ""
+    internal var manzanaCatalog: String = ""
+    internal var loteCatalog: String = ""
     
     // Variables para edición
     internal var currentEditingId: Int = -1
@@ -54,6 +56,8 @@ class FormActivity : AppCompatActivity() {
         const val EXTRA_MUNICIPIO_CATALOG = "municipio_catalog"
         const val EXTRA_SECTOR_CATALOG = "sector_catalog"
         const val EXTRA_LAYER_NAME = "layer_name"
+        const val EXTRA_MANZANA_CATALOG = "manzana_catalog"
+        const val EXTRA_LOTE_CATALOG = "lote_catalog"
     }
 
     internal var idObject: Int = 0
@@ -105,6 +109,8 @@ class FormActivity : AppCompatActivity() {
         areaCalculada = intent.getDoubleExtra(EXTRA_AREA_CALCULADA, 0.0)
         municipioCatalog = intent.getStringExtra(EXTRA_MUNICIPIO_CATALOG) ?: ""
         sectorCatalog = intent.getStringExtra(EXTRA_SECTOR_CATALOG) ?: ""
+        manzanaCatalog = intent.getStringExtra(EXTRA_MANZANA_CATALOG) ?: ""
+        loteCatalog = intent.getStringExtra(EXTRA_LOTE_CATALOG) ?: ""
         layerName = intent.getStringExtra(EXTRA_LAYER_NAME) ?: "Aceras"
         
         // Detectar si es edición de registro existente

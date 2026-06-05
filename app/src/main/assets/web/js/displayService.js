@@ -37,7 +37,7 @@ window.DisplayService = {
 
         switch (data.Type) {
             case 'Ficha':
-                return data.NombreFinca || localizacionDefault || '-';
+                return data.NoEncuesta || '-';
 
             case 'Familiares':
                 return `Integrantes: ${data.Familiares?.length || 0}`;

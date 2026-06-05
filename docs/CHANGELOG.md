@@ -4,7 +4,20 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
-## [2026-06-04] - Firma Digital, Precarga de GPS y Habilitación de Residencia para Poseedores
+## [2026-06-04] - Firma Digital, Prefijo de Encuesta, Foto de Frente y Ajustes de Ficha
+
+### 📸 Prefijos de Fotos y Foto de Frente del Predio Obligatoria
+- **Prefijo con ID de Encuesta**: Modificación del motor de captura centralizado (`app.js` y `openCamera`) para que al lanzar la cámara nativa se envíe el ID de la encuesta (`NoEncuesta`) como prefijo. Los archivos de imagen resultantes se almacenan como `{NoEncuesta}_{timestamp}.jpg`.
+- **Foto del Frente Obligatoria**: Incorporación del campo `FotoFrente` al modelo de Ficha (`modelsFactory.js`). Se agregó una sección visual interactiva y obligatoria en el formulario de Ficha (`FormFicha.js`) para capturar específicamente esta fotografía.
+- **Aislamiento y Sincronización**: La foto del frente se previsualiza mediante su propia tarjeta dedicada en el formulario (cargada dinámicamente con `Android.loadPhotoAsBase64`), quedando excluida de la galería de fotos adicionales para evitar duplicación. A nivel de base de datos se guarda en su propio campo de texto.
+- **Validación Restrictiva**: Se incorporó a la validación de guardado (`validate()`) el requisito obligatorio de capturar la foto de frente del predio antes de permitir guardar la encuesta.
+
+### 📋 Ajustes de Flujo y Valores por Defecto en Fichas
+- **Flujo Espacial Unificado**: Refactorización de la lógica táctil de `MainActivity.kt` para unificar el comportamiento de clics sobre el polígono cartográfico y clics sobre marcadores preexistentes. Ambos resuelven e inyectan de forma idéntica los datos espaciales (municipio, sector, manzana, lote).
+- **Valores por Defecto**: Configuración inicial automática en `modelsFactory.js` para que toda nueva ficha inicie con Tipo de Encuesta = **Parcela Unificada** y Uso del Predio = **Privado**.
+- **Flexibilización de Obligatoriedad**: Remoción del requisito obligatorio para los campos **Reseña Histórica** y **Origen de la Tierra** en `FormFicha.js`, eliminando alertas visuales y permitiendo guardar sin rellenarlos.
+- **Formato del ID de Encuesta (`NoEncuesta`)**: Modificación del patrón de autogeneración en `FormFicha.js`. Ahora el ID visible ubica el número de lote en la posición final (`${muni}_${sector}_${loc}_${lote}`), mientras que el consecutivo se mantiene de forma interna para ordenamiento en base de datos.
+- **Visualización en el Index Principal**: Modificación de `displayService.js` para que el listado de encuestas muestre el ID de la encuesta (`NoEncuesta`) en lugar del nombre de finca o localización predeterminados.
 
 ### ✍️ Firma Digital del Entrevistado
 - **Captura Táctil de Firma**: Integración de un lienzo `<canvas>` HTML5 interactivo al final del formulario del Entrevistado (`FormEntrevistado.js`) para capturar la firma física del encuestado en el dispositivo.

@@ -56,13 +56,22 @@ window.PhotoService = {
                 data: base64Data ? `data:image/jpeg;base64,${base64Data}` : null
             };
 
-            // Actualizar estado Vue
-            ctx.fotos.value.push(fotoObj);
-            ctx.fotosNuevas.value.push({ ...fotoObj });
+            if (ctx.tomandoFotoFrente && ctx.tomandoFotoFrente.value) {
+                // Asignar al campo FotoFrente
+                if (ctx.formData.value) {
+                    ctx.formData.value.FotoFrente = filename;
+                }
+                ctx.tomandoFotoFrente.value = false;
+                ctx.fotosNuevas.value.push({ ...fotoObj });
+            } else {
+                // Actualizar estado Vue general
+                ctx.fotos.value.push(fotoObj);
+                ctx.fotosNuevas.value.push({ ...fotoObj });
 
-            // Sincronizar campo Imagenes en el modelo actual
-            if (ctx.formData.value) {
-                ctx.formData.value.Imagenes = ctx.fotos.value.map(f => f.name).join(',');
+                // Sincronizar campo Imagenes en el modelo actual
+                if (ctx.formData.value) {
+                    ctx.formData.value.Imagenes = ctx.fotos.value.map(f => f.name).join(',');
+                }
             }
         } catch (error) {
             console.error('❌ Error agregando foto en PhotoService:', error);
@@ -90,6 +99,11 @@ window.PhotoService = {
                 // Marcado de borrado diferido para fotos que ya pertenecen al registro persistido
                 const foto = ctx.fotosOriginales.value.find(f => f.name === filename);
                 if (foto) ctx.fotosMarcadasBorrar.value.push({ ...foto });
+            }
+
+            // Limpiar de FotoFrente si corresponde
+            if (ctx.formData.value && ctx.formData.value.FotoFrente === filename) {
+                ctx.formData.value.FotoFrente = '';
             }
 
             // Quitar de UI y actualizar modelo

@@ -104,6 +104,8 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     fun getGeometry(lng: Double, lat: Double, layer: String = "Predios"): Geometry? = SpatialHelper.getGeometry(readableDatabase, lng, lat, layer)
     fun getMunicipiosAt(lng: Double, lat: Double): String? = SpatialHelper.getMunicipiosAt(readableDatabase, lng, lat)
     fun getSectorAt(lng: Double, lat: Double): String? = SpatialHelper.getSectorAt(readableDatabase, lng, lat)
+    fun getManzanaForPredio(geomPredio: org.locationtech.jts.geom.Geometry): String? = SpatialHelper.getManzanaForPredio(readableDatabase, geomPredio)
+    fun getLoteForPredio(geomPredio: org.locationtech.jts.geom.Geometry): String? = SpatialHelper.getLoteForPredio(readableDatabase, geomPredio)
     fun getDataByProximity(lat: Double, lng: Double, radiusInMeters: Double, limitToOne: Boolean): List<DataItem> = SpatialHelper.getDataByProximity(readableDatabase, lat, lng, radiusInMeters, limitToOne)
     fun getDataInPolygon(predioId: Int): String = SpatialHelper.getDataInPolygon(readableDatabase, predioId)
     fun getDataInAdjacentPolygons(predioId: Int): String = SpatialHelper.getDataInAdjacentPolygons(readableDatabase, predioId)
