@@ -17,10 +17,16 @@ Esta tabla muestra todos los registros de inventario (Encuestas Catastrales, Pro
  - **Optimización**: Utiliza caché de geometrías pre-procesadas e índices espaciales en memoria para una respuesta instantánea, incluso con geometrías complejas.
  - **Utilidad**: Provee una referencia rápida de lo que hay alrededor y permite "clonar" datos de vecinos para no empezar desde cero si las condiciones son similares.
  
-### 1.3 Autodetectar Dirección Colindante
-Permite autocompletar la dirección del propietario en el formulario de Sujeto Natural copiándola de un predio adyacente.
-- **Lógica**: Consulta las encuestas registradas en predios vecinos mediante `Android.getDataInAdjacentPolygons`.
-- **Interacción**: Despliega un listado con las fichas vecinas encontradas, su dirección relativa (N, S, E, O) y sus datos descriptivos. Al seleccionar una de ellas, el sistema copia automáticamente los campos de `Dirección`, `Caserío`, `Barrio/Comarca` y `Municipio` al formulario en curso.
+### 1.3 Autodetectar Dirección por Frente de Calle Recto (Manzana)
+Permite autocompletar la dirección en los formularios (`FormFicha`, `FormSujetoNatural`, `FormEntrevistado`) a partir de fichas catastrales registradas en la misma acera de la manzana, asegurando consistencia de calle.
+- **Lógica de Frente de Calle**: 
+  1. El sistema recupera el polígono de la manzana (`Sectores`) que interseca al predio de origen.
+  2. Extrae el contorno exterior de la manzana y lo subdivide en segmentos individuales con sus respectivos rumbos geométricos (bearings).
+  3. Identifica cuáles segmentos colindan con el predio origen (con tolerancia cartográfica de 2 metros) o localiza el más cercano si se trata de un predio interior.
+  4. Realiza una propagación (en sentido horario y antihorario) acumulando segmentos contiguos para definir la calle recta del predio. El trazado se interrumpe al detectar esquinas si el cambio de dirección entre segmentos contiguos es $>35^\circ$ o si la desviación acumulada total es $>50^\circ$ respecto al segmento de arranque.
+  5. Consulta todas las encuestas guardadas en la manzana y filtra para conservar únicamente aquellas cuyos predios colinden con los segmentos de calle resultantes de la propagación.
+  6. Los resultados se ordenan por orden de cercanía (distancia euclidiana del punto de la encuesta al predio de origen) y se calculan las orientaciones cardinales precisas (N, S, E, O, etc.).
+- **Interacción**: Despliega en la interfaz Vue un listado limpio con las fichas vecinas de la misma calle, mostrando su localización predial, rumbo relativo y la dirección escrita. Al seleccionar una, el sistema auto-completa los campos residenciales/direccionales correspondientes.
 
  ---
  

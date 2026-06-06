@@ -155,14 +155,14 @@ const FormSujetoNatural = {
 
                 <div class="coords-grid">
                     <div class="form-group">
-                       <label>Perfil del Propietario</label>
+                       <label>Perfil del Propietario / Poseedor</label>
                        <div class="selector-display" @click="pedirPerfilPropietarioGlobal">
                            <span v-if="perfilPropietarioName" style="color: #1565C0; font-weight: 600;">{{ perfilPropietarioName }}</span>
                            <span v-else style="color: #757575;">Seleccione un perfil...</span>
                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
                        </div>
                     </div>
-                    <div v-if="formData.PerfilPropietarioCatalog" class="form-group">
+                    <div v-if="formData.PerfilPropietarioCatalog === 1 || formData.PerfilPropietarioCatalog === 2" class="form-group">
                         <label :style="{color: errors.PerfilPropietarioCarnet ? 'red' : 'inherit', fontWeight: errors.PerfilPropietarioCarnet ? 'bold' : 'normal'}">Carnet del Perfil *</label>
                         <input type="text" v-model="formData.PerfilPropietarioCarnet" placeholder="No. de Carnet..." :style="{borderColor: errors.PerfilPropietarioCarnet ? '#d32f2f' : '#ccc'}">
                     </div>
@@ -582,9 +582,15 @@ const FormSujetoNatural = {
                 formData.PerfilPropietarioCarnet = '';
                 delete errors.PerfilPropietarioOtroText;
                 delete errors.PerfilPropietarioCarnet;
-            } else if (newVal !== 7) {
-                formData.PerfilPropietarioOtroText = '';
-                delete errors.PerfilPropietarioOtroText;
+            } else {
+                if (newVal !== 1 && newVal !== 2) {
+                    formData.PerfilPropietarioCarnet = '';
+                    delete errors.PerfilPropietarioCarnet;
+                }
+                if (newVal !== 7) {
+                    formData.PerfilPropietarioOtroText = '';
+                    delete errors.PerfilPropietarioOtroText;
+                }
             }
         });
 
@@ -761,12 +767,14 @@ const FormSujetoNatural = {
                 errors.ProfessionOtroText = true;
                 errorList.push('Especificar Profesión');
             }
-            if (formData.PerfilPropietarioCatalog) {
+            if (formData.PerfilPropietarioCatalog === 1 || formData.PerfilPropietarioCatalog === 2) {
                 if (!formData.PerfilPropietarioCarnet?.trim()) {
                     errors.PerfilPropietarioCarnet = true;
                     errorList.push('Carnet del Perfil');
                 }
-                if (formData.PerfilPropietarioCatalog == 7 && !formData.PerfilPropietarioOtroText?.trim()) {
+            }
+            if (formData.PerfilPropietarioCatalog === 7) {
+                if (!formData.PerfilPropietarioOtroText?.trim()) {
                     errors.PerfilPropietarioOtroText = true;
                     errorList.push('Especificar Perfil');
                 }

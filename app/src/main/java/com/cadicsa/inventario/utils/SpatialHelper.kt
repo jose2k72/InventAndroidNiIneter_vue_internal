@@ -298,6 +298,25 @@ object SpatialHelper {
     }
 
     fun getDataInAdjacentPolygons(db: SQLiteDatabase, predioId: Int): String {
+        fun calculateBearing(c1: Coordinate, c2: Coordinate): Double {
+            val angle = Math.toDegrees(Math.atan2(c2.y - c1.y, c2.x - c1.x))
+            return (360.0 + angle) % 360.0
+        }
+
+        fun angleDifference(a: Double, b: Double): Double {
+            var diff = Math.abs(a - b)
+            if (diff > 180.0) diff = 360.0 - diff
+            return diff
+        }
+
+        data class BoundarySegment(
+            val index: Int,
+            val p1: Coordinate,
+            val p2: Coordinate,
+            val bearing: Double,
+            val geom: org.locationtech.jts.geom.LineString
+        )
+
         var wkbOrignBytes: ByteArray? = null
         db.rawQuery("SELECT wkb FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->
             if (cursor.moveToFirst()) wkbOrignBytes = cursor.getBlob(0)
@@ -306,52 +325,159 @@ object SpatialHelper {
         
         val geomOrigen = GeometryUtil.wkbToGeometry(wkbOrignBytes) ?: return "[]"
         val envelope = geomOrigen.envelopeInternal
-        val expansion = 0.00045 // ~50m
         
-        val queryCandidatos = """
-            SELECT id, wkb, LOCALIZACION 
+        // 1. Buscar la manzana (Sectores) que interseca al predio
+        var geomManzana: JtsGeometry? = null
+        val queryManzana = """
+            SELECT wkb 
             FROM objects 
-            WHERE layer = 'Predios' COLLATE NOCASE
-            AND id != $predioId
-            AND maxX >= ${SpatialNormalizer.format(envelope.minX - expansion)} AND minX <= ${SpatialNormalizer.format(envelope.maxX + expansion)}
-            AND maxY >= ${SpatialNormalizer.format(envelope.minY - expansion)} AND minY <= ${SpatialNormalizer.format(envelope.maxY + expansion)}
+            WHERE layer = 'Sectores' COLLATE NOCASE
+            AND minX <= ${SpatialNormalizer.format(envelope.maxX)} AND maxX >= ${SpatialNormalizer.format(envelope.minX)}
+            AND minY <= ${SpatialNormalizer.format(envelope.maxY)} AND maxY >= ${SpatialNormalizer.format(envelope.minY)}
         """.trimIndent()
         
-        data class PredioInfo(val id: Int, val geom: JtsGeometry, val localizacion: String, val direccionRelativa: String)
-        val prediosConfirmados = mutableListOf<PredioInfo>()
-        
-        db.rawQuery(queryCandidatos, null).use { cursor ->
+        db.rawQuery(queryManzana, null).use { cursor ->
             while (cursor.moveToNext()) {
-                val idC = cursor.getInt(0)
-                val wkbC = cursor.getBlob(1) ?: continue
-                val geomC = GeometryUtil.wkbToGeometry(wkbC) ?: continue
-                if (geomOrigen.intersects(geomC)) {
-                    val dir = GeometryUtil.getRelativeDirectionFromJts(geomOrigen, geomC)
-                    prediosConfirmados.add(PredioInfo(idC, geomC, cursor.getString(2) ?: "", dir))
+                val wkbM = cursor.getBlob(0) ?: continue
+                val geomM = GeometryUtil.wkbToGeometry(wkbM) ?: continue
+                if (geomM.intersects(geomOrigen)) {
+                    geomManzana = geomM
+                    break
                 }
             }
         }
         
-        data class DatoAdyacente(val id: Int, val jsonData: String, val fecha: String, val localizacionPredio: String, val idObject: Int, val direccionRelativa: String, val codigoCamino: String, val latitud: Double, val longitud: Double)
+        val manzanaGeom = geomManzana ?: return "[]"
+        
+        // 2. Convertir el anillo exterior de la manzana a segmentos con bearing
+        val coords = (manzanaGeom as? org.locationtech.jts.geom.Polygon)?.getExteriorRing()?.getCoordinates() ?: return "[]"
+        val segments = mutableListOf<BoundarySegment>()
+        val geomFactory = org.locationtech.jts.geom.GeometryFactory()
+        for (i in 0 until coords.size - 1) {
+            val c1 = coords[i]
+            val c2 = coords[i+1]
+            val bearing = calculateBearing(c1, c2)
+            val segmentGeom = geomFactory.createLineString(arrayOf(c1, c2))
+            segments.add(BoundarySegment(i, c1, c2, bearing, segmentGeom))
+        }
+        
+        val numSegments = segments.size
+        if (numSegments == 0) return "[]"
+        
+        // 3. Identificar segmentos del borde que toca el predio
+        val tolerance = 2e-5 // ~2 metros
+        val startIndices = segments.filter { geomOrigen.distance(it.geom) < tolerance }.map { it.index }
+        
+        val finalStartIndices = if (startIndices.isNotEmpty()) {
+            startIndices
+        } else {
+            // Predio interior: encontrar el segmento más cercano
+            val closest = segments.minByOrNull { geomOrigen.distance(it.geom) }
+            if (closest != null) listOf(closest.index) else emptyList()
+        }
+        
+        val validStreetSegmentIndices = mutableSetOf<Int>()
+        
+        for (startIdx in finalStartIndices) {
+            validStreetSegmentIndices.add(startIdx)
+            val startSegment = segments[startIdx]
+            
+            // Dirección +1
+            var prevSegment = startSegment
+            var currIdx = (startIdx + 1) % numSegments
+            while (currIdx != startIdx) {
+                val currSegment = segments[currIdx]
+                val diffFromPrev = angleDifference(currSegment.bearing, prevSegment.bearing)
+                val diffFromStart = angleDifference(currSegment.bearing, startSegment.bearing)
+                
+                if (diffFromPrev > 35.0 || diffFromStart > 50.0) break
+                
+                validStreetSegmentIndices.add(currIdx)
+                prevSegment = currSegment
+                currIdx = (currIdx + 1) % numSegments
+            }
+            
+            // Dirección -1
+            prevSegment = startSegment
+            currIdx = (startIdx - 1 + numSegments) % numSegments
+            while (currIdx != startIdx) {
+                val currSegment = segments[currIdx]
+                val diffFromPrev = angleDifference(currSegment.bearing, prevSegment.bearing)
+                val diffFromStart = angleDifference(currSegment.bearing, startSegment.bearing)
+                
+                if (diffFromPrev > 35.0 || diffFromStart > 50.0) break
+                
+                validStreetSegmentIndices.add(currIdx)
+                prevSegment = currSegment
+                currIdx = (currIdx - 1 + numSegments) % numSegments
+            }
+        }
+        
+        data class DatoAdyacente(
+            val id: Int, 
+            val jsonData: String, 
+            val fecha: String, 
+            val localizacionPredio: String, 
+            val idObject: Int, 
+            val direccionRelativa: String, 
+            val latitud: Double, 
+            val longitud: Double, 
+            val distance: Double
+        )
         val listaDatos = mutableListOf<DatoAdyacente>()
         
-        for (info in prediosConfirmados) {
-            val env = info.geom.envelopeInternal
-            val queryDatos = "SELECT ID, DATOS, FECHA, LATITUD, LONGITUD FROM DATOS WHERE LATITUD BETWEEN ${SpatialNormalizer.format(env.minY)} AND ${SpatialNormalizer.format(env.maxY)} AND LONGITUD BETWEEN ${SpatialNormalizer.format(env.minX)} AND ${SpatialNormalizer.format(env.maxX)}"
-            db.rawQuery(queryDatos, null).use { cursorD ->
-                while (cursorD.moveToNext()) {
-                    val lat = cursorD.getDouble(3)
-                    val lon = cursorD.getDouble(4)
-                    if (GeometryUtil.isPointInPolygon(lat, lon, info.geom)) {
-                        val jsonData = cursorD.getString(1) ?: "{}"
-                        val codigoCamino = try { org.json.JSONObject(jsonData).optString("CodigoCamino") ?: "" } catch (e: Exception) { "" }
-                        listaDatos.add(DatoAdyacente(cursorD.getInt(0), jsonData, cursorD.getString(2) ?: "", info.localizacion, info.id, info.direccionRelativa, codigoCamino, lat, lon))
+        // 4. Consultar encuestas y predios de la manzana en una única consulta
+        val envManzana = manzanaGeom.envelopeInternal
+        val queryDatos = """
+            SELECT d.ID, d.DATOS, d.FECHA, d.LATITUD, d.LONGITUD, o.LOCALIZACION, o.id, o.wkb
+            FROM DATOS d
+            JOIN objects o ON d.IDOBJECT = o.id
+            WHERE o.layer = 'Predios' COLLATE NOCASE
+              AND o.id != $predioId
+              AND o.maxX >= ${SpatialNormalizer.format(envManzana.minX)} AND o.minX <= ${SpatialNormalizer.format(envManzana.maxX)}
+              AND o.maxY >= ${SpatialNormalizer.format(envManzana.minY)} AND o.minY <= ${SpatialNormalizer.format(envManzana.maxY)}
+        """.trimIndent()
+        
+        db.rawQuery(queryDatos, null).use { cursorD ->
+            while (cursorD.moveToNext()) {
+                val idD = cursorD.getInt(0)
+                val jsonData = cursorD.getString(1) ?: "{}"
+                val fecha = cursorD.getString(2) ?: ""
+                val lat = cursorD.getDouble(3)
+                val lon = cursorD.getDouble(4)
+                val idObj = cursorD.getInt(6)
+                val wkbC = cursorD.getBlob(7) ?: continue
+                
+                val geomC = GeometryUtil.wkbToGeometry(wkbC) ?: continue
+                
+                // Verificar si el predio candidato toca algún segmento de la calle recta
+                var touchesStreet = false
+                for (idx in validStreetSegmentIndices) {
+                    if (geomC.distance(segments[idx].geom) < tolerance) {
+                        touchesStreet = true
+                        break
+                    }
+                }
+                
+                if (touchesStreet) {
+                    val jsonObject = try { org.json.JSONObject(jsonData) } catch (e: Exception) { null }
+                    val isFicha = jsonObject?.optString("Type") == "Ficha"
+                    if (isFicha) {
+                        val geomPoint: JtsGeometry = GeometryUtil.createPoint(lat, lon)
+                        val dir = GeometryUtil.getRelativeDirectionFromJts(geomOrigen, geomPoint)
+                        val dist = geomOrigen.distance(geomPoint)
+                        val localizacion = jsonObject?.optString("Localizacion")?.takeIf { it.isNotEmpty() }
+                            ?: jsonObject?.optString("ParcelaCatastrada")?.takeIf { it.isNotEmpty() }
+                            ?: ""
+                        
+                        listaDatos.add(DatoAdyacente(idD, jsonData, fecha, localizacion, idObj, dir, lat, lon, dist))
                     }
                 }
             }
         }
         
-        listaDatos.sortWith(compareBy({ it.localizacionPredio }, { it.codigoCamino }))
+        listaDatos.sortBy { it.distance }
+        
         val builder = StringBuilder("[")
         for (dato in listaDatos) {
             builder.append("{\"Id\":${dato.id},\"Data\": ${dato.jsonData},\"IdObject\":${dato.idObject},\"Fecha\": \"${dato.fecha}\",\"LocalizacionPredio\": \"${dato.localizacionPredio}\",\"DireccionRelativa\": \"${dato.direccionRelativa}\", \"Latitud\": ${dato.latitud}, \"Longitud\": ${dato.longitud}},")

@@ -4,6 +4,20 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-06-05] - Reglas de Perfil y Autodetección Avanzada de Dirección por Manzana
+
+### 📍 Autodetección Avanzada por Frente de Calle Recto (`SpatialHelper.kt`)
+- **Filtrado por Manzana (`Sectores`)**: Se sustituyó el análisis espacial por buffer simple para predios colindantes por un análisis de manzana completa. El sistema identifica la manzana correspondiente al predio de origen y procesa todos sus puntos de encuesta.
+- **Identificación de Calle y Propagación**: Se extrae el contorno exterior de la manzana y se divide en segmentos JTS. El sistema localiza los segmentos que toca el predio de origen (o el más cercano si es un predio interior) y se propaga en ambos rumbos.
+- **Detención en Esquinas**: La propagación se interrumpe si hay un cambio brusco de bearing ($>35^\circ$ entre segmentos contiguos) o una curva prolongada ($>50^\circ$ acumulada respecto al inicial), lo que delimita el frente de calle recto del predio.
+- **Filtrado de Fichas**: Solo se listan y devuelven las fichas catastrales asociadas a predios que intersecan físicamente este tramo de calle recto, ordenadas cronológicamente por cercanía euclidiana.
+
+### 👤 Reglas del Perfil de Propietario / Poseedor (`FormSujetoNatural.js`)
+- **Restricción de Carnet**: Se eliminó la obligatoriedad general del campo `"Carnet del Perfil"`. Ahora el campo solo es visible y requerido en el formulario si el perfil seleccionado es **Desmovilizado (ID 1)** o **Retirado (ID 2)**; para cualquier otro perfil, el campo se oculta y limpia automáticamente.
+- **Título de Sección**: Se actualizó el título de la tarjeta en el formulario a `"Perfil del Propietario / Poseedor"`.
+
+---
+
 ## [2026-06-04] - Firma Digital, Prefijo de Encuesta, Foto de Frente y Ajustes de Ficha
 
 ### 📸 Prefijos de Fotos y Foto de Frente del Predio Obligatoria
