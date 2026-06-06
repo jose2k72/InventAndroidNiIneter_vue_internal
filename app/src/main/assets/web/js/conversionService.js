@@ -53,7 +53,7 @@ window.ConversionService = {
         // Si el informante es Propietario (1) -> Destino Propietario (1)
         // Cualquier otro rol (2-Poseedor, 3-Representante, etc) -> Destino Poseedor (2)
         nuevo.DerehoParcelaCatalog = (origen.RelacionConParcelaCatalog === 1) ? 1 : 2;
-        nuevo.NoPersonasSimilarDerecho = 1; // Valor inicial lógico
+        nuevo.NoPersonasSimilarDerecho = 0; // Valor inicial lógico
 
         // 3. Regla de Higiene: Solo copiar relación si el destino es Poseedor
         if (nuevo.DerehoParcelaCatalog === 2) {
