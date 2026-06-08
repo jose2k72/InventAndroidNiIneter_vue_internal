@@ -18,6 +18,7 @@
     
     <!-- Permisos de cámara -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     
     <!-- Permisos de red -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -65,6 +66,12 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.InventarioAceras" />
+
+        <activity
+            android:name=".CustomCameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <!-- FileProvider para cámara -->
         <provider

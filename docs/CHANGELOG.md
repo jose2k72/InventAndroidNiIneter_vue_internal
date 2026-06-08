@@ -4,7 +4,12 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
-## [2026-06-08] - Simplificación de Uniones Catastrales y Uniones Transitivas
+## [2026-06-08] - Simplificación de Uniones Catastrales, Foto de Frente Obligatoria y Autoscroll
+
+### 📸 Validación de Foto de Frente y Autoscroll en Ficha (`FormFicha.js`)
+- **Validación Robusta de Foto del Frente**: Se blindó la validación del campo `FotoFrente` para impedir el guardado de la ficha si este campo contiene valores vacíos, nulos (`null`), indefinidos (`undefined`) o cadenas compuestas de puros espacios, solucionando el bug que permitía guardar fichas incompletas.
+- **Limpieza Reactiva de Errores**: Se incorporó un observador (`Vue.watch`) para remover en tiempo real el indicador de error visual en rojo tan pronto como el encuestador asigne una foto de frente válida.
+- **Desplazamiento Suave al Primer Campo Inválido (Autoscroll & Focus)**: Se añadieron descriptores `id="..."` a todos los inputs y selectores validados del formulario. Al pulsar "Guardar" y detectarse errores de validación, la página ejecuta un scroll suave (`scrollIntoView` centrado) directamente hacia el primer control fallido (en orden de aparición visual) y le otorga foco inmediato al input.
 
 ### 🔗 Simplificación de Unión con Predio Master (`SpatialHelper.kt`)
 - **Filtro Espacial de Colindancia**: Se eliminó la compleja lógica de bearings de manzana y callejones de calle recta. Ahora la adyacencia de predios candidatos en una manzana se define de manera más directa si pertenecen a la misma manzana (`geomC.intersects(manzanaGeom)`) y son colindantes físicos con el predio actual (`geomC.distance(geomOrigen) < tolerance`, tolerancia de ~2 metros).

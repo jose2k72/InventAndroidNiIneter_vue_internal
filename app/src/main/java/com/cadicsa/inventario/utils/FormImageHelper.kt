@@ -24,6 +24,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import android.app.Activity
+import com.cadicsa.inventario.CustomCameraActivity
+
 class FormImageHelper(private val activity: FormActivity) {
 
     private val TAG = "FormImageHelper"
@@ -33,11 +36,16 @@ class FormImageHelper(private val activity: FormActivity) {
     var currentPhotoPrefix: String? = null
 
     // Registradores de resultados (deben registrarse durante la inicialización de la Actividad)
-    private val cameraLauncher: ActivityResultLauncher<Uri> = activity.registerForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            processCapturedPhoto()
+    private val cameraLauncher = activity.registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val photoName = result.data?.getStringExtra(CustomCameraActivity.RESULT_PHOTO_NAME)
+            if (!photoName.isNullOrEmpty()) {
+                currentPhotoName = photoName
+                currentPhotoPath = File(AppConfig.getStorageDirectory(), photoName).absolutePath
+                processCapturedPhoto()
+            }
         }
     }
 
@@ -109,12 +117,10 @@ class FormImageHelper(private val activity: FormActivity) {
     private fun launchCamera() {
         val photoFile = createImageFile()
         photoFile?.let { file ->
-            val photoUri: Uri = FileProvider.getUriForFile(
-                activity,
-                "${activity.packageName}.fileprovider",
-                file
-            )
-            cameraLauncher.launch(photoUri)
+            val intent = Intent(activity, CustomCameraActivity::class.java).apply {
+                putExtra(CustomCameraActivity.EXTRA_OUTPUT_PATH, file.absolutePath)
+            }
+            cameraLauncher.launch(intent)
         }
     }
 

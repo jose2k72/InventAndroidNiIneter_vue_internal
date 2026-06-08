@@ -33,7 +33,7 @@ const FormFicha = {
                 </div>
                 
                 <!-- Municipio: esquema de FormPropietarioNatural -->
-                <div class="form-group">
+                <div id="MunicipioCatalog" class="form-group">
                     <label :style="{color: errors.MunicipioCatalog ? 'red' : 'inherit', fontWeight: errors.MunicipioCatalog ? 'bold' : 'normal'}">Municipio *</label>
                     
                     <!-- Trigger para abrir el selector (solo si no viene del mapa) -->
@@ -63,7 +63,7 @@ const FormFicha = {
 
                 <div class="form-group">
                     <label :style="{color: errors.Direccion ? 'red' : 'inherit', fontWeight: errors.Direccion ? 'bold' : 'normal'}">Dirección de la Parcela *</label>
-                    <textarea v-model="formData.Direccion" rows="2" placeholder="Dirección exacta o descripción del lugar"></textarea>
+                    <textarea id="Direccion" v-model="formData.Direccion" rows="2" placeholder="Dirección exacta o descripción del lugar"></textarea>
                 </div>
 
                 <div class="coords-grid">
@@ -105,7 +105,7 @@ const FormFicha = {
                 
                 <div class="form-group">
                     <label :style="{color: errors.TipoEncuestaCatalog ? 'red' : 'inherit', fontWeight: errors.TipoEncuestaCatalog ? 'bold' : 'normal'}">Tipo de Encuesta *</label>
-                    <select v-model.number="formData.TipoEncuestaCatalog">
+                    <select id="TipoEncuestaCatalog" v-model.number="formData.TipoEncuestaCatalog">
                         <option :value="null" disabled selected>Seleccione...</option>
                         <option v-for="opt in catalogos.TipoEncuesta" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                     </select>
@@ -113,7 +113,7 @@ const FormFicha = {
 
                 <div class="form-group">
                     <label :style="{color: errors.TipoUsoCatalog ? 'red' : 'inherit', fontWeight: errors.TipoUsoCatalog ? 'bold' : 'normal'}">Uso del Predio *</label>
-                    <select v-model.number="formData.TipoUsoCatalog">
+                    <select id="TipoUsoCatalog" v-model.number="formData.TipoUsoCatalog">
                         <option :value="null" disabled selected>Seleccione...</option>
                         <option v-for="opt in catalogos.TipoUso" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                     </select>
@@ -121,7 +121,7 @@ const FormFicha = {
 
                 <div class="form-group">
                     <label :style="{color: errors.DescripcionUsoCatalog ? 'red' : 'inherit', fontWeight: errors.DescripcionUsoCatalog ? 'bold' : 'normal'}">Descripción del Uso *</label>
-                    <div class="selector-display" @click="pedirDescripcionUsoGlobal" :style="{borderColor: errors.DescripcionUsoCatalog ? '#d32f2f' : '#ccc'}">
+                    <div id="DescripcionUsoCatalog" class="selector-display" @click="pedirDescripcionUsoGlobal" :style="{borderColor: errors.DescripcionUsoCatalog ? '#d32f2f' : '#ccc'}">
                         <span v-if="descripcionUsoName" style="color: #1565C0; font-weight: 600;">{{ descripcionUsoName }}</span>
                         <span v-else style="color: #757575;">Seleccione descripción...</span>
                         <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
@@ -130,12 +130,12 @@ const FormFicha = {
 
                 <div v-if="formData.DescripcionUsoCatalog === 5" class="form-group sub-section">
                     <label :style="{color: errors.DescripcionUsoOtroText ? 'red' : 'inherit'}">Especifique Uso Mixto *</label>
-                    <textarea v-model="formData.DescripcionUsoOtroText" rows="3" placeholder="Detalle los múltiples usos de la parcela..."></textarea>
+                    <textarea id="DescripcionUsoOtroText" v-model="formData.DescripcionUsoOtroText" rows="3" placeholder="Detalle los múltiples usos de la parcela..."></textarea>
                 </div>
 
                 <div class="form-group">
                     <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra *</label>
-                    <div class="selector-display" @click="pedirOrigenTierraGlobal">
+                    <div id="OrigenTierraCatalog" class="selector-display" @click="pedirOrigenTierraGlobal">
                         <span v-if="origenTierraName" style="color: #1565C0; font-weight: 600;">{{ origenTierraName }}</span>
                         <span v-else style="color: #757575;">Seleccione origen...</span>
                         <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
@@ -145,12 +145,12 @@ const FormFicha = {
                 <!-- Especificar Origen si es "Otros" (ID 1) -->
                 <div v-if="formData.OrigenTierraCatalog === 1" class="form-group sub-section">
                     <label :style="{color: errors.OrigenTierraOtroText ? 'red' : 'inherit', fontWeight: errors.OrigenTierraOtroText ? 'bold' : 'normal'}">Especifique Origen *</label>
-                    <input type="text" v-model="formData.OrigenTierraOtroText" placeholder="Detalle el origen de la tierra...">
+                    <input id="OrigenTierraOtroText" type="text" v-model="formData.OrigenTierraOtroText" placeholder="Detalle el origen de la tierra...">
                 </div>
 
                 <div class="form-group">
                     <label :style="{color: errors.ResenaHistorica ? 'red' : 'inherit', fontWeight: errors.ResenaHistorica ? 'bold' : 'normal'}">Reseña Histórica *</label>
-                    <textarea v-model="formData.ResenaHistorica" rows="9" placeholder="Documentación histórica del predio..."></textarea>
+                    <textarea id="ResenaHistorica" v-model="formData.ResenaHistorica" rows="9" placeholder="Documentación histórica del predio..."></textarea>
                 </div>
 
                 <div class="coords-grid">
@@ -160,7 +160,7 @@ const FormFicha = {
                     </div>
                     <div class="form-group">
                         <label :style="{color: errors.UnidadMedidaAreaEstimadaCatalog ? 'red' : 'inherit', fontWeight: errors.UnidadMedidaAreaEstimadaCatalog ? 'bold' : 'normal'}">Unidad *</label>
-                        <select v-model.number="formData.UnidadMedidaAreaEstimadaCatalog" :disabled="formData._isFromMap" :style="{backgroundColor: formData._isFromMap ? '#f5f5f5' : 'white'}">
+                        <select id="UnidadMedidaAreaEstimadaCatalog" v-model.number="formData.UnidadMedidaAreaEstimadaCatalog" :disabled="formData._isFromMap" :style="{backgroundColor: formData._isFromMap ? '#f5f5f5' : 'white'}">
                              <option :value="null" disabled selected>Seleccione...</option>
                              <option v-for="opt in catalogos.UnidadMedida" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                         </select>
@@ -260,7 +260,7 @@ const FormFicha = {
                     <div class="coords-grid">
                         <div class="form-group">
                             <label :style="{color: errors.NoFinca_NAP ? 'red' : 'inherit', fontWeight: errors.NoFinca_NAP ? 'bold' : 'normal'}">No. Finca / NAP *</label>
-                            <input type="text" v-model="formData.NoFinca_NAP">
+                            <input id="NoFinca_NAP" type="text" v-model="formData.NoFinca_NAP">
                         </div>
                         <div class="form-group">
                             <label :style="{color: errors.Tomo ? 'red' : 'inherit', fontWeight: errors.Tomo ? 'bold' : 'normal'}">Tomo</label>
@@ -281,7 +281,7 @@ const FormFicha = {
             </div>
 
             <!-- SECCIÓN 5: DOCUMENTOS -->
-            <div class="section">
+            <div id="Documentos" class="section">
                 <h3>📂 Documentos</h3>
                 
                 <div class="form-group checkbox-group">
@@ -371,7 +371,7 @@ const FormFicha = {
                 <div v-if="formData.TieneConflicto">
                     <div class="form-group">
                         <label :style="{color: errors.ClaseConflictoCatalog ? 'red' : 'inherit', fontWeight: errors.ClaseConflictoCatalog ? 'bold' : 'normal'}">Clase de Conflicto *</label>
-                        <div class="selector-display" @click="pedirClaseConflictoGlobal" :style="{borderColor: errors.ClaseConflictoCatalog ? '#d32f2f' : '#ccc'}">
+                        <div id="ClaseConflictoCatalog" class="selector-display" @click="pedirClaseConflictoGlobal" :style="{borderColor: errors.ClaseConflictoCatalog ? '#d32f2f' : '#ccc'}">
                             <span v-if="conflictoName" style="color: #1565C0; font-weight: 600;">{{ conflictoName }}</span>
                             <span v-else style="color: #757575;">Seleccione clase...</span>
                             <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
@@ -380,13 +380,13 @@ const FormFicha = {
 
                     <div v-if="formData.ClaseConflictoCatalog === 13" class="form-group" style="margin-top: 10px;">
                         <label :style="{color: errors.ClaseConflictoOtroText ? 'red' : 'inherit', fontWeight: errors.ClaseConflictoOtroText ? 'bold' : 'normal'}">Especifique otro conflicto *</label>
-                        <input type="text" v-model="formData.ClaseConflictoOtroText" :style="{borderColor: errors.ClaseConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa el conflicto...">
+                        <input id="ClaseConflictoOtroText" type="text" v-model="formData.ClaseConflictoOtroText" :style="{borderColor: errors.ClaseConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa el conflicto...">
                     </div>
 
                     <!-- Vía de Gestión de Conflictos (Obligatoria si hay conflicto) -->
                     <div class="form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
                         <label :style="{color: errors.GestionConflictoCatalog ? 'red' : 'inherit', fontWeight: errors.GestionConflictoCatalog ? 'bold' : 'normal'}">Vía de Gestión de Conflictos *</label>
-                        <div class="selector-display" @click="pedirGestionConflictoGlobal" :style="{borderColor: errors.GestionConflictoCatalog ? '#d32f2f' : '#ccc'}">
+                        <div id="GestionConflictoCatalog" class="selector-display" @click="pedirGestionConflictoGlobal" :style="{borderColor: errors.GestionConflictoCatalog ? '#d32f2f' : '#ccc'}">
                             <span v-if="gestionConflictoName" style="color: #1565C0; font-weight: 600;">{{ gestionConflictoName }}</span>
                             <span v-else style="color: #757575;">Seleccione vía de gestión...</span>
                             <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
@@ -395,7 +395,7 @@ const FormFicha = {
 
                     <div v-if="formData.GestionConflictoCatalog === 6" class="form-group" style="margin-top: 10px;">
                         <label :style="{color: errors.GestionConflictoOtroText ? 'red' : 'inherit', fontWeight: errors.GestionConflictoOtroText ? 'bold' : 'normal'}">Especifique otra gestión *</label>
-                        <input type="text" v-model="formData.GestionConflictoOtroText" :style="{borderColor: errors.GestionConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa la vía de gestión...">
+                        <input id="GestionConflictoOtroText" type="text" v-model="formData.GestionConflictoOtroText" :style="{borderColor: errors.GestionConflictoOtroText ? '#d32f2f' : '#ccc'}" placeholder="Describa la vía de gestión...">
                     </div>
                 </div>
             </div>
@@ -410,7 +410,7 @@ const FormFicha = {
             </div>
 
             <!-- Foto del Frente del Predio (Obligatoria) -->
-            <div class="section" style="border: 2px dashed #1565C0; border-radius: 8px; padding: 15px; background-color: #fafdff;">
+            <div id="FotoFrente" class="section" style="border: 2px dashed #1565C0; border-radius: 8px; padding: 15px; background-color: #fafdff;">
                 <h3 :style="{color: errors.FotoFrente ? 'red' : '#1565C0'}">📸 Foto del Frente del Predio *</h3>
                 
                 <div v-if="fotoFrenteBase64" class="photo-item" style="max-width: 250px; margin: 0 auto 10px auto;">
@@ -498,6 +498,7 @@ const FormFicha = {
 
         // Limpieza de errores al escribir
         Vue.watch(() => formData.Direccion, (val) => { if (val?.trim()) delete errors.Direccion; });
+        Vue.watch(() => formData.FotoFrente, (val) => { if (val && val !== 'null' && val !== 'undefined' && val.trim()) delete errors.FotoFrente; });
         Vue.watch(() => formData.DescripcionUsoCatalog, (val) => { if (val) delete errors.DescripcionUsoCatalog; });
         Vue.watch(() => formData.DescripcionUsoOtroText, (val) => { if (val?.trim()) delete errors.DescripcionUsoOtroText; });
         Vue.watch(() => formData.OrigenTierraCatalog, (val) => { if (val) delete errors.OrigenTierraCatalog; });
@@ -940,7 +941,7 @@ const FormFicha = {
             if (!formData.MunicipioCatalog) { errors.MunicipioCatalog = true; isValid = false; }
 
             if (!formData.Direccion?.trim()) { errors.Direccion = true; isValid = false; }
-            if (!formData.FotoFrente) { errors.FotoFrente = true; isValid = false; }
+            if (!formData.FotoFrente || formData.FotoFrente === 'null' || formData.FotoFrente === 'undefined' || !formData.FotoFrente.trim()) { errors.FotoFrente = true; isValid = false; }
             if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
             if (!formData.DescripcionUsoCatalog) { errors.DescripcionUsoCatalog = true; isValid = false; }
@@ -1067,6 +1068,34 @@ const FormFicha = {
             if (validate()) emit('save', JSON.parse(JSON.stringify(formData)));
             else {
                 if (typeof Android !== 'undefined' && Android.showToast) Android.showToast('⚠️ Faltan datos marcados en rojo.');
+                
+                // Orden de campos para posicionar el scroll en el primer error visible
+                const errorOrder = [
+                    'MunicipioCatalog', 'Direccion', 'TipoEncuestaCatalog', 'TipoUsoCatalog', 
+                    'DescripcionUsoCatalog', 'DescripcionUsoOtroText', 'OrigenTierraCatalog', 
+                    'OrigenTierraOtroText', 'ResenaHistorica', 'UnidadMedidaAreaEstimadaCatalog',
+                    'Documentos', 'NoFinca_NAP', 'ClaseConflictoCatalog', 'ClaseConflictoOtroText', 
+                    'GestionConflictoCatalog', 'GestionConflictoOtroText', 'FotoFrente'
+                ];
+
+                const firstErrorKey = errorOrder.find(key => {
+                    if (key === 'Documentos') {
+                        return errors.Documentos || Object.keys(errors).some(k => k.startsWith('Doc'));
+                    }
+                    return errors[key];
+                });
+
+                if (firstErrorKey) {
+                    const el = document.getElementById(firstErrorKey);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (el.focus && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')) {
+                            el.focus();
+                        }
+                        return;
+                    }
+                }
+
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };

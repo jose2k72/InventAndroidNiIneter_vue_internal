@@ -97,6 +97,16 @@ dependencies {
     implementation("org.locationtech.jts:jts-core:1.19.0")
     implementation("org.locationtech.proj4j:proj4j:1.3.0")
     
+    // CameraX (Visor en vivo y captura)
+    val cameraxVersion = "1.3.1"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // Google ML Kit Text Recognition (Reconocimiento de texto local/offline)
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+    
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
