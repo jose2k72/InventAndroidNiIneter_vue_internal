@@ -741,11 +741,51 @@ window.onOcrResult = (fieldName, extractedText) => {
                 }
             }
         } else if (fieldName === 'FechaRegistro' || fieldName === 'FechaAdquisicion') {
-            let cleaned = extractedText.replace(/[^0-9\/\-]/g, '');
-            cleaned = cleaned.replace(/-/g, '/');
-            if (/^\d{8}$/.test(cleaned)) {
-                cleaned = `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}/${cleaned.substring(4)}`;
+            let text = extractedText.trim().toUpperCase();
+            text = text.replace(/[\-\.]/g, '/');
+            
+            const monthsMap = {
+                'ENE': '01', 'ENERO': '01',
+                'FEB': '02', 'FEBRERO': '02',
+                'MAR': '03', 'MARZO': '03',
+                'ABR': '04', 'ABRIL': '04',
+                'MAY': '05', 'MAYO': '05',
+                'JUN': '06', 'JUNIO': '06',
+                'JUL': '07', 'JULIO': '07',
+                'AGO': '08', 'AGOSTO': '08',
+                'SEP': '09', 'SEPTIEMBRE': '09', 'SETIEMBRE': '09',
+                'OCT': '10', 'OCTUBRE': '10',
+                'NOV': '11', 'NOVIEMBRE': '11',
+                'DIC': '12', 'DICIEMBRE': '12'
+            };
+            
+            const parts = text.split('/').map(p => p.trim()).filter(p => p.length > 0);
+            let cleaned = '';
+            
+            if (parts.length >= 3) {
+                const day = parts[0].padStart(2, '0');
+                const year = parts[parts.length - 1];
+                let monthRaw = parts[1];
+                let monthStr = '';
+                if (/^\d+$/.test(monthRaw)) {
+                    monthStr = monthRaw.padStart(2, '0');
+                } else if (monthsMap[monthRaw]) {
+                    monthStr = monthsMap[monthRaw];
+                }
+                
+                if (/^\d{2}$/.test(day) && /^\d{2}$/.test(monthStr) && /^\d{4}$/.test(year)) {
+                    cleaned = `${day}/${monthStr}/${year}`;
+                }
             }
+            
+            if (!cleaned) {
+                cleaned = extractedText.replace(/[^0-9\/\-]/g, '');
+                cleaned = cleaned.replace(/-/g, '/');
+                if (/^\d{8}$/.test(cleaned)) {
+                    cleaned = `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}/${cleaned.substring(4)}`;
+                }
+            }
+            
             vueAppContext.formData.value[fieldName] = cleaned;
             if (typeof Android !== 'undefined' && Android.showToast) {
                 Android.showToast(`✅ Fecha de ${fieldName === 'FechaRegistro' ? 'registro' : 'adquisición'} autocompletada.`);

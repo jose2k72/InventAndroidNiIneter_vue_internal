@@ -353,6 +353,49 @@ class CustomCameraActivity : AppCompatActivity() {
         }
     }
 
+    private fun parseOcrDate(text: String): String? {
+        val cleanText = text.trim().uppercase()
+        
+        // Regex para detectar fechas con mes numérico o en texto, con delimitadores opcionales y posibles partes intermedias
+        val regex = Regex(
+            "\\b(\\d{1,2})[\\/\\-\\.\\s]+([A-Z0-9]+)(?:[\\/\\-\\.\\s]+[A-Z0-9]+)*[\\/\\-\\.\\s]+(\\d{4})\\b",
+            RegexOption.IGNORE_CASE
+        )
+        
+        val match = regex.find(cleanText) ?: return null
+        
+        val dayStr = match.groupValues[1].padStart(2, '0')
+        val monthRaw = match.groupValues[2]
+        val yearStr = match.groupValues[3]
+        
+        val monthsMap = mapOf(
+            "ENE" to "01", "ENERO" to "01",
+            "FEB" to "02", "FEBRERO" to "02",
+            "MAR" to "03", "MARZO" to "03",
+            "ABR" to "04", "ABRIL" to "04",
+            "MAY" to "05", "MAYO" to "05",
+            "JUN" to "06", "JUNIO" to "06",
+            "JUL" to "07", "JULIO" to "07",
+            "AGO" to "08", "AGOSTO" to "08",
+            "SEP" to "09", "SEPTIEMBRE" to "09", "SETIEMBRE" to "09",
+            "OCT" to "10", "OCTUBRE" to "10",
+            "NOV" to "11", "NOVIEMBRE" to "11",
+            "DIC" to "12", "DICIEMBRE" to "12"
+        )
+        
+        val monthStr = if (monthRaw.all { it.isDigit() }) {
+            monthRaw.padStart(2, '0')
+        } else {
+            monthsMap[monthRaw] ?: return null
+        }
+        
+        val dayInt = dayStr.toIntOrNull() ?: return null
+        val monthInt = monthStr.toIntOrNull() ?: return null
+        if (dayInt !in 1..31 || monthInt !in 1..12) return null
+        
+        return "$dayStr/$monthStr/$yearStr"
+    }
+
     private fun parseOcrTextWithSizes(visionText: com.google.mlkit.vision.text.Text, targetField: String): String {
         val ignorePatterns = listOf(
             "REPUBLICA", "NICARAGUA", "CONSEJO", "SUPREMO", "CEDULA", 
@@ -376,9 +419,12 @@ class CustomCameraActivity : AppCompatActivity() {
 
         if (linesWithHeights.isEmpty()) return ""
 
+        // Priorizar el texto más grande de forma general para todos los campos
+        val sortedLines = linesWithHeights.sortedByDescending { it.second }
+
         return when (targetField) {
             "Tomo", "Folio", "Asiento", "NoFinca_NAP" -> {
-                for (item in linesWithHeights) {
+                for (item in sortedLines) {
                     val regex = Regex("\\d+")
                     val match = regex.find(item.first)
                     if (match != null) return match.value
@@ -387,20 +433,26 @@ class CustomCameraActivity : AppCompatActivity() {
             }
             "Identificacion" -> {
                 val cedulaRegex = Regex("\\b\\d{3}-?\\d{6}-?\\d{4}[A-Z]\\b", RegexOption.IGNORE_CASE)
-                for (item in linesWithHeights) {
+                for (item in sortedLines) {
                     val match = cedulaRegex.find(item.first)
                     if (match != null) return match.value.uppercase()
                 }
                 val rucRegex = Regex("\\b[A-Z]-?\\d{12,13}\\b", RegexOption.IGNORE_CASE)
-                for (item in linesWithHeights) {
+                for (item in sortedLines) {
                     val match = rucRegex.find(item.first)
                     if (match != null) return match.value.uppercase()
                 }
-                linesWithHeights.maxByOrNull { it.second }?.first ?: ""
+                sortedLines.firstOrNull()?.first ?: ""
+            }
+            "FechaRegistro", "FechaAdquisicion" -> {
+                for (item in sortedLines) {
+                    val parsedDate = parseOcrDate(item.first)
+                    if (parsedDate != null) return parsedDate
+                }
+                sortedLines.firstOrNull()?.first ?: ""
             }
             else -> {
-                // Para Nombres y Apellidos, retornar la línea con el tamaño de letra más grande
-                linesWithHeights.maxByOrNull { it.second }?.first ?: ""
+                sortedLines.firstOrNull()?.first ?: ""
             }
         }
     }
