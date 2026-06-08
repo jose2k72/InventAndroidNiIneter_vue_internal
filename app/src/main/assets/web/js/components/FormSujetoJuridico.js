@@ -52,12 +52,25 @@ const FormSujetoJuridico = {
                 
                 <div class="coords-grid">
                     <div class="form-group">
-                        <label>No. RUC</label>
-                        <input type="text" v-model="formData.Identificacion" placeholder="Ej: J0000000000000">
+                        <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. RUC</label>
+                        <input type="text" v-model="formData.Identificacion" placeholder="Ej: J0000000000000" @blur="validarIdentificacion">
+                        <button type="button" class="ocr-btn" @click="scanField('Identificacion')" title="Escanear RUC" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
+                        <small v-if="errors.IdentificacionMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.IdentificacionMsg }}</small>
                     </div>
                     <div class="form-group">
                         <label :style="{color: errors.RazonSocial ? 'red' : 'inherit', fontWeight: errors.RazonSocial ? 'bold' : 'normal'}">Razón Social *</label>
                         <input type="text" v-model="formData.RazonSocial" placeholder="Nombre legal de la entidad">
+                        <button type="button" class="ocr-btn" @click="scanField('RazonSocial')" title="Escanear Razón Social" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                     </div>
                 </div>
 
@@ -91,23 +104,29 @@ const FormSujetoJuridico = {
                     <div class="form-group">
                         <label :style="{color: errors.RegistradaEn ? 'red' : 'inherit', fontWeight: errors.RegistradaEn ? 'bold' : 'normal'}">Registrada En *</label>
                         <input type="text" v-model="formData.RegistradaEn" placeholder="Ej: Registro Público de Managua">
+                        <button type="button" class="ocr-btn" @click="scanField('RegistradaEn')" title="Escanear Registrada En" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                     </div>
 
                     <div class="form-group">
                         <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha de Registro *</label>
-                        <div style="display: flex; gap: 8px;">
-                            <input 
-                                type="text" 
-                                inputmode="numeric" 
-                                placeholder="DD/MM/AAAA" 
-                                v-model="fechaRegistroUI"
-                                @input="fechaRegistroUI = formatAsDate(fechaRegistroUI)"
-                                style="flex: 1;"
-                            >
-                            <button type="button" class="btn btn-secondary" @click="setFechaRegistroToday" style="padding: 10px 16px; margin: 0; min-width: auto;">
-                                📅 HOY
-                            </button>
-                        </div>
+                        <input 
+                            type="text" 
+                            inputmode="numeric" 
+                            placeholder="DD/MM/AAAA" 
+                            v-model="fechaRegistroUI"
+                            @input="fechaRegistroUI = formatAsDate(fechaRegistroUI)"
+                        >
+                        <button type="button" class="ocr-btn" @click="scanField('FechaRegistro')" title="Escanear Fecha de Registro" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -216,10 +235,19 @@ const FormSujetoJuridico = {
             formData.FechaRegistro = null;
         });
 
-        // Sincronizar Modelo (si cambia a null) -> UI
+        // Sincronizar Modelo -> UI
         Vue.watch(() => formData.FechaRegistro, (newVal) => {
             if (!newVal) {
                 fechaRegistroUI.value = '';
+                return;
+            }
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(newVal)) {
+                fechaRegistroUI.value = newVal;
+                return;
+            }
+            const parts = newVal.split('-');
+            if (parts.length === 3) {
+                fechaRegistroUI.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
         });
 
@@ -310,14 +338,6 @@ const FormSujetoJuridico = {
                 ].filter(o => esEmpresa(o.nombre));
             }
         };
-
-        Vue.onMounted(() => {
-            cargarCatalogos();
-            cargarPropietariosCatastrales();
-        });
-
-
-
         // Cálculo automático del total de miembros
         const totalMiembros = Vue.computed(() => {
             const socios = parseInt(formData.NroSocios) || 0;
@@ -331,10 +351,10 @@ const FormSujetoJuridico = {
         });
 
         // Limpieza de errores al escribir
-
         Vue.watch(() => formData.RazonSocial, () => delete errors.RazonSocial);
         Vue.watch(() => formData.RegistradaEn, () => delete errors.RegistradaEn);
         Vue.watch(() => formData.FechaRegistro, () => delete errors.FechaRegistro);
+
         // Limpieza de campos al desmarcar secciones opcionales
         Vue.watch(() => formData.MuestraDatosRegistrales, (val) => {
             if (!val) {
@@ -367,10 +387,55 @@ const FormSujetoJuridico = {
             }
         });
 
+        Vue.onMounted(() => {
+            cargarCatalogos();
+            cargarPropietariosCatastrales();
+            if (typeof vueAppContext !== 'undefined') {
+                vueAppContext.validarIdentificacion = validarIdentificacion;
+            }
+        });
+
+        Vue.onUnmounted(() => {
+            if (typeof vueAppContext !== 'undefined' && vueAppContext.validarIdentificacion === validarIdentificacion) {
+                delete vueAppContext.validarIdentificacion;
+            }
+        });
+
+        const validarIdentificacion = () => {
+            if (!formData.Identificacion?.trim()) {
+                delete errors.IdentificacionMsg;
+                delete errors.Identificacion;
+                return true;
+            }
+            let valor = formData.Identificacion.trim().toUpperCase();
+            formData.Identificacion = valor;
+
+            // RUC format: 1 letter followed by 12 digits
+            const esValido = /^[A-Z]\d{12}$/.test(valor);
+            if (!esValido) {
+                errors.Identificacion = true;
+                errors.IdentificacionMsg = 'RUC inválido (1 letra seguida de 12 números)';
+            } else {
+                delete errors.Identificacion;
+                delete errors.IdentificacionMsg;
+            }
+            return esValido;
+        };
+
+        Vue.watch(() => formData.Identificacion, () => {
+            if (errors.Identificacion) {
+                validarIdentificacion();
+            }
+        });
+
         const save = () => {
             // Limpiar errores
             Object.keys(errors).forEach(key => delete errors[key]);
             const errorList = [];
+
+            if (formData.Identificacion?.trim() && !validarIdentificacion()) {
+                errorList.push('No. RUC');
+            }
 
 
             if (!formData.RazonSocial?.trim()) {
@@ -423,11 +488,13 @@ const FormSujetoJuridico = {
 
             emit('save', Vue.toRaw(formData));
         };
+        const scanField = (fieldName) => emit('ocr-scan', fieldName);
 
         return {
             formData,
             errors,
             catalogos,
+            scanField,
             totalMiembros,
             fechaRegistroUI,
             formatAsDate,

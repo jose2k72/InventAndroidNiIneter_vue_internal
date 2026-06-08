@@ -448,15 +448,16 @@
 
             <!-- Formularios INETER -->
             <form-ficha v-if="formType === 'Ficha'" :data="formData" :localizacion="localizacion" :fotos="fotos"
-                @save="sendData" @cancel="volver" @camera="openCamera(false)" @camera-frente="openCamera(true)"></form-ficha>
+                @save="sendData" @cancel="volver" @camera="openCamera(false)" @camera-frente="openCamera(true)"
+                @ocr-scan="scanField"></form-ficha>
             <form-sujeto-natural v-if="formType === 'SujetoNatural'" :data="formData" @save="sendData" @cancel="volver"
-                @camera="openCamera"></form-sujeto-natural>
+                @camera="openCamera" @ocr-scan="scanField"></form-sujeto-natural>
             <form-sujeto-juridico v-if="formType === 'SujetoJuridico'" :data="formData" @save="sendData"
-                @cancel="volver" @camera="openCamera"></form-sujeto-juridico>
+                @cancel="volver" @camera="openCamera" @ocr-scan="scanField"></form-sujeto-juridico>
             <form-entrevistado v-if="formType === 'Entrevistado'" :data="formData" @save="sendData" @cancel="volver"
-                @camera="openCamera"></form-entrevistado>
+                @camera="openCamera" @ocr-scan="scanField"></form-entrevistado>
             <form-familiares v-if="formType === 'Familiares'" :data="formData" @save="sendData"
-                @cancel="volver"></form-familiares>
+                @cancel="volver" @ocr-scan="scanField"></form-familiares>
             <form-no-encuestado v-if="formType === 'NoEncuestado'" :data="formData" @save="sendData"
                 @cancel="volver"></form-no-encuestado>
             <form-union-con-predio v-if="formType === 'UnionConPredio'" :data="formData" @save="sendData"

@@ -69,6 +69,12 @@ const FormEntrevistado = {
                     <div class="form-group">
                         <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. Identificación *</label>
                         <input type="text" v-model="formData.Identificacion" @blur="validarIdentificacion" :placeholder="placeholderIdentificacion">
+                        <button type="button" class="ocr-btn" @click="scanField('Identificacion')" title="Escanear Identificación" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                         <small v-if="errors.IdentificacionMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.IdentificacionMsg }}</small>
                     </div>
                 </div>
@@ -128,6 +134,12 @@ const FormEntrevistado = {
                     <div class="form-group">
                         <label :style="{color: errors.FirstName ? 'red' : 'inherit', fontWeight: errors.FirstName ? 'bold' : 'normal'}">Primer Nombre *</label>
                         <input type="text" v-model="formData.FirstName" placeholder="Ej: Juan" @blur="validarNombre('FirstName')">
+                        <button type="button" class="ocr-btn" @click="scanField('Entrevistado_Nombres')" title="Escanear Nombres" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                         <small v-if="errors.FirstNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.FirstNameMsg }}</small>
                     </div>
                     <div class="form-group">
@@ -141,6 +153,12 @@ const FormEntrevistado = {
                     <div class="form-group">
                         <label :style="{color: errors.FirstSurName ? 'red' : 'inherit', fontWeight: errors.FirstSurName ? 'bold' : 'normal'}">Primer Apellido *</label>
                         <input type="text" v-model="formData.FirstSurName" placeholder="Ej: Pérez" @blur="validarNombre('FirstSurName')">
+                        <button type="button" class="ocr-btn" @click="scanField('Entrevistado_Apellidos')" title="Escanear Apellidos" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                         <small v-if="errors.FirstSurNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.FirstSurNameMsg }}</small>
                     </div>
                     <div class="form-group">
@@ -1088,10 +1106,24 @@ const FormEntrevistado = {
             }
         };
 
+        const scanField = (fieldName) => emit('ocr-scan', fieldName);
+        Vue.onMounted(() => {
+            if (typeof vueAppContext !== 'undefined') {
+                vueAppContext.validarIdentificacion = validarIdentificacion;
+            }
+        });
+
+        Vue.onUnmounted(() => {
+            if (typeof vueAppContext !== 'undefined' && vueAppContext.validarIdentificacion === validarIdentificacion) {
+                delete vueAppContext.validarIdentificacion;
+            }
+        });
+
         return {
             formData,
             errors,
             catalogos,
+            scanField,
             relacionPropietarioName,
             pedirRelacionPropietarioGlobal,
             profesionName,

@@ -226,55 +226,79 @@ const FormFicha = {
                     <div class="coords-grid">
                         <div class="form-group">
                             <label :style="{color: errors.FechaAdquisicion ? 'red' : 'inherit', fontWeight: errors.FechaAdquisicion ? 'bold' : 'normal'}">Fecha Adquisición</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input 
-                                    type="text" 
-                                    inputmode="numeric" 
-                                    placeholder="DD/MM/AAAA" 
-                                    v-model="fechaAdquisicionUI"
-                                    @input="fechaAdquisicionUI = formatAsDate(fechaAdquisicionUI)"
-                                    style="flex: 1;"
-                                >
-                                <button type="button" class="btn btn-secondary" @click="setFechaAdquisicionToday" style="padding: 10px 16px; margin: 0; min-width: auto;">
-                                    📅 HOY
-                                </button>
-                            </div>
+                            <input 
+                                type="text" 
+                                inputmode="numeric" 
+                                placeholder="DD/MM/AAAA" 
+                                v-model="fechaAdquisicionUI"
+                                @input="fechaAdquisicionUI = formatAsDate(fechaAdquisicionUI)"
+                            >
+                            <button type="button" class="ocr-btn" @click="scanField('FechaAdquisicion')" title="Escanear Fecha Adquisición" style="margin-top: 6px;">
+                                <div class="ocr-icon-container">
+                                    <span class="ocr-icon-doc">📄</span>
+                                    <span class="ocr-icon-search">🔍</span>
+                                </div>
+                            </button>
                         </div>
                         <div class="form-group">
                             <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha Registro</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input 
-                                    type="text" 
-                                    inputmode="numeric" 
-                                    placeholder="DD/MM/AAAA" 
-                                    v-model="fechaRegistroUI"
-                                    @input="fechaRegistroUI = formatAsDate(fechaRegistroUI)"
-                                    style="flex: 1;"
-                                >
-                                <button type="button" class="btn btn-secondary" @click="setFechaRegistroToday" style="padding: 10px 16px; margin: 0; min-width: auto;">
-                                    📅 HOY
-                                </button>
-                            </div>
+                            <input 
+                                type="text" 
+                                inputmode="numeric" 
+                                placeholder="DD/MM/AAAA" 
+                                v-model="fechaRegistroUI"
+                                @input="fechaRegistroUI = formatAsDate(fechaRegistroUI)"
+                            >
+                            <button type="button" class="ocr-btn" @click="scanField('FechaRegistro')" title="Escanear Fecha Registro" style="margin-top: 6px;">
+                                <div class="ocr-icon-container">
+                                    <span class="ocr-icon-doc">📄</span>
+                                    <span class="ocr-icon-search">🔍</span>
+                                </div>
+                            </button>
                         </div>
                     </div>
                     <div class="coords-grid">
                         <div class="form-group">
                             <label :style="{color: errors.NoFinca_NAP ? 'red' : 'inherit', fontWeight: errors.NoFinca_NAP ? 'bold' : 'normal'}">No. Finca / NAP *</label>
                             <input id="NoFinca_NAP" type="text" v-model="formData.NoFinca_NAP">
+                            <button type="button" class="ocr-btn" @click="scanField('NoFinca_NAP')" title="Escanear No. Finca" style="margin-top: 6px;">
+                                <div class="ocr-icon-container">
+                                    <span class="ocr-icon-doc">📄</span>
+                                    <span class="ocr-icon-search">🔍</span>
+                                </div>
+                            </button>
                         </div>
                         <div class="form-group">
                             <label :style="{color: errors.Tomo ? 'red' : 'inherit', fontWeight: errors.Tomo ? 'bold' : 'normal'}">Tomo</label>
-                            <input type="text" v-model="formData.Tomo">
+                            <input id="Tomo" type="text" v-model="formData.Tomo">
+                            <button type="button" class="ocr-btn" @click="scanField('Tomo')" title="Escanear Tomo" style="margin-top: 6px;">
+                                <div class="ocr-icon-container">
+                                    <span class="ocr-icon-doc">📄</span>
+                                    <span class="ocr-icon-search">🔍</span>
+                                </div>
+                            </button>
                         </div>
                     </div>
                     <div class="coords-grid">
                         <div class="form-group">
                             <label :style="{color: errors.Folio ? 'red' : 'inherit', fontWeight: errors.Folio ? 'bold' : 'normal'}">Folio</label>
-                            <input type="text" v-model="formData.Folio">
+                            <input id="Folio" type="text" v-model="formData.Folio">
+                            <button type="button" class="ocr-btn" @click="scanField('Folio')" title="Escanear Folio" style="margin-top: 6px;">
+                                <div class="ocr-icon-container">
+                                    <span class="ocr-icon-doc">📄</span>
+                                    <span class="ocr-icon-search">🔍</span>
+                                </div>
+                            </button>
                         </div>
                         <div class="form-group">
                             <label :style="{color: errors.Asiento ? 'red' : 'inherit', fontWeight: errors.Asiento ? 'bold' : 'normal'}">Asiento</label>
-                            <input type="text" v-model="formData.Asiento">
+                            <input id="Asiento" type="text" v-model="formData.Asiento">
+                            <button type="button" class="ocr-btn" @click="scanField('Asiento')" title="Escanear Asiento" style="margin-top: 6px;">
+                                <div class="ocr-icon-container">
+                                    <span class="ocr-icon-doc">📄</span>
+                                    <span class="ocr-icon-search">🔍</span>
+                                </div>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -315,20 +339,14 @@ const FormFicha = {
 
                         <div class="form-group">
                             <label :style="{color: (errors['Doc' + index + '_Fecha']) ? 'red' : 'inherit', fontWeight: (errors['Doc' + index + '_Fecha']) ? 'bold' : 'normal'}">Fecha de Documento *</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input 
-                                    type="text" 
-                                    inputmode="numeric" 
-                                    placeholder="DD/MM/AAAA" 
-                                    v-model="doc._FechaDocumentoUI"
-                                    @input="onDocFechaInput(doc)"
-                                    style="flex: 1;"
-                                    :style="{borderColor: (errors['Doc' + index + '_Fecha']) ? '#d32f2f' : '#ccc'}"
-                                >
-                                <button type="button" class="btn btn-secondary" @click="setDocFechaToday(doc)" style="padding: 10px 16px; margin: 0; min-width: auto;">
-                                    📅 HOY
-                                </button>
-                            </div>
+                            <input 
+                                type="text" 
+                                inputmode="numeric" 
+                                placeholder="DD/MM/AAAA" 
+                                v-model="doc._FechaDocumentoUI"
+                                @input="onDocFechaInput(doc)"
+                                :style="{borderColor: (errors['Doc' + index + '_Fecha']) ? '#d32f2f' : '#ccc'}"
+                            >
                         </div>
                     </div>
                     
@@ -739,16 +757,34 @@ const FormFicha = {
             formData.FechaRegistro = null;
         });
 
-        // Sincronizar Modelo (si cambia a null) -> UI
+        // Sincronizar Modelo -> UI
         Vue.watch(() => formData.FechaAdquisicion, (newVal) => {
             if (!newVal) {
                 fechaAdquisicionUI.value = '';
+                return;
+            }
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(newVal)) {
+                fechaAdquisicionUI.value = newVal;
+                return;
+            }
+            const parts = newVal.split('-');
+            if (parts.length === 3) {
+                fechaAdquisicionUI.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
         });
 
         Vue.watch(() => formData.FechaRegistro, (newVal) => {
             if (!newVal) {
                 fechaRegistroUI.value = '';
+                return;
+            }
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(newVal)) {
+                fechaRegistroUI.value = newVal;
+                return;
+            }
+            const parts = newVal.split('-');
+            if (parts.length === 3) {
+                fechaRegistroUI.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
         });
 
@@ -1100,10 +1136,12 @@ const FormFicha = {
             }
         };
 
+        const scanField = (fieldName) => emit('ocr-scan', fieldName);
+
         return {
             formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName, descripcionUsoName,
             pedirMunicipioGlobal, pedirDescripcionUsoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
-            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion,
+            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion, scanField,
             fotoFrenteBase64, fotosGenerales, capturarFotoFrente, eliminarFotoFrente,
             fechaAdquisicionUI, fechaRegistroUI, formatAsDate, setFechaAdquisicionToday, setFechaRegistroToday, onDocFechaInput, setDocFechaToday
         };

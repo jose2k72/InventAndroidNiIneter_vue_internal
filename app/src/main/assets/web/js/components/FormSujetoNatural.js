@@ -28,10 +28,15 @@ const FormSujetoNatural = {
                              <option :value="null" disabled selected>Seleccione...</option>
                              <option v-for="opt in catalogos.TipoIdentificacion" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
                         </select>
-                    </div>
-                    <div class="form-group">
+                                 <div class="form-group">
                         <label :style="{color: errors.Identificacion ? 'red' : 'inherit', fontWeight: errors.Identificacion ? 'bold' : 'normal'}">No. Identificación *</label>
                         <input type="text" v-model="formData.Identificacion" @blur="validarIdentificacion" :placeholder="placeholderIdentificacion">
+                        <button type="button" class="ocr-btn" @click="scanField('Identificacion')" title="Escanear Identificación" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                         <small v-if="errors.IdentificacionMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.IdentificacionMsg }}</small>
                     </div>
                 </div>
@@ -51,7 +56,7 @@ const FormSujetoNatural = {
                 </div>
                 <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
                     <div v-for="prop in propietariosDisponibles" :key="prop.id" 
-                         style="background: white; border: 1px solid #BBDEFB; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                          style="background: white; border: 1px solid #BBDEFB; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div>
                             <div style="font-weight: bold; color: #1976D2; font-size: 1rem; margin-bottom: 6px; display: flex; justify-content: space-between;">
                                 <span>👤 {{ prop.nombre }}</span>
@@ -91,6 +96,12 @@ const FormSujetoNatural = {
                     <div class="form-group">
                         <label :style="{color: errors.FirstName ? 'red' : 'inherit', fontWeight: errors.FirstName ? 'bold' : 'normal'}">Primer Nombre *</label>
                         <input type="text" v-model="formData.FirstName" placeholder="Ej: Juan" @blur="validarNombre('FirstName')">
+                        <button type="button" class="ocr-btn" @click="scanField('SujetoNatural_Nombres')" title="Escanear Nombres" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                         <small v-if="errors.FirstNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.FirstNameMsg }}</small>
                     </div>
                     <div class="form-group">
@@ -104,6 +115,12 @@ const FormSujetoNatural = {
                     <div class="form-group">
                         <label :style="{color: errors.FirstSurName ? 'red' : 'inherit', fontWeight: errors.FirstSurName ? 'bold' : 'normal'}">Primer Apellido *</label>
                         <input type="text" v-model="formData.FirstSurName" placeholder="Ej: Pérez" @blur="validarNombre('FirstSurName')">
+                        <button type="button" class="ocr-btn" @click="scanField('SujetoNatural_Apellidos')" title="Escanear Apellidos" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                         <small v-if="errors.FirstSurNameMsg" style="color: #d32f2f; font-weight: bold; display: block; margin-top: 4px;">{{ errors.FirstSurNameMsg }}</small>
                     </div>
                     <div class="form-group">
@@ -907,11 +924,24 @@ const FormSujetoNatural = {
                 alert('La detección de dirección solo está disponible en la tablet con datos colindantes.');
             }
         };
+        const scanField = (fieldName) => emit('ocr-scan', fieldName);
+        Vue.onMounted(() => {
+            if (typeof vueAppContext !== 'undefined') {
+                vueAppContext.validarIdentificacion = validarIdentificacion;
+            }
+        });
+
+        Vue.onUnmounted(() => {
+            if (typeof vueAppContext !== 'undefined' && vueAppContext.validarIdentificacion === validarIdentificacion) {
+                delete vueAppContext.validarIdentificacion;
+            }
+        });
 
         return {
             formData,
             errors,
             catalogos,
+            scanField,
             profesionName,
             pedirProfesionGlobal,
             perfilPropietarioName,

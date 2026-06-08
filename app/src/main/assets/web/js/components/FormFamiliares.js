@@ -1,6 +1,6 @@
 const FormFamiliares = {
     props: ['data'],
-    emits: ['save', 'cancel'],
+    emits: ['save', 'cancel', 'ocr-scan'],
     template: `
         <div class="form-container">
             <div class="form-header">
@@ -22,6 +22,12 @@ const FormFamiliares = {
                     <div class="form-group">
                         <label :style="{color: errors[index + '_FirstName'] ? 'red' : 'inherit', fontWeight: errors[index + '_FirstName'] ? 'bold' : 'normal'}">Primer Nombre *</label>
                         <input type="text" v-model="fam.FirstName" :style="{borderColor: errors[index + '_FirstName'] ? '#d32f2f' : '#ccc'}">
+                        <button type="button" class="ocr-btn" @click="scanField('Familiar_Nombres_' + index)" title="Escanear Nombres" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                     </div>
                     <div class="form-group">
                         <label>Segundo Nombre</label>
@@ -33,6 +39,12 @@ const FormFamiliares = {
                     <div class="form-group">
                         <label :style="{color: errors[index + '_FirstSurName'] ? 'red' : 'inherit', fontWeight: errors[index + '_FirstSurName'] ? 'bold' : 'normal'}">Primer Apellido *</label>
                         <input type="text" v-model="fam.FirstSurName" :style="{borderColor: errors[index + '_FirstSurName'] ? '#d32f2f' : '#ccc'}">
+                        <button type="button" class="ocr-btn" @click="scanField('Familiar_Apellidos_' + index)" title="Escanear Apellidos" style="margin-top: 6px;">
+                            <div class="ocr-icon-container">
+                                <span class="ocr-icon-doc">📄</span>
+                                <span class="ocr-icon-search">🔍</span>
+                            </div>
+                        </button>
                     </div>
                     <div class="form-group">
                         <label>Segundo Apellido</label>
@@ -161,9 +173,11 @@ const FormFamiliares = {
             emit('save', Vue.toRaw(formData));
         };
 
+        const scanField = (fieldName) => emit('ocr-scan', fieldName);
+
         return {
             formData, errors,
-            agregarFamiliar, quitarFamiliar, pedirParentesco, save
+            agregarFamiliar, quitarFamiliar, pedirParentesco, save, scanField
         };
     }
 };

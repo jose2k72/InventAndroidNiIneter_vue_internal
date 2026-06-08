@@ -41,38 +41,47 @@ La aplicación se transformó desde su prototipo de inventario georreferenciado 
 
 ---
 
-## 3. Integración de Cámara y Fotos
+## 3. Integración de Cámara In-App (CameraX) y Motor OCR Offline (ML Kit)
 
-El sistema de captura de fotos es uno de los puntos más críticos, requiriendo una coordinación precisa entre el formulario web y el sistema operativo.
+El sistema de captura fotográfica y reconocimiento óptico de caracteres (OCR) es uno de los módulos más críticos, requiriendo un acoplamiento estrecho y de alto rendimiento entre la interfaz híbrida (Vue) y el hardware de la tablet (Kotlin).
 
-### Flujo de Captura
+### 3.1 Flujo de Captura Fotográfica Estándar (Fachadas y Documentos)
 
-1.  **Usuario (Web)**: Presiona el botón "📷 CAPTURAR FOTO" en el formulario.
-2.  **Vue** (desde el formulario activo):
-    *   Ejecuta la función `capturarFoto()`.
-    *   **Validación Estricta**: Verifica que existan datos en los campos `Localizacion` y `CodigoCamino`.
-        *   *Si falla*: Muestra alerta y detiene el proceso.
-    *   **Construcción de Prefijo**: Concatena `Localizacion` + `CodigoCamino` (ej. `"SanJose_Ruta101"`).
-    *   **Llamada al Puente**: Invoca `Android.Camera(prefijo)`.
-3.  **Android (`FormActivity.kt`)**:
-    *   Recibe el `prefijo` en el método anotado con `@JavascriptInterface`.
-    *   Solicita permisos de cámara/almacenamiento si no están concedidos.
-    *   Lanza el `Intent` de cámara nativa.
-45.  **Sistema de Archivos (Android)**:
-    - Utiliza `AppConfig.getStorageDirectory()` (donde reside `map.db`).
-    - **Nomenclatura**: `PREFIJO_TIMESTAMP.jpg`
-        *   `PREFIJO`: El string enviado desde Vue, sanitizado (sin caracteres especiales).
-        *   `TIMESTAMP`: Formato `yyyyMMdd_HHmmss`.
-        *   Ejemplo final: `SanJose_Ruta101_20260129_143000.jpg`
-5.  **Retorno a Vue**:
-    *   Al confirmar la captura, Android convierte la imagen a Base64 (miniatura).
-    *   Invoca función JS: `window.addPhoto(nombreArchivo, base64)`.
-    *   Vue actualiza la galería visual y el campo oculto `Imagenes` en el `formData`.
+1.  **Disparo (Web/Vue)**: El usuario pulsa el botón de captura en el formulario (ej: "Foto Frente" o "Agregar Documento").
+2.  **Preparación (Vue)**: La app valida los metadatos necesarios, construye un prefijo formateado con el ID de la encuesta (`NoEncuesta`) y llama al puente: `Android.Camera(prefijo)`.
+3.  **Captura Nativa (Android/CameraX)**:
+    *   `FormActivity.kt` lanza la cámara interna integrada (desarrollada con **CameraX**).
+    *   Se utiliza un flujo basado en `ProcessCameraProvider` enlazando en paralelo el caso de uso `Preview` (visor en vivo) y `ImageCapture` (captura en alta calidad).
+    *   **Nomenclatura física**: Las fotos se guardan en el almacenamiento privado de la app con el nombre `{PREFIJO}_{TIMESTAMP}.jpg`.
+4.  **Retorno a Vue**: Al finalizar, Android convierte la imagen capturada a miniatura Base64 e invoca `window.addPhoto(nombreArchivo, base64)` para renderizarla en la interfaz web de manera inmediata.
 
-### Consideraciones de Datos
+---
 
-*   **En Base de Datos**: NO se guarda la imagen binaria. Solo se guarda una cadena de texto con los nombres de archivo separados por comas.
-*   **En Disco**: Las imágenes originales (resolución completa) residen en la carpeta de la aplicación en el dispositivo.
+### 3.2 Arquitectura y Diseño del Motor OCR Offline
+
+Para digitalizar de forma ágil y offline cédulas de identidad, números de finca catastrales y registros RUC, se ha integrado un flujo de escaneo continuo en tiempo real basado en **Google ML Kit Text Recognition** y **CameraX ImageAnalysis**.
+
+#### A. Visor de Captura de Rendija Estrecha (Single-Line Visor)
+Para evitar que el reconocedor procese bloques de texto adyacentes irrelevantes (como etiquetas del documento, firmas u otros metadatos), el visor de captura fuerza un recuadro o visor central restringido de tamaño estático (`320dp` de ancho por `72dp` de alto). 
+* El flujo nativo del analizador recorta la imagen física capturada exactamente sobre las coordenadas de esta rendija en la pantalla antes de enviarla al reconocedor de texto.
+* Para asegurar la alocación de coordenadas y evitar deformaciones o desfases de recorte, tanto el caso de uso de `Preview` como el de `ImageCapture` y `ImageAnalysis` se homologan al mismo ratio de aspecto (`AspectRatio.RATIO_4_3`).
+
+#### B. Heurística de Selección de Candidatos (Text Size Heuristic)
+Cuando el documento contiene etiquetas o descripciones cercanas al valor real (por ejemplo, la palabra "CÉDULA" o "SEXO" cerca del número), el sistema nativo analiza las dimensiones de todos los bloques de texto detectados:
+* Se calcula el tamaño de fuente relativo de cada bloque utilizando la altura de su caja contenedora (`BoundingBox.height()`).
+* El motor selecciona automáticamente la cadena de texto que posee el **mayor tamaño de fuente** (el texto físicamente más grande dentro de la rendija), descartando efectivamente las etiquetas secundarias y de menor tamaño.
+
+#### C. Separación Lógica de Nombres y Apellidos
+Dado que el visor opera bajo un esquema estrecho de lectura de una sola línea, la captura del nombre del propietario se divide en dos fases/botones independientes:
+* **Escaneo de Nombres**: Lee y asigna `Primer Nombre` y `Segundo Nombre`.
+* **Escaneo de Apellidos**: Lee y asigna `Primer Apellido` y `Segundo Apellido`.
+Esto garantiza que la tasa de precisión del reconocimiento se mantenga al máximo al no intentar procesar bloques de texto multilinea complejos.
+
+#### D. Validación e Integración Reactiva post-OCR
+Una vez que el motor nativo retorna el texto leído mediante `window.onOcrResult(fieldName, extractedText)` a `app.js`:
+* Si el campo afectado es `'Identificacion'`, el sistema invoca de forma inmediata la validación asociada al formulario activo en el ciclo de vida (registrada de forma dinámica en `vueAppContext.validarIdentificacion`).
+* Los formularios de **Sujeto Natural**, **Entrevistado** y **Sujeto Jurídico** se encargan de registrar su propio método de validación al montarse (`onMounted`) y limpiarlo al desmontarse (`onUnmounted`).
+* Esto fuerza la validación y el formateo automático inmediato (por ejemplo, autocompletado en mayúsculas e inserción de guiones en las cédulas de identidad nicaragüenses) sin necesidad de que el usuario interaccione con la caja de texto.
 
 ---
 

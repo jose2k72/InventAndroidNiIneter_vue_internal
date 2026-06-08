@@ -421,6 +421,23 @@ const app = createApp({
             }
         };
 
+        // Lanzar escaneo OCR en un campo específico
+        const scanField = (fieldName) => {
+            if (typeof Android !== 'undefined' && typeof Android.scanFieldOCR === 'function') {
+                Android.scanFieldOCR(fieldName);
+            } else {
+                console.log('💻 OCR no disponible en desarrollo. Simulando lectura de:', fieldName);
+                setTimeout(() => {
+                    let simVal = '';
+                    if (fieldName === 'Tomo') simVal = '415';
+                    else if (fieldName === 'Folio') simVal = '23';
+                    else if (fieldName === 'Asiento') simVal = '1';
+                    else if (fieldName === 'NoFinca_NAP') simVal = '1204';
+                    window.onOcrResult(fieldName, simVal);
+                }, 1000);
+            }
+        };
+
         // Restaurar scroll al volver de selectores
         Vue.watch(operation, (newOp, oldOp) => {
             const viewsWithScroll = ['Edit', 'Create'];
@@ -623,6 +640,7 @@ const app = createApp({
             updateData,
             editItem,
             openCamera,
+            scanField,
             resetForm,
             startCreate,
             startCopy,
@@ -651,5 +669,101 @@ window.deletePhoto = (filename) => PhotoService.handleAndroidDelete(filename, vu
 
 // Función global para cargar datos existentes (modo edición desde marcador)
 window.loadExistingData = (id, jsonData) => SyncService.handleLoadData(id, jsonData, vueAppContext);
+
+// Helper para parsear nombres completos desde OCR
+// Helpers para parsear nombres y apellidos desde OCR
+const parseNombresOCR = (text) => {
+    if (!text) return { first: '', second: '' };
+    let parts = text.trim().toUpperCase().split(/\s+/).filter(p => p.length > 0);
+    if (parts.length === 0) return { first: '', second: '' };
+    if (parts.length === 1) return { first: parts[0], second: '' };
+    return { first: parts[0], second: parts.slice(1).join(' ') };
+};
+
+const parseApellidosOCR = (text) => {
+    if (!text) return { first: '', second: '' };
+    let parts = text.trim().toUpperCase().split(/\s+/).filter(p => p.length > 0);
+    if (parts.length === 0) return { first: '', second: '' };
+    if (parts.length === 1) return { first: parts[0], second: '' };
+    return { first: parts[0], second: parts.slice(1).join(' ') };
+};
+
+// Función global para recibir resultados del OCR nativo
+window.onOcrResult = (fieldName, extractedText) => {
+    console.log(`📡 Recibido OCR para campo: ${fieldName} -> Valor: ${extractedText}`);
+    if (vueAppContext && vueAppContext.formData && vueAppContext.formData.value) {
+        if (fieldName === 'SujetoNatural_Nombres') {
+            const parsed = parseNombresOCR(extractedText);
+            vueAppContext.formData.value.FirstName = parsed.first;
+            vueAppContext.formData.value.SecondName = parsed.second;
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast(`✅ Nombres autocompletados.`);
+            }
+        } else if (fieldName === 'SujetoNatural_Apellidos') {
+            const parsed = parseApellidosOCR(extractedText);
+            vueAppContext.formData.value.FirstSurName = parsed.first;
+            vueAppContext.formData.value.SecondSurName = parsed.second;
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast(`✅ Apellidos autocompletados.`);
+            }
+        } else if (fieldName === 'Entrevistado_Nombres') {
+            const parsed = parseNombresOCR(extractedText);
+            vueAppContext.formData.value.FirstName = parsed.first;
+            vueAppContext.formData.value.SecondName = parsed.second;
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast(`✅ Nombres autocompletados.`);
+            }
+        } else if (fieldName === 'Entrevistado_Apellidos') {
+            const parsed = parseApellidosOCR(extractedText);
+            vueAppContext.formData.value.FirstSurName = parsed.first;
+            vueAppContext.formData.value.SecondSurName = parsed.second;
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast(`✅ Apellidos autocompletados.`);
+            }
+        } else if (fieldName.startsWith('Familiar_Nombres_')) {
+            const index = parseInt(fieldName.split('_')[2]);
+            const parsed = parseNombresOCR(extractedText);
+            if (vueAppContext.formData.value.Familiares && vueAppContext.formData.value.Familiares[index]) {
+                vueAppContext.formData.value.Familiares[index].FirstName = parsed.first;
+                vueAppContext.formData.value.Familiares[index].SecondName = parsed.second;
+                if (typeof Android !== 'undefined' && Android.showToast) {
+                    Android.showToast(`✅ Nombres de integrante #${index + 1} autocompletados.`);
+                }
+            }
+        } else if (fieldName.startsWith('Familiar_Apellidos_')) {
+            const index = parseInt(fieldName.split('_')[2]);
+            const parsed = parseApellidosOCR(extractedText);
+            if (vueAppContext.formData.value.Familiares && vueAppContext.formData.value.Familiares[index]) {
+                vueAppContext.formData.value.Familiares[index].FirstSurName = parsed.first;
+                vueAppContext.formData.value.Familiares[index].SecondSurName = parsed.second;
+                if (typeof Android !== 'undefined' && Android.showToast) {
+                    Android.showToast(`✅ Apellidos de integrante #${index + 1} autocompletados.`);
+                }
+            }
+        } else if (fieldName === 'FechaRegistro' || fieldName === 'FechaAdquisicion') {
+            let cleaned = extractedText.replace(/[^0-9\/\-]/g, '');
+            cleaned = cleaned.replace(/-/g, '/');
+            if (/^\d{8}$/.test(cleaned)) {
+                cleaned = `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}/${cleaned.substring(4)}`;
+            }
+            vueAppContext.formData.value[fieldName] = cleaned;
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast(`✅ Fecha de ${fieldName === 'FechaRegistro' ? 'registro' : 'adquisición'} autocompletada.`);
+            }
+        } else {
+            vueAppContext.formData.value[fieldName] = extractedText;
+            if (fieldName === 'Identificacion') {
+                if (typeof vueAppContext.validarIdentificacion === 'function') {
+                    Vue.nextTick(() => {
+                        vueAppContext.validarIdentificacion();
+                    });
+                }
+            }
+            if (typeof Android !== 'undefined' && Android.showToast) {
+                Android.showToast(`✅ Campo ${fieldName} autocompletado.`);
+            }
+        }
+    }
+};
 
 // La función showConfirmModal ahora reside en utils.js

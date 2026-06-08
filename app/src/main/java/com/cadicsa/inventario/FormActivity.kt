@@ -168,6 +168,18 @@ class FormActivity : AppCompatActivity() {
     }
 
     /**
+     * Notificar a Vue que se ha obtenido un resultado OCR.
+     */
+    fun notifyOcrResult(fieldName: String, value: String) {
+        runOnUiThread {
+            binding.webView.evaluateJavascript(
+                "if(window.onOcrResult) window.onOcrResult('$fieldName', '$value');",
+                null
+            )
+        }
+    }
+
+    /**
      * Habilitar o deshabilitar la navegación atrás desde la Toolbar nativa.
      * Si se deshabilita, se oculta el ícono de retroceso.
      */

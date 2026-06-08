@@ -34,18 +34,37 @@ class FormImageHelper(private val activity: FormActivity) {
     var currentPhotoPath: String = ""
     var currentPhotoName: String = ""
     var currentPhotoPrefix: String? = null
+    var currentOcrField: String? = null
 
     // Registradores de resultados (deben registrarse durante la inicialización de la Actividad)
     private val cameraLauncher = activity.registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val photoName = result.data?.getStringExtra(CustomCameraActivity.RESULT_PHOTO_NAME)
-            if (!photoName.isNullOrEmpty()) {
-                currentPhotoName = photoName
-                currentPhotoPath = File(AppConfig.getStorageDirectory(), photoName).absolutePath
-                processCapturedPhoto()
+            val ocrField = currentOcrField
+            if (ocrField != null) {
+                val ocrResult = result.data?.getStringExtra("ocr_result") ?: ""
+                activity.notifyOcrResult(ocrField, ocrResult)
+                
+                // Borrar foto temporal de OCR
+                val photoName = result.data?.getStringExtra(CustomCameraActivity.RESULT_PHOTO_NAME)
+                if (!photoName.isNullOrEmpty()) {
+                    val tempFile = File(AppConfig.getStorageDirectory(), photoName)
+                    if (tempFile.exists()) {
+                        tempFile.delete()
+                    }
+                }
+                currentOcrField = null
+            } else {
+                val photoName = result.data?.getStringExtra(CustomCameraActivity.RESULT_PHOTO_NAME)
+                if (!photoName.isNullOrEmpty()) {
+                    currentPhotoName = photoName
+                    currentPhotoPath = File(AppConfig.getStorageDirectory(), photoName).absolutePath
+                    processCapturedPhoto()
+                }
             }
+        } else {
+            currentOcrField = null
         }
     }
 
@@ -66,6 +85,16 @@ class FormImageHelper(private val activity: FormActivity) {
             launchCamera()
         } else {
             Toast.makeText(activity, "Permiso de almacenamiento denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun launchCameraForOCR(targetField: String) {
+        currentOcrField = targetField
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) 
+            == PackageManager.PERMISSION_GRANTED) {
+            checkStoragePermission()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
@@ -119,6 +148,10 @@ class FormImageHelper(private val activity: FormActivity) {
         photoFile?.let { file ->
             val intent = Intent(activity, CustomCameraActivity::class.java).apply {
                 putExtra(CustomCameraActivity.EXTRA_OUTPUT_PATH, file.absolutePath)
+                if (currentOcrField != null) {
+                    putExtra("ocr_mode", true)
+                    putExtra("ocr_target", currentOcrField)
+                }
             }
             cameraLauncher.launch(intent)
         }

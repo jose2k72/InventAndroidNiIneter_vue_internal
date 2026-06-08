@@ -18,6 +18,19 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 - **Soporte de Uniones Encadenadas**: Se permite registrar un predio como Master de unificación si este cuenta con una Ficha catastral activa (`"Ficha"`) o si es a su vez un predio de unión (`"UnionConPredio"`), lo que habilita la transitividad de unificaciones catastrales.
 - **Validación al Eliminar**: Se modificó `validateDeletion` para bloquear la eliminación tanto del registro de Ficha (`Ficha`) como del registro de Unión (`UnionConPredio`) de un predio si existen otros predios unificados dependientes que lo referencian como su Master.
 
+### 📅 Rediseño de Fechas, Eliminación del Botón Hoy y Validación OCR Inmediata
+- **Eliminación del Botón 📅 HOY**: Se eliminó el botón de autocompletado de fecha actual de todos los campos de fecha (`FechaAdquisicion`, `FechaRegistro` y `Fecha de Documento` en los adjuntos) en `FormFicha.js` y `FormSujetoJuridico.js`.
+- **Alineación Vertical de Campos OCR**:
+  - Reorganización visual de todos los campos que utilizan lectura de cámara/OCR en `FormSujetoJuridico.js` y `FormFicha.js` (incluyendo `NoFinca_NAP`, `Tomo`, `Folio`, `Asiento` e `Identificacion`/RUC).
+  - Ahora siguen la estructura vertical: Etiqueta arriba, Caja de texto en medio, Botón OCR abajo (con margen superior de `6px` y ancho completo).
+- **Validación Automática Inmediata post-OCR**:
+  - Se modificó `window.onOcrResult` en `app.js` para interceptar la escritura en el campo `Identificacion` e invocar el método reactivo de validación correspondiente de forma automática a través del contexto de aplicación (`vueAppContext`).
+  - Se agregaron ganchos de ciclo de vida (`onMounted` / `onUnmounted`) en `FormSujetoNatural.js`, `FormEntrevistado.js` y `FormSujetoJuridico.js` para registrar/remover dinámicamente sus validadores en `vueAppContext`.
+  - Esto fuerza la validación y formateo (como la adición automática de guiones en Cédulas y conversión a mayúsculas) inmediatamente después de leer con la cámara sin requerir perder el foco (`blur`).
+- **Nueva Validación de RUC en Persona Jurídica**:
+  - Se incorporó la regla de validación de RUC en `FormSujetoJuridico.js` para exigir el formato de una letra seguida de doce números (`^[A-Z]\d{12}$`).
+  - La validación se activa al desenfocar (`@blur`), en caliente al editar con OCR, y de forma restrictiva al presionar "Guardar".
+
 ---
 
 ## [2026-06-05] - Reglas de Perfil y Autodetección Avanzada de Dirección por Manzana

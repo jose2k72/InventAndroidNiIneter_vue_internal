@@ -574,6 +574,201 @@ textarea {
         padding: 10px 16px;
         font-size: 13px;
     }
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--gray-light);
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.total-row .label {
+    font-weight: 600;
+    color: var(--gray-dark);
+}
+
+.total-row .value {
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+/* ==========================================
+   FOTOS
+   ========================================== */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.photo-item {
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.photo-thumbnail {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-info {
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.photo-name {
+    font-size: 11px;
+    color: var(--gray-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    font-family: 'Courier New', monospace;
+}
+
+.btn-delete {
+    padding: 6px 10px;
+    background: var(--error);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-delete:hover {
+    background: #E53935;
+}
+
+/* ==========================================
+   SELECTORES Y VISUALIZADORES
+   ========================================== */
+.selector-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    min-height: 50px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    margin-bottom: 8px;
+}
+
+.selector-icon {
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.placeholder-text {
+    color: var(--gray);
+}
+
+.selected-text {
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+/* Cajas de visualización (tipo readonly) */
+.display-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.display-box-depto {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+}
+
+.display-box-muni {
+    background: #e8f5e9;
+    border: 1px solid #a5d6a7;
+}
+
+.display-box .cod {
+    font-weight: bold;
+    min-width: 32px;
+}
+
+.display-box-depto .cod { color: #1565C0; }
+.display-box-muni .cod { color: #2e7d32; }
+
+/* ==========================================
+   TABLA COSTOS
+   ========================================== */
+.cost-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 12px 0;
+}
+
+.cost-table th,
+.cost-table td {
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.cost-table th {
+    background: var(--primary-light);
+    color: var(--white);
+    font-size: 11px;
+}
+
+.cost-table input {
+    width: 100%;
+    padding: 6px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.cost-table input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.cost-table .description {
+    font-size: 11px;
+    max-width: 120px;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
+    
+    .nav-btn img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
     
     .cost-table {
         font-size: 10px;
@@ -583,4 +778,61 @@ textarea {
         padding: 4px;
         font-size: 10px;
     }
+}
+
+/* ==========================================
+   OCR / ESCANER POR CONTROL OBJETIVO
+   ========================================== */
+.input-with-ocr {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-with-ocr input {
+    flex: 1;
+}
+
+.ocr-btn {
+    background: var(--gray);
+    border: 2px solid var(--gray-dark);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    height: 44px; /* Alinear con el alto de los inputs de 12px padding */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ocr-btn:hover {
+    background-color: var(--gray-dark);
+}
+
+.ocr-btn:active {
+    transform: scale(0.95);
+}
+
+.ocr-icon-container {
+    position: relative;
+    width: 22px;
+    height: 22px;
+}
+
+.ocr-icon-doc {
+    position: absolute;
+    left: 0;
+    top: -1px;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.ocr-icon-search {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    font-size: 0.8rem;
+    line-height: 1;
 }

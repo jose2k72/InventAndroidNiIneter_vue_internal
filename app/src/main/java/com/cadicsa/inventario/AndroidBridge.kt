@@ -194,6 +194,13 @@ class AndroidBridge(activity: FormActivity) {
     }
 
     @JavascriptInterface
+    fun scanFieldOCR(targetField: String) {
+        activity?.runOnUiThread {
+            activity?.imageHelper?.launchCameraForOCR(targetField)
+        }
+    }
+
+    @JavascriptInterface
     fun getImageBasePath(): String {
         return activity?.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)?.absolutePath ?: ""
     }

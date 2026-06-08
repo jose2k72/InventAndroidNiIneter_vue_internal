@@ -177,4 +177,54 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Rendija Guía OCR (Horizontal y Estrecha) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/ocrOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:background="@android:color/transparent">
+
+        <!-- Sombreado Superior -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:background="#99000000"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/ocrTargetArea" />
+
+        <!-- Rendija / Área de Enfoque Objetivo -->
+        <View
+            android:id="@+id/ocrTargetArea"
+            android:layout_width="320dp"
+            android:layout_height="72dp"
+            android:background="@drawable/ocr_target_border"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Sombreado Inferior -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:background="#99000000"
+            app:layout_constraintTop_toBottomOf="@id/ocrTargetArea"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Texto de Instrucciones -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Encuadre el texto a escanear"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ocrTargetArea" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

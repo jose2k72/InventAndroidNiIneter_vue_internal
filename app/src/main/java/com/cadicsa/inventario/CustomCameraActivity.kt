@@ -23,6 +23,14 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -94,6 +102,13 @@ class CustomCameraActivity : AppCompatActivity() {
 
         setupCameraTouchFocus()
         startCamera()
+
+        // Configurar modo OCR si se solicita
+        val ocrMode = intent.getBooleanExtra("ocr_mode", false)
+        if (ocrMode) {
+            findViewById<View>(R.id.gridOverlay)?.visibility = View.GONE
+            findViewById<View>(R.id.ocrOverlay)?.visibility = View.VISIBLE
+        }
     }
 
     private fun startCamera() {
@@ -105,19 +120,19 @@ class CustomCameraActivity : AppCompatActivity() {
             // Seleccionar cámara trasera por defecto
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            // 1. Configurar Preview
+            // 1. Configurar Preview con Aspect Ratio 4:3 homologado
             val preview = Preview.Builder()
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                 .build()
                 .also {
                     it.setSurfaceProvider(viewFinder.surfaceProvider)
                 }
 
-            // 2. Configurar ImageCapture con presets de calidad, resolución balanceada y estabilización
+            // 2. Configurar ImageCapture con presets de calidad, relación balanceada y estabilización
             val imageCaptureBuilder = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .setFlashMode(flashMode)
-                // Usar resolución balanceada para no saturar memoria (~3MP)
-                .setTargetResolution(Size(2048, 1536))
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
 
             // Aplicar presets de estabilización (OIS/EIS) en la sesión de captura
             enableStabilization(imageCaptureBuilder)
@@ -194,14 +209,200 @@ class CustomCameraActivity : AppCompatActivity() {
                         // Ignorar si no hay vibrador
                     }
 
+                    val ocrMode = intent.getBooleanExtra("ocr_mode", false)
+                    if (ocrMode) {
+                        runOCR(outputFile)
+                    } else { 
+                        val resultIntent = Intent().apply {
+                            putExtra(RESULT_PHOTO_NAME, outputFile.name)
+                        }
+                        setResult(Activity.RESULT_OK, resultIntent)
+                        finish()
+                    }
+                }
+            }
+        )
+    }
+
+    private fun rotateAndCropOcrImage(outputFile: File): Bitmap? {
+        try {
+            val rawBitmap = BitmapFactory.decodeFile(outputFile.absolutePath) ?: return null
+            
+            // 1. Obtener la rotación correcta usando EXIF
+            val exifInterface = ExifInterface(outputFile.absolutePath)
+            val orientation = exifInterface.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            var rotationDegrees = 0
+            val hardwareRotation = getSensorOrientation()
+            Log.e(TAG, "Crop Debug: Hardware Sensor Orientation = $hardwareRotation")
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> rotationDegrees = 90
+                ExifInterface.ORIENTATION_ROTATE_180 -> rotationDegrees = 180
+                ExifInterface.ORIENTATION_ROTATE_270 -> rotationDegrees = 270
+                else -> {
+                    // Forzar rotación si la foto viene en landscape pero la pantalla es portrait
+                    if (rawBitmap.width > rawBitmap.height) {
+                        rotationDegrees = hardwareRotation
+                    }
+                }
+            }
+            val matrix = Matrix()
+            if (rotationDegrees != 0) {
+                matrix.postRotate(rotationDegrees.toFloat())
+            }
+            
+            val rotatedBitmap = Bitmap.createBitmap(
+                rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, true
+            )
+            if (rotatedBitmap != rawBitmap) {
+                rawBitmap.recycle()
+            }
+            
+            // 2. Obtener las coordenadas en pantalla de ocrTargetArea y viewFinder
+            val targetView = findViewById<View>(R.id.ocrTargetArea) ?: return rotatedBitmap
+            val finder = findViewById<View>(R.id.viewFinder) ?: return rotatedBitmap
+            
+            val targetLocation = IntArray(2)
+            targetView.getLocationInWindow(targetLocation)
+            val targetX = targetLocation[0]
+            val targetY = targetLocation[1]
+            val targetWidth = targetView.width
+            val targetHeight = targetView.height
+            
+            val finderWidth = finder.width
+            val finderHeight = finder.height
+            
+            if (finderWidth <= 0 || finderHeight <= 0) return rotatedBitmap
+            
+            // 3. Mapear las coordenadas al Bitmap rotado
+            val scaleX = rotatedBitmap.width.toFloat() / finderWidth.toFloat()
+            val scaleY = rotatedBitmap.height.toFloat() / finderHeight.toFloat()
+            
+            val cropX = (targetX * scaleX).toInt().coerceIn(0, rotatedBitmap.width - 1)
+            val cropY = (targetY * scaleY).toInt().coerceIn(0, rotatedBitmap.height - 1)
+            val cropWidth = (targetWidth * scaleX).toInt().coerceAtMost(rotatedBitmap.width - cropX)
+            val cropHeight = (targetHeight * scaleY).toInt().coerceAtMost(rotatedBitmap.height - cropY)
+            
+            Log.e(TAG, "Crop Debug: rotatedBitmap size = ${rotatedBitmap.width}x${rotatedBitmap.height}")
+            Log.e(TAG, "Crop Debug: finder size = ${finderWidth}x${finderHeight}")
+            Log.e(TAG, "Crop Debug: targetView screen coordinates = ($targetX, $targetY), size = ${targetWidth}x${targetHeight}")
+            Log.e(TAG, "Crop Debug: computed crop area = ($cropX, $cropY), size = ${cropWidth}x${cropHeight}")
+            
+            if (cropWidth <= 0 || cropHeight <= 0) return rotatedBitmap
+            
+            // 4. Recortar la imagen
+            val croppedBitmap = Bitmap.createBitmap(rotatedBitmap, cropX, cropY, cropWidth, cropHeight)
+            if (croppedBitmap != rotatedBitmap) {
+                rotatedBitmap.recycle()
+            }
+            
+            // 5. Sobrescribir el archivo original con la imagen recortada
+            java.io.FileOutputStream(outputFile).use { out ->
+                croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            
+            return croppedBitmap
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al rotar y recortar imagen para OCR", e)
+            return null
+        }
+    }
+
+    private fun runOCR(outputFile: File) {
+        val image: InputImage
+        try {
+            val croppedBitmap = rotateAndCropOcrImage(outputFile)
+            image = if (croppedBitmap != null) {
+                InputImage.fromBitmap(croppedBitmap, 0)
+            } else {
+                InputImage.fromFilePath(this, Uri.fromFile(outputFile))
+            }
+            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            recognizer.process(image)
+                .addOnSuccessListener { visionText ->
+                    val targetField = intent.getStringExtra("ocr_target") ?: ""
+                    val cleanedText = parseOcrTextWithSizes(visionText, targetField)
+                    
                     val resultIntent = Intent().apply {
                         putExtra(RESULT_PHOTO_NAME, outputFile.name)
+                        putExtra("ocr_result", cleanedText)
                     }
                     setResult(Activity.RESULT_OK, resultIntent)
                     finish()
                 }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "OCR failed: ${e.message}", e)
+                    Toast.makeText(this, "Fallo al reconocer texto. Ingrese datos manualmente.", Toast.LENGTH_SHORT).show()
+                    val resultIntent = Intent().apply {
+                        putExtra(RESULT_PHOTO_NAME, outputFile.name)
+                        putExtra("ocr_result", "")
+                    }
+                    setResult(Activity.RESULT_OK, resultIntent)
+                    finish()
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load image for OCR", e)
+            val resultIntent = Intent().apply {
+                putExtra(RESULT_PHOTO_NAME, outputFile.name)
+                putExtra("ocr_result", "")
             }
+            setResult(Activity.RESULT_OK, resultIntent)
+            finish()
+        }
+    }
+
+    private fun parseOcrTextWithSizes(visionText: com.google.mlkit.vision.text.Text, targetField: String): String {
+        val ignorePatterns = listOf(
+            "REPUBLICA", "NICARAGUA", "CONSEJO", "SUPREMO", "CEDULA", 
+            "IDENTIDAD", "NOMBRES", "APELLIDOS", "SEXO", "FECHA", "NACIMIENTO", "FIRMA"
         )
+        val linesWithHeights = mutableListOf<Pair<String, Int>>()
+        
+        for (block in visionText.textBlocks) {
+            for (line in block.lines) {
+                val text = line.text.trim()
+                val height = line.boundingBox?.height() ?: 0
+                val upper = text.uppercase()
+                val hasIgnore = ignorePatterns.any { upper.contains(it) }
+                if (text.isNotEmpty() && !hasIgnore) {
+                    linesWithHeights.add(Pair(text, height))
+                }
+            }
+        }
+        
+        Log.e(TAG, "OCR Debug: Candidates for field [$targetField]: ${linesWithHeights.map { "${it.first} (${it.second}px)" }}")
+
+        if (linesWithHeights.isEmpty()) return ""
+
+        return when (targetField) {
+            "Tomo", "Folio", "Asiento", "NoFinca_NAP" -> {
+                for (item in linesWithHeights) {
+                    val regex = Regex("\\d+")
+                    val match = regex.find(item.first)
+                    if (match != null) return match.value
+                }
+                ""
+            }
+            "Identificacion" -> {
+                val cedulaRegex = Regex("\\b\\d{3}-?\\d{6}-?\\d{4}[A-Z]\\b", RegexOption.IGNORE_CASE)
+                for (item in linesWithHeights) {
+                    val match = cedulaRegex.find(item.first)
+                    if (match != null) return match.value.uppercase()
+                }
+                val rucRegex = Regex("\\b[A-Z]-?\\d{12,13}\\b", RegexOption.IGNORE_CASE)
+                for (item in linesWithHeights) {
+                    val match = rucRegex.find(item.first)
+                    if (match != null) return match.value.uppercase()
+                }
+                linesWithHeights.maxByOrNull { it.second }?.first ?: ""
+            }
+            else -> {
+                // Para Nombres y Apellidos, retornar la línea con el tamaño de letra más grande
+                linesWithHeights.maxByOrNull { it.second }?.first ?: ""
+            }
+        }
     }
 
     private fun toggleFlash() {
@@ -275,6 +476,23 @@ class CustomCameraActivity : AppCompatActivity() {
                         }, 1000)
                     }
             }
+    }
+
+    private fun getSensorOrientation(): Int {
+        try {
+            val cameraManager = getSystemService(android.content.Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
+            for (id in cameraManager.cameraIdList) {
+                val characteristics = cameraManager.getCameraCharacteristics(id)
+                val facing = characteristics.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING)
+                if (facing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK) {
+                    val orient = characteristics.get(android.hardware.camera2.CameraCharacteristics.SENSOR_ORIENTATION)
+                    return orient ?: 90
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error obteniendo la orientación del hardware", e)
+        }
+        return 90
     }
 
     override fun onDestroy() {
