@@ -4,6 +4,17 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-06-08] - Simplificación de Uniones Catastrales y Uniones Transitivas
+
+### 🔗 Simplificación de Unión con Predio Master (`SpatialHelper.kt`)
+- **Filtro Espacial de Colindancia**: Se eliminó la compleja lógica de bearings de manzana y callejones de calle recta. Ahora la adyacencia de predios candidatos en una manzana se define de manera más directa si pertenecen a la misma manzana (`geomC.intersects(manzanaGeom)`) y son colindantes físicos con el predio actual (`geomC.distance(geomOrigen) < tolerance`, tolerancia de ~2 metros).
+
+### 🔄 Uniones Transitivas y Restricción de Borrado (`workflowService.js`, `SpatialHelper.kt`)
+- **Soporte de Uniones Encadenadas**: Se permite registrar un predio como Master de unificación si este cuenta con una Ficha catastral activa (`"Ficha"`) o si es a su vez un predio de unión (`"UnionConPredio"`), lo que habilita la transitividad de unificaciones catastrales.
+- **Validación al Eliminar**: Se modificó `validateDeletion` para bloquear la eliminación tanto del registro de Ficha (`Ficha`) como del registro de Unión (`UnionConPredio`) de un predio si existen otros predios unificados dependientes que lo referencian como su Master.
+
+---
+
 ## [2026-06-05] - Reglas de Perfil y Autodetección Avanzada de Dirección por Manzana
 
 ### 📍 Autodetección Avanzada por Frente de Calle Recto (`SpatialHelper.kt`)

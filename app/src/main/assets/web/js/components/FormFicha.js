@@ -134,7 +134,7 @@ const FormFicha = {
                 </div>
 
                 <div class="form-group">
-                    <label>Origen de la Tierra</label>
+                    <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra *</label>
                     <div class="selector-display" @click="pedirOrigenTierraGlobal">
                         <span v-if="origenTierraName" style="color: #1565C0; font-weight: 600;">{{ origenTierraName }}</span>
                         <span v-else style="color: #757575;">Seleccione origen...</span>
@@ -144,12 +144,12 @@ const FormFicha = {
 
                 <!-- Especificar Origen si es "Otros" (ID 1) -->
                 <div v-if="formData.OrigenTierraCatalog === 1" class="form-group sub-section">
-                    <label :style="{color: errors.OrigenTierraOtroText ? 'red' : 'inherit'}">Especifique Origen *</label>
+                    <label :style="{color: errors.OrigenTierraOtroText ? 'red' : 'inherit', fontWeight: errors.OrigenTierraOtroText ? 'bold' : 'normal'}">Especifique Origen *</label>
                     <input type="text" v-model="formData.OrigenTierraOtroText" placeholder="Detalle el origen de la tierra...">
                 </div>
 
                 <div class="form-group">
-                    <label>Reseña Histórica</label>
+                    <label :style="{color: errors.ResenaHistorica ? 'red' : 'inherit', fontWeight: errors.ResenaHistorica ? 'bold' : 'normal'}">Reseña Histórica *</label>
                     <textarea v-model="formData.ResenaHistorica" rows="9" placeholder="Documentación histórica del predio..."></textarea>
                 </div>
 
@@ -226,11 +226,35 @@ const FormFicha = {
                     <div class="coords-grid">
                         <div class="form-group">
                             <label :style="{color: errors.FechaAdquisicion ? 'red' : 'inherit', fontWeight: errors.FechaAdquisicion ? 'bold' : 'normal'}">Fecha Adquisición</label>
-                            <input type="date" v-model="formData.FechaAdquisicion">
+                            <div style="display: flex; gap: 8px;">
+                                <input 
+                                    type="text" 
+                                    inputmode="numeric" 
+                                    placeholder="DD/MM/AAAA" 
+                                    v-model="fechaAdquisicionUI"
+                                    @input="fechaAdquisicionUI = formatAsDate(fechaAdquisicionUI)"
+                                    style="flex: 1;"
+                                >
+                                <button type="button" class="btn btn-secondary" @click="setFechaAdquisicionToday" style="padding: 10px 16px; margin: 0; min-width: auto;">
+                                    📅 HOY
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha Registro</label>
-                            <input type="date" v-model="formData.FechaRegistro">
+                            <div style="display: flex; gap: 8px;">
+                                <input 
+                                    type="text" 
+                                    inputmode="numeric" 
+                                    placeholder="DD/MM/AAAA" 
+                                    v-model="fechaRegistroUI"
+                                    @input="fechaRegistroUI = formatAsDate(fechaRegistroUI)"
+                                    style="flex: 1;"
+                                >
+                                <button type="button" class="btn btn-secondary" @click="setFechaRegistroToday" style="padding: 10px 16px; margin: 0; min-width: auto;">
+                                    📅 HOY
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="coords-grid">
@@ -291,7 +315,20 @@ const FormFicha = {
 
                         <div class="form-group">
                             <label :style="{color: (errors['Doc' + index + '_Fecha']) ? 'red' : 'inherit', fontWeight: (errors['Doc' + index + '_Fecha']) ? 'bold' : 'normal'}">Fecha de Documento *</label>
-                            <input type="date" v-model="doc.FechaDocumento" :style="{borderColor: (errors['Doc' + index + '_Fecha']) ? '#d32f2f' : '#ccc'}">
+                            <div style="display: flex; gap: 8px;">
+                                <input 
+                                    type="text" 
+                                    inputmode="numeric" 
+                                    placeholder="DD/MM/AAAA" 
+                                    v-model="doc._FechaDocumentoUI"
+                                    @input="onDocFechaInput(doc)"
+                                    style="flex: 1;"
+                                    :style="{borderColor: (errors['Doc' + index + '_Fecha']) ? '#d32f2f' : '#ccc'}"
+                                >
+                                <button type="button" class="btn btn-secondary" @click="setDocFechaToday(doc)" style="padding: 10px 16px; margin: 0; min-width: auto;">
+                                    📅 HOY
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
@@ -438,7 +475,7 @@ const FormFicha = {
                     const cons = String(next).padStart(3, '0');
 
 
-                    formData.NoEncuesta = `${muni}_${sector}_${loc}_${lote}`;
+                    formData.NoEncuesta = `${muni}_${sector}_${lote}_${loc}_${cons}`;
                     
                     // Inicializar valores automáticos para la vista
                     formData.ParcelaCatastrada = formData.Localizacion || '';
@@ -464,6 +501,7 @@ const FormFicha = {
         Vue.watch(() => formData.DescripcionUsoCatalog, (val) => { if (val) delete errors.DescripcionUsoCatalog; });
         Vue.watch(() => formData.DescripcionUsoOtroText, (val) => { if (val?.trim()) delete errors.DescripcionUsoOtroText; });
         Vue.watch(() => formData.OrigenTierraCatalog, (val) => { if (val) delete errors.OrigenTierraCatalog; });
+        Vue.watch(() => formData.OrigenTierraOtroText, (val) => { if (val?.trim()) delete errors.OrigenTierraOtroText; });
         Vue.watch(() => formData.ResenaHistorica, (val) => { if (val?.trim()) delete errors.ResenaHistorica; });
 
         // Limpieza de errores de Datos Registrales
@@ -570,10 +608,148 @@ const FormFicha = {
         const origenTierraName = Vue.ref(formData._OrigenTierraName || '');
         const gestionConflictoName = Vue.ref(formData._GestionConflictoName || '');
 
-        // Normalización de fechas para inputs HTML5
+        // Normalización de fechas para inputs y UI
+        const fechaAdquisicionUI = Vue.ref('');
+        const fechaRegistroUI = Vue.ref('');
+
         const dateFields = ['FechaAdquisicion', 'FechaRegistro'];
-        dateFields.forEach(f => { if (formData[f]) formData[f] = formData[f].split('T')[0]; });
-        formData.Documentos.forEach(doc => { if (doc.FechaDocumento) doc.FechaDocumento = doc.FechaDocumento.split('T')[0]; });
+        dateFields.forEach(f => { 
+            if (formData[f]) {
+                const cleanDate = formData[f].split('T')[0];
+                formData[f] = cleanDate;
+                const parts = cleanDate.split('-');
+                if (parts.length === 3) {
+                    if (f === 'FechaAdquisicion') fechaAdquisicionUI.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    if (f === 'FechaRegistro') fechaRegistroUI.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
+        });
+
+        formData.Documentos.forEach(doc => { 
+            if (doc.FechaDocumento) {
+                const cleanDate = doc.FechaDocumento.split('T')[0];
+                doc.FechaDocumento = cleanDate;
+                const parts = cleanDate.split('-');
+                if (parts.length === 3) {
+                    doc._FechaDocumentoUI = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            } else {
+                doc._FechaDocumentoUI = '';
+            }
+        });
+
+        // Formateador de máscara de fecha automática al escribir dígitos
+        const formatAsDate = (val) => {
+            if (!val) return '';
+            let clean = val.replace(/\D/g, '');
+            if (clean.length > 8) clean = clean.substring(0, 8);
+            if (clean.length > 4) {
+                return `${clean.substring(0, 2)}/${clean.substring(2, 4)}/${clean.substring(4)}`;
+            } else if (clean.length > 2) {
+                return `${clean.substring(0, 2)}/${clean.substring(2)}`;
+            }
+            return clean;
+        };
+
+        // Rellenar fecha actual
+        const setFechaAdquisicionToday = () => {
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            fechaAdquisicionUI.value = `${d}/${m}/${y}`;
+            formData.FechaAdquisicion = `${y}-${m}-${d}`;
+        };
+
+        const setFechaRegistroToday = () => {
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            fechaRegistroUI.value = `${d}/${m}/${y}`;
+            formData.FechaRegistro = `${y}-${m}-${d}`;
+        };
+
+        const onDocFechaInput = (doc) => {
+            doc._FechaDocumentoUI = formatAsDate(doc._FechaDocumentoUI);
+            const val = doc._FechaDocumentoUI;
+            if (!val) {
+                doc.FechaDocumento = null;
+                return;
+            }
+            const parts = val.split('/');
+            if (parts.length === 3) {
+                const d = parts[0].padStart(2, '0');
+                const m = parts[1].padStart(2, '0');
+                const y = parts[2];
+                if (y.length === 4) {
+                    doc.FechaDocumento = `${y}-${m}-${d}`;
+                    return;
+                }
+            }
+            doc.FechaDocumento = null;
+        };
+
+        const setDocFechaToday = (doc) => {
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            doc._FechaDocumentoUI = `${d}/${m}/${y}`;
+            doc.FechaDocumento = `${y}-${m}-${d}`;
+        };
+
+        // Sincronizar UI (DD/MM/YYYY) -> Modelo (YYYY-MM-DD)
+        Vue.watch(() => fechaAdquisicionUI.value, (newVal) => {
+            delete errors.FechaAdquisicion;
+            if (!newVal) {
+                formData.FechaAdquisicion = null;
+                return;
+            }
+            const parts = newVal.split('/');
+            if (parts.length === 3) {
+                const d = parts[0].padStart(2, '0');
+                const m = parts[1].padStart(2, '0');
+                const y = parts[2];
+                if (y.length === 4) {
+                    formData.FechaAdquisicion = `${y}-${m}-${d}`;
+                    return;
+                }
+            }
+            formData.FechaAdquisicion = null;
+        });
+
+        Vue.watch(() => fechaRegistroUI.value, (newVal) => {
+            delete errors.FechaRegistro;
+            if (!newVal) {
+                formData.FechaRegistro = null;
+                return;
+            }
+            const parts = newVal.split('/');
+            if (parts.length === 3) {
+                const d = parts[0].padStart(2, '0');
+                const m = parts[1].padStart(2, '0');
+                const y = parts[2];
+                if (y.length === 4) {
+                    formData.FechaRegistro = `${y}-${m}-${d}`;
+                    return;
+                }
+            }
+            formData.FechaRegistro = null;
+        });
+
+        // Sincronizar Modelo (si cambia a null) -> UI
+        Vue.watch(() => formData.FechaAdquisicion, (newVal) => {
+            if (!newVal) {
+                fechaAdquisicionUI.value = '';
+            }
+        });
+
+        Vue.watch(() => formData.FechaRegistro, (newVal) => {
+            if (!newVal) {
+                fechaRegistroUI.value = '';
+            }
+        });
 
         // Catálogos reactivos (Se cargan dinámicamente de /data/)
         const catalogos = Vue.reactive({
@@ -695,7 +871,7 @@ const FormFicha = {
             }
         };
 
-        const agregarDocumento = () => { formData.Documentos.push({ DocumentoCatalog: 0, AutorNotario: '', FechaDocumento: null, _DocumentoName: '' }); };
+        const agregarDocumento = () => { formData.Documentos.push({ DocumentoCatalog: 0, AutorNotario: '', FechaDocumento: null, _DocumentoName: '', _FechaDocumentoUI: '' }); };
         const quitarDocumento = (index) => { formData.Documentos.splice(index, 1); };
         const fotoFrenteBase64 = Vue.ref('');
 
@@ -769,6 +945,9 @@ const FormFicha = {
             if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
             if (!formData.DescripcionUsoCatalog) { errors.DescripcionUsoCatalog = true; isValid = false; }
             if (formData.DescripcionUsoCatalog === 5 && !formData.DescripcionUsoOtroText?.trim()) { errors.DescripcionUsoOtroText = true; isValid = false; }
+            if (!formData.OrigenTierraCatalog) { errors.OrigenTierraCatalog = true; isValid = false; }
+            if (formData.OrigenTierraCatalog === 1 && !formData.OrigenTierraOtroText?.trim()) { errors.OrigenTierraOtroText = true; isValid = false; }
+            if (!formData.ResenaHistorica?.trim()) { errors.ResenaHistorica = true; isValid = false; }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
             if (formData.PresentaDocumentos) {
                 if (!formData.Documentos?.length) { errors.Documentos = true; isValid = false; }
@@ -896,7 +1075,8 @@ const FormFicha = {
             formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName, descripcionUsoName,
             pedirMunicipioGlobal, pedirDescripcionUsoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
             agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion,
-            fotoFrenteBase64, fotosGenerales, capturarFotoFrente, eliminarFotoFrente
+            fotoFrenteBase64, fotosGenerales, capturarFotoFrente, eliminarFotoFrente,
+            fechaAdquisicionUI, fechaRegistroUI, formatAsDate, setFechaAdquisicionToday, setFechaRegistroToday, onDocFechaInput, setDocFechaToday
         };
     }
 };

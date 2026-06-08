@@ -186,7 +186,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         enableMyLocation()
 
         mMap.setOnMapClickListener { latLng ->
-            handleMapPosition(latLng)
+            handleMapPosition(latLng, singleGroupPoint = true)
         }
 
         mMap.setOnMarkerClickListener { marker ->
@@ -197,7 +197,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val lat = parts[0].toDouble()
                     val lng = parts[1].toDouble()
                     // Ruta unificada: misma lógica que el click en cartografía
-                    handleMapPosition(com.google.android.gms.maps.model.LatLng(lat, lng))
+                    handleMapPosition(com.google.android.gms.maps.model.LatLng(lat, lng), singleGroupPoint = true)
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Error al procesar marcador: ${e.message}")
                 }
@@ -406,26 +406,43 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
      * Punto de entrada unificado: cualquier posición (click en carto o click en marcador)
      * pasa por aquí. Resuelve toda la información espacial del predio y lanza FormActivity.
      */
-    private fun handleMapPosition(latLng: com.google.android.gms.maps.model.LatLng) {
+    private fun handleMapPosition(latLng: com.google.android.gms.maps.model.LatLng, singleGroupPoint: Boolean = true) {
         val dbHelper = DatabaseHelper.getInstance(this)
 
+        // 1. Interceptar la geometría del predio en base a las coordenadas de click/marcador
         val geom = dbHelper.getGeometry(latLng.longitude, latLng.latitude)
         if (geom == null) {
             Toast.makeText(this, "Ningún objeto interceptado", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Coordenada consolidada: posición existente o polo de inaccesibilidad
-        val existingPoints = dbHelper.getDataByObjectId(geom.id)
+        // 2. Determinar los puntos capturados existentes para la coordenada destino:
+        // - Si singleGroupPoint == true: Se consultan todos los puntos existentes del predio (agrupación clásica única).
+        // - Si singleGroupPoint == false: Se consultan sólo los puntos del predio a menos de 3.0 metros del click (agrupación por cercanía).
+        val existingPoints = if (singleGroupPoint) {
+            dbHelper.getDataByObjectId(geom.id)
+        } else {
+            dbHelper.getDataByObjectId(geom.id, latLng.latitude, latLng.longitude, 3.0)
+        }
+
         val targetLat: Double
         val targetLng: Double
         if (existingPoints.isNotEmpty()) {
+            // 3a. Snapping: Si ya existe un punto en el conjunto evaluado, se reutiliza su coordenada
             targetLat = existingPoints[0].latitud
             targetLng = existingPoints[0].longitud
         } else {
-            val pole = GeometryUtil.getPoleOfInaccessibility(geom.jtsGeom!!)
-            targetLat = pole.latitude
-            targetLng = pole.longitude
+            // 3b. Creación de punto nuevo:
+            if (singleGroupPoint) {
+                // En agrupación única, el primer punto del predio se sitúa en su polo de inaccesibilidad
+                val pole = GeometryUtil.getPoleOfInaccessibility(geom.jtsGeom!!)
+                targetLat = pole.latitude
+                targetLng = pole.longitude
+            } else {
+                // En agrupación por cercanía, los puntos nuevos se posicionan exactamente donde el usuario hizo click
+                targetLat = latLng.latitude
+                targetLng = latLng.longitude
+            }
         }
 
         // Recolección de datos espaciales

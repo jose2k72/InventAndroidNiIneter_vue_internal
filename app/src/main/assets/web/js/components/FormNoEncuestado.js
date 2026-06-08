@@ -28,6 +28,15 @@ const FormNoEncuestado = {
 
                 <div class="form-group">
                     <label :style="{color: errors.Descripcion ? 'red' : 'inherit', fontWeight: errors.Descripcion ? 'bold' : 'normal'}">Motivo / Descripción *</label>
+                    
+                    <!-- Botones rápidos de prerrelleno -->
+                    <div class="quick-reasons" style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                        <button type="button" :style="chipStyle" @click="selectReason('No atendió')">🚪 No atendió</button>
+                        <button type="button" :style="chipStyle" @click="selectReason('No había personas en el lugar')">👥 No había personas</button>
+                        <button type="button" :style="chipStyle" @click="selectReason('Propietario se negó a brindar información (Rechazo)')">🚫 Rechazo de encuesta</button>
+                        <button type="button" :style="chipStyle" @click="selectReason('Vivienda deshabitada / desocupada')">🏠 Vivienda deshabitada</button>
+                    </div>
+
                     <textarea 
                         v-model="formData.Descripcion" 
                         rows="8" 
@@ -59,6 +68,34 @@ const FormNoEncuestado = {
         const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
 
+        // Estilos para los chips de motivos rápidos
+        const chipStyle = {
+            background: '#f1f3f4',
+            border: '1px solid #dadce0',
+            borderRadius: '16px',
+            padding: '6px 14px',
+            fontSize: '13px',
+            color: '#3c4043',
+            cursor: 'pointer',
+            fontWeight: '500',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+        };
+
+        // Concatenación inteligente de motivos rápidos
+        const selectReason = (reason) => {
+            if (!formData.Descripcion) {
+                formData.Descripcion = reason;
+            } else {
+                const text = formData.Descripcion;
+                if (text.endsWith(' ') || text.endsWith('\n')) {
+                    formData.Descripcion = text + reason;
+                } else {
+                    formData.Descripcion = text + ' ' + reason;
+                }
+            }
+        };
+
         // Normalizar fecha si es necesario
         if (formData.Fecha) {
             formData.Fecha = formData.Fecha.split('T')[0];
@@ -85,6 +122,8 @@ const FormNoEncuestado = {
         return {
             formData,
             errors,
+            chipStyle,
+            selectReason,
             save
         };
     }

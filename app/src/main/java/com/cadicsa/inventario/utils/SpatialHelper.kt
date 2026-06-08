@@ -298,25 +298,6 @@ object SpatialHelper {
     }
 
     fun getDataInAdjacentPolygons(db: SQLiteDatabase, predioId: Int): String {
-        fun calculateBearing(c1: Coordinate, c2: Coordinate): Double {
-            val angle = Math.toDegrees(Math.atan2(c2.y - c1.y, c2.x - c1.x))
-            return (360.0 + angle) % 360.0
-        }
-
-        fun angleDifference(a: Double, b: Double): Double {
-            var diff = Math.abs(a - b)
-            if (diff > 180.0) diff = 360.0 - diff
-            return diff
-        }
-
-        data class BoundarySegment(
-            val index: Int,
-            val p1: Coordinate,
-            val p2: Coordinate,
-            val bearing: Double,
-            val geom: org.locationtech.jts.geom.LineString
-        )
-
         var wkbOrignBytes: ByteArray? = null
         db.rawQuery("SELECT wkb FROM objects WHERE id = ?", arrayOf(predioId.toString())).use { cursor ->
             if (cursor.moveToFirst()) wkbOrignBytes = cursor.getBlob(0)
@@ -348,70 +329,7 @@ object SpatialHelper {
         }
         
         val manzanaGeom = geomManzana ?: return "[]"
-        
-        // 2. Convertir el anillo exterior de la manzana a segmentos con bearing
-        val coords = (manzanaGeom as? org.locationtech.jts.geom.Polygon)?.getExteriorRing()?.getCoordinates() ?: return "[]"
-        val segments = mutableListOf<BoundarySegment>()
-        val geomFactory = org.locationtech.jts.geom.GeometryFactory()
-        for (i in 0 until coords.size - 1) {
-            val c1 = coords[i]
-            val c2 = coords[i+1]
-            val bearing = calculateBearing(c1, c2)
-            val segmentGeom = geomFactory.createLineString(arrayOf(c1, c2))
-            segments.add(BoundarySegment(i, c1, c2, bearing, segmentGeom))
-        }
-        
-        val numSegments = segments.size
-        if (numSegments == 0) return "[]"
-        
-        // 3. Identificar segmentos del borde que toca el predio
         val tolerance = 2e-5 // ~2 metros
-        val startIndices = segments.filter { geomOrigen.distance(it.geom) < tolerance }.map { it.index }
-        
-        val finalStartIndices = if (startIndices.isNotEmpty()) {
-            startIndices
-        } else {
-            // Predio interior: encontrar el segmento más cercano
-            val closest = segments.minByOrNull { geomOrigen.distance(it.geom) }
-            if (closest != null) listOf(closest.index) else emptyList()
-        }
-        
-        val validStreetSegmentIndices = mutableSetOf<Int>()
-        
-        for (startIdx in finalStartIndices) {
-            validStreetSegmentIndices.add(startIdx)
-            val startSegment = segments[startIdx]
-            
-            // Dirección +1
-            var prevSegment = startSegment
-            var currIdx = (startIdx + 1) % numSegments
-            while (currIdx != startIdx) {
-                val currSegment = segments[currIdx]
-                val diffFromPrev = angleDifference(currSegment.bearing, prevSegment.bearing)
-                val diffFromStart = angleDifference(currSegment.bearing, startSegment.bearing)
-                
-                if (diffFromPrev > 35.0 || diffFromStart > 50.0) break
-                
-                validStreetSegmentIndices.add(currIdx)
-                prevSegment = currSegment
-                currIdx = (currIdx + 1) % numSegments
-            }
-            
-            // Dirección -1
-            prevSegment = startSegment
-            currIdx = (startIdx - 1 + numSegments) % numSegments
-            while (currIdx != startIdx) {
-                val currSegment = segments[currIdx]
-                val diffFromPrev = angleDifference(currSegment.bearing, prevSegment.bearing)
-                val diffFromStart = angleDifference(currSegment.bearing, startSegment.bearing)
-                
-                if (diffFromPrev > 35.0 || diffFromStart > 50.0) break
-                
-                validStreetSegmentIndices.add(currIdx)
-                prevSegment = currSegment
-                currIdx = (currIdx - 1 + numSegments) % numSegments
-            }
-        }
         
         data class DatoAdyacente(
             val id: Int, 
@@ -426,7 +344,7 @@ object SpatialHelper {
         )
         val listaDatos = mutableListOf<DatoAdyacente>()
         
-        // 4. Consultar encuestas y predios de la manzana en una única consulta
+        // 2. Consultar encuestas y predios de la manzana en una única consulta
         val envManzana = manzanaGeom.envelopeInternal
         val queryDatos = """
             SELECT d.ID, d.DATOS, d.FECHA, d.LATITUD, d.LONGITUD, o.LOCALIZACION, o.id, o.wkb
@@ -450,19 +368,17 @@ object SpatialHelper {
                 
                 val geomC = GeometryUtil.wkbToGeometry(wkbC) ?: continue
                 
-                // Verificar si el predio candidato toca algún segmento de la calle recta
-                var touchesStreet = false
-                for (idx in validStreetSegmentIndices) {
-                    if (geomC.distance(segments[idx].geom) < tolerance) {
-                        touchesStreet = true
-                        break
-                    }
-                }
+                // Nuevas reglas simplificadas:
+                // 1. Debe pertenecer a la misma manzana
+                val intersectsManzana = geomC.intersects(manzanaGeom)
+                // 2. Debe ser colindante directo con el predio actual
+                val isColindante = geomC.distance(geomOrigen) < tolerance
                 
-                if (touchesStreet) {
+                if (intersectsManzana && isColindante) {
                     val jsonObject = try { org.json.JSONObject(jsonData) } catch (e: Exception) { null }
-                    val isFicha = jsonObject?.optString("Type") == "Ficha"
-                    if (isFicha) {
+                    val type = jsonObject?.optString("Type")
+                    val isValidMaster = type == "Ficha" || type == "UnionConPredio"
+                    if (isValidMaster) {
                         val geomPoint: JtsGeometry = GeometryUtil.createPoint(lat, lon)
                         val dir = GeometryUtil.getRelativeDirectionFromJts(geomOrigen, geomPoint)
                         val dist = geomOrigen.distance(geomPoint)

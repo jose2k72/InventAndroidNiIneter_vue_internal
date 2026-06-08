@@ -153,8 +153,8 @@ window.WorkflowService = {
             };
         }
 
-        // Evitar dejar un predio Master sin datos si tiene predios dependientes unificados
-        if (listData.length === 1 && typeof Android !== 'undefined' && Android.getDataInAdjacentPolygons && idObject && localizacionActual) {
+        // Evitar dejar un predio Master sin Ficha o sin Unión si tiene predios dependientes unificados
+        if ((type === 'Ficha' || type === 'UnionConPredio') && typeof Android !== 'undefined' && Android.getDataInAdjacentPolygons && idObject && localizacionActual) {
             try {
                 const rawJson = Android.getDataInAdjacentPolygons(idObject);
                 const adyacentes = JSON.parse(rawJson || "[]");
@@ -164,9 +164,10 @@ window.WorkflowService = {
                 );
                 if (unidos.length > 0) {
                     const locsDependientes = [...new Set(unidos.map(item => item.LocalizacionPredio || item.Data?.Localizacion))];
+                    const label = type === 'Ficha' ? 'la Encuesta Catastral (Ficha)' : 'la Unión con Predio';
                     return {
                         allowed: false,
-                        message: `No se puede eliminar el último registro. Este predio es Master para la unificación de los siguientes predios: ${locsDependientes.join(', ')}.`
+                        message: `No se puede eliminar ${label}. Este predio es Master para la unificación de los siguientes predios: ${locsDependientes.join(', ')}.`
                     };
                 }
             } catch (e) {
@@ -230,10 +231,10 @@ window.WorkflowService = {
                 const registros = gruposPorPredio[loc];
                 if (registros.length === 0) return;
 
-                // Descartar si el predio vecino está marcado como No Encuestado
-                const tieneNoEncuestado = registros.some(r => r.Data?.Type === 'NoEncuestado');
-                if (tieneNoEncuestado) {
-                    console.log(`🚫 Predio ${loc} descartado por estar marcado como No Encuestado.`);
+                // El predio colindante debe tener una Ficha o una Unión registrada (marca de catastrado)
+                const tieneFichaOUnion = registros.some(r => r.Data?.Type === 'Ficha' || r.Data?.Type === 'UnionConPredio');
+                if (!tieneFichaOUnion) {
+                    console.log(`🚫 Predio ${loc} descartado por no tener una Ficha o Unión registrada.`);
                     return;
                 }
 

@@ -208,6 +208,15 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         return items
     }
 
+    fun getDataByObjectId(idObject: Int, lat: Double, lng: Double, radiusInMeters: Double): List<DataItem> {
+        val allPoints = getDataByObjectId(idObject)
+        val results = FloatArray(1)
+        return allPoints.filter { point ->
+            android.location.Location.distanceBetween(lat, lng, point.latitud, point.longitud, results)
+            results[0] <= radiusInMeters
+        }
+    }
+
     /**
      * Obtiene el mapa de estadísticas agrupadas por día con filtrado espacial de 3 metros
      */

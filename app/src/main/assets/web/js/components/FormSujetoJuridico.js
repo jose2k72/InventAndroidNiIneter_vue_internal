@@ -95,7 +95,19 @@ const FormSujetoJuridico = {
 
                     <div class="form-group">
                         <label :style="{color: errors.FechaRegistro ? 'red' : 'inherit', fontWeight: errors.FechaRegistro ? 'bold' : 'normal'}">Fecha de Registro *</label>
-                        <input type="date" v-model="formData.FechaRegistro">
+                        <div style="display: flex; gap: 8px;">
+                            <input 
+                                type="text" 
+                                inputmode="numeric" 
+                                placeholder="DD/MM/AAAA" 
+                                v-model="fechaRegistroUI"
+                                @input="fechaRegistroUI = formatAsDate(fechaRegistroUI)"
+                                style="flex: 1;"
+                            >
+                            <button type="button" class="btn btn-secondary" @click="setFechaRegistroToday" style="padding: 10px 16px; margin: 0; min-width: auto;">
+                                📅 HOY
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -150,10 +162,66 @@ const FormSujetoJuridico = {
         const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
 
-        // Normalizar fecha para el input date (YYYY-MM-DD)
+        // Normalizar fecha y configurar representación en la UI (DD/MM/YYYY)
+        const fechaRegistroUI = Vue.ref('');
         if (formData.FechaRegistro) {
-            formData.FechaRegistro = formData.FechaRegistro.split('T')[0];
+            const cleanDate = formData.FechaRegistro.split('T')[0];
+            formData.FechaRegistro = cleanDate;
+            const parts = cleanDate.split('-');
+            if (parts.length === 3) {
+                fechaRegistroUI.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
         }
+
+        // Formateador de máscara de fecha automática al escribir dígitos
+        const formatAsDate = (val) => {
+            if (!val) return '';
+            let clean = val.replace(/\D/g, '');
+            if (clean.length > 8) clean = clean.substring(0, 8);
+            if (clean.length > 4) {
+                return `${clean.substring(0, 2)}/${clean.substring(2, 4)}/${clean.substring(4)}`;
+            } else if (clean.length > 2) {
+                return `${clean.substring(0, 2)}/${clean.substring(2)}`;
+            }
+            return clean;
+        };
+
+        // Rellenar fecha actual
+        const setFechaRegistroToday = () => {
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            fechaRegistroUI.value = `${d}/${m}/${y}`;
+            formData.FechaRegistro = `${y}-${m}-${d}`;
+        };
+
+        // Sincronizar UI (DD/MM/YYYY) -> Modelo (YYYY-MM-DD)
+        Vue.watch(() => fechaRegistroUI.value, (newVal) => {
+            delete errors.FechaRegistro;
+            if (!newVal) {
+                formData.FechaRegistro = null;
+                return;
+            }
+            const parts = newVal.split('/');
+            if (parts.length === 3) {
+                const d = parts[0].padStart(2, '0');
+                const m = parts[1].padStart(2, '0');
+                const y = parts[2];
+                if (y.length === 4) {
+                    formData.FechaRegistro = `${y}-${m}-${d}`;
+                    return;
+                }
+            }
+            formData.FechaRegistro = null;
+        });
+
+        // Sincronizar Modelo (si cambia a null) -> UI
+        Vue.watch(() => formData.FechaRegistro, (newVal) => {
+            if (!newVal) {
+                fechaRegistroUI.value = '';
+            }
+        });
 
         // Catálogos reactivos (Se cargan dinámicamente de /data/)
         const catalogos = Vue.reactive({
@@ -361,6 +429,9 @@ const FormSujetoJuridico = {
             errors,
             catalogos,
             totalMiembros,
+            fechaRegistroUI,
+            formatAsDate,
+            setFechaRegistroToday,
             save,
             propietariosDisponibles,
             seleccionarPropietarioCatastral,
