@@ -82,6 +82,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+
+        if (!checkAppDomain()) return
+
         updateActionBarTitle()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -96,6 +99,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             permissionsGranted = true
             permissionHelper.requestAllPermissions(multiplePermissionsLauncher) {
                 AppConfig.ensureStorageDirectoryExists()
+                if (!checkAppDomain()) return@requestAllPermissions
                 initializeMap()
                 preloadLocationSilently()
                 startLocationUpdates()
@@ -109,12 +113,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onResume() {
         super.onResume()
+        if (!checkAppDomain()) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val hasStorage = Environment.isExternalStorageManager()
             if (hasStorage && !permissionsGranted) {
                 permissionsGranted = true
                 permissionHelper.requestAllPermissions(multiplePermissionsLauncher) {
                     AppConfig.ensureStorageDirectoryExists()
+                    if (!checkAppDomain()) return@requestAllPermissions
                     initializeMap()
                     preloadLocationSilently()
                     startLocationUpdates()
@@ -1080,6 +1086,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 ex.printStackTrace()
             }
         }
+    }
+
+    private fun checkAppDomain(): Boolean {
+        if (DatabaseHelper.isDatabaseAvailable()) {
+            try {
+                // Instanciar para forzar la lectura del config si no se ha hecho
+                DatabaseHelper.getInstance(this)
+                if (AppConfig.AppDomainId != BuildConfig.APPLICATION_ID) {
+                    dialogHelper.showFatalErrorDialog(
+                        "Error de Dominio:\n\nLa base de datos cargada no coincide con el dominio asignado a esta aplicación.\n\nLa aplicación se cerrará."
+                    )
+                    return false
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error comprobando dominio: ${e.message}")
+            }
+        }
+        return true
     }
 
     override fun onDestroy() {

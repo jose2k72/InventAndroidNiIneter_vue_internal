@@ -16,6 +16,12 @@ import java.util.*
 object AppConfig {
     
     /**
+     * Variables estáticas cargadas desde la tabla de configuración al inicio
+     */
+    var AppDomainId: String = ""
+    var AppDomainCarto: String = ""
+
+    /**
      * Habilita el servidor de depuración HTTP para consultas SQLite en caliente.
      * IMPORTANTE: Cambiar a 'false' en compilaciones de producción.
      */

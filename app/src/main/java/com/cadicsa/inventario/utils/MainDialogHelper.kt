@@ -284,7 +284,8 @@ class MainDialogHelper(private val activity: AppCompatActivity) {
             .setMessage(message)
             .setCancelable(false)
             .setPositiveButton("OK") { _, _ ->
-                activity.finishAffinity()
+                activity.finishAndRemoveTask()
+                android.os.Process.killProcess(android.os.Process.myPid())
                 System.exit(0)
             }
             .show()

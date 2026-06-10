@@ -42,7 +42,10 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         fun getInstance(context: Context): DatabaseHelper {
             return instance ?: synchronized(this) {
                 instance ?: try {
-                    DatabaseHelper(context.applicationContext).also { instance = it }
+                    DatabaseHelper(context.applicationContext).also { 
+                        instance = it 
+                        it.loadAppDomainConfig()
+                    }
                 } catch (e: Exception) {
                     throw IllegalStateException("No se puede acceder a la base de datos: ${e.message}")
                 }
@@ -74,10 +77,28 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     // ========== CONFIGURACIÓN ==========
 
-    fun getEncuestador(): String {
-        readableDatabase.rawQuery("SELECT VALOR FROM CONFIG WHERE VARIABLE='ENCUESTADOR'", null).use { cursor ->
-            return if (cursor.moveToFirst()) cursor.getString(0) ?: "" else ""
+    fun getConfigValue(variable: String): String {
+        return try {
+            readableDatabase.rawQuery("SELECT VALOR FROM config WHERE VARIABLE = ?", arrayOf(variable)).use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) ?: "" else ""
+            }
+        } catch (e: Exception) {
+            ""
         }
+    }
+
+    fun loadAppDomainConfig() {
+        try {
+            AppConfig.AppDomainId = getConfigValue("AppDomainId")
+            AppConfig.AppDomainCarto = getConfigValue("AppDomainCarto")
+            android.util.Log.d(TAG, "Configuración de dominio cargada: AppDomainId=${AppConfig.AppDomainId}, AppDomainCarto=${AppConfig.AppDomainCarto}")
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error al cargar variables de dominio config: ${e.message}")
+        }
+    }
+
+    fun getEncuestador(): String {
+        return getConfigValue("ENCUESTADOR")
     }
 
     fun updateNombreEncuestador(nombre: String): Boolean {
