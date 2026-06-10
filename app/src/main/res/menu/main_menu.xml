@@ -54,6 +54,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_export_db"
+        android:title="Exportar Base de Datos"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_statistics"
         android:title="Estadísticas Diarias"
         app:showAsAction="never" />

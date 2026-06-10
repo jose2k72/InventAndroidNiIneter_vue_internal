@@ -542,7 +542,8 @@ const FormSujetoJuridico = {
             save,
             propietariosDisponibles,
             seleccionarPropietarioCatastral,
-            descartarPropietarioCatastral
+            descartarPropietarioCatastral,
+            validarIdentificacion
         };
     }
 };

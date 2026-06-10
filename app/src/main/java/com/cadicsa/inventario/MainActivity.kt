@@ -538,6 +538,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val importItem = menu?.findItem(R.id.menu_import_users)
         val clearDataItem = menu?.findItem(R.id.menu_clear_data)
         val importDbItem = menu?.findItem(R.id.menu_import_db)
+        val exportDbItem = menu?.findItem(R.id.menu_export_db)
 
         val user = SecurityManager.currentUser
         infoItem?.title = "👤 " + (user?.fullName ?: "Desconocido")
@@ -546,6 +547,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         adminPassItem?.isVisible = isAdmin
         clearDataItem?.isVisible = isAdmin
         importDbItem?.isVisible = isAdmin
+        exportDbItem?.isVisible = isAdmin
         changePassItem?.isVisible = user?.userName != "MASTER"
         return true
     }
@@ -557,6 +559,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             R.id.menu_import_users -> { importDeviceUsersFile(); true }
             R.id.menu_clear_data -> { clearAllData(); true }
             R.id.menu_import_db -> { importExternalDb(); true }
+            R.id.menu_export_db -> { exportExternalDb(); true }
             R.id.menu_statistics -> { dialogHelper.showStatisticsDialog(); true }
             R.id.menu_about -> { dialogHelper.showAboutDialog(30); true }
             R.id.menu_exit -> { exitApp(); true }
@@ -1104,6 +1107,124 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         return true
+    }
+
+    private fun exportExternalDb() {
+        FolderBrowserDialog(this) { dirPath ->
+            try {
+                val dbHelper = DatabaseHelper.getInstance(this)
+                val manager = ExportManager(dbHelper, dirPath)
+                val localizacionesMap = manager.getExportableLocalizaciones()
+
+                if (localizacionesMap.isEmpty()) {
+                    androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("⚠️ Sin datos exportables")
+                        .setMessage("No existen encuestas de catastros registradas en la base de datos local para exportar.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                } else {
+                    exportExternalDb_phase2_selectPredios(manager, localizacionesMap)
+                }
+            } catch (e: IllegalArgumentException) {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("⚠️ Directorio Inválido")
+                    .setMessage(e.message)
+                    .setPositiveButton("OK", null)
+                    .show()
+            } catch (e: Exception) {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("⚠️ Error de Exportación")
+                    .setMessage("Ocurrió un error al iniciar la exportación:\n\n${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }.show()
+    }
+
+    private fun exportExternalDb_phase2_selectPredios(manager: ExportManager, localizacionesMap: Map<String, Int>) {
+        val keys = localizacionesMap.keys.toList()
+        val items = keys.map { loc -> "$loc  ·  (${localizacionesMap[loc]} puntos)" }.toTypedArray()
+        val checked = BooleanArray(keys.size) { true }
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Seleccione los predios a exportar:")
+            .setMultiChoiceItems(items, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setNeutralButton("Desmarcar todos") { _, _ -> } // Se sobrescribe abajo
+            .setPositiveButton("Exportar") { _, _ ->
+                val selected = mutableListOf<String>()
+                for (i in checked.indices) {
+                    if (checked[i]) selected.add(keys[i])
+                }
+                if (selected.isEmpty()) {
+                    Toast.makeText(this, "Debe seleccionar al menos un predio para exportar", Toast.LENGTH_SHORT).show()
+                } else {
+                    exportExternalDb_phase3_execute(manager, selected)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+
+        // Sobrescribir neutral button para marcar/desmarcar todos sin cerrar diálogo
+        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+            val allChecked = checked.all { it }
+            val newState = !allChecked
+            for (i in checked.indices) {
+                checked[i] = newState
+                dialog.listView.setItemChecked(i, newState)
+            }
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).text =
+                if (newState) "Desmarcar todos" else "Marcar todos"
+        }
+    }
+
+    private fun exportExternalDb_phase3_execute(manager: ExportManager, selected: List<String>) {
+        val progressDialog = ProgressDialog(this).apply {
+            setTitle("Exportando datos...")
+            setMessage("Iniciando copia de base de datos...")
+            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+            setCancelable(false)
+            max = selected.size
+            show()
+        }
+
+        Thread {
+            try {
+                val result = manager.executeExport(selected) { current, total, message ->
+                    runOnUiThread {
+                        progressDialog.progress = current
+                        progressDialog.setMessage(message)
+                    }
+                }
+
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("✅ Exportación Completada")
+                        .setMessage(
+                            "Los datos han sido exportados exitosamente al destino.\n\n" +
+                            "· Predios exportados: ${selected.size}\n" +
+                            "· Registros exportados: ${result.exportedRecords}\n" +
+                            "· Fotos copiadas: ${result.exportedPhotos}"
+                        )
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("❌ ERROR — Exportación Fallida")
+                        .setMessage(
+                            "Ocurrió un fallo durante la exportación y se revirtieron los cambios parciales.\n\n" +
+                            "Detalle:\n${e.message}"
+                        )
+                        .setPositiveButton("Aceptar", null)
+                        .show()
+                }
+            }
+        }.start()
     }
 
     override fun onDestroy() {

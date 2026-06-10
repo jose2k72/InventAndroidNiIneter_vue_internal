@@ -12,11 +12,11 @@ window.DisplayService = {
 
         const type = data.Type;
         if (type === 'SujetoNatural') {
-            return data.DerehoParcelaCatalog === 2 ? 'NAT-POSEEDOR' : 'NAT-PROPIETTARIO';
+            return data.DerehoParcelaCatalog === 2 ? 'POSEED. NAT.' : 'PROPIET. NAT.';
         }
 
         if (type === 'SujetoJuridico') {
-            return data.DerehoParcelaCatalog !== 1 ? 'JUR-POSEEDOR' : 'JUR-PROPIETARIO';
+            return data.DerehoParcelaCatalog !== 1 ? 'POSEED. JUR.' : 'PROPIET. JUR.';
         }
 
         const names = {

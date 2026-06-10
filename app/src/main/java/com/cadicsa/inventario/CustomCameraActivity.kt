@@ -179,88 +179,66 @@ class CustomCameraActivity : AppCompatActivity() {
         }
     }
 
-    private fun takePhoto() {
-        val imageCapture = imageCapture ?: return
-
-        // Deshabilitar botón para evitar múltiples clics
-        btnCapture.isEnabled = false
-
-        val outputFile = File(outputFilePath)
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exc: ImageCaptureException) {
-                    btnCapture.isEnabled = true
-                    Log.e(TAG, "Error guardando foto: ${exc.message}", exc)
-                    Toast.makeText(this@CustomCameraActivity, "Error al capturar la foto", Toast.LENGTH_SHORT).show()
-                }
-
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    Log.d(TAG, "📷 Foto guardada en: $outputFilePath")
-                    
-                    // Breve vibración física de confirmación al guardar
-                    try {
-                        val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-                        vibrator.vibrate(80)
-                    } catch (e: Exception) {
-                        // Ignorar si no hay vibrador
-                    }
-
-                    val ocrMode = intent.getBooleanExtra("ocr_mode", false)
-                    if (ocrMode) {
-                        runOCR(outputFile)
-                    } else { 
-                        val resultIntent = Intent().apply {
-                            putExtra(RESULT_PHOTO_NAME, outputFile.name)
-                        }
-                        setResult(Activity.RESULT_OK, resultIntent)
-                        finish()
-                    }
-                }
-            }
-        )
+    private fun imageProxyToBitmap(image: ImageProxy): Bitmap? {
+        return try {
+            val plane = image.planes[0]
+            val buffer = plane.buffer
+            val bytes = ByteArray(buffer.remaining())
+            buffer.get(bytes)
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error convirtiendo ImageProxy a Bitmap", e)
+            null
+        }
     }
 
-    private fun rotateAndCropOcrImage(outputFile: File): Bitmap? {
-        try {
-            val rawBitmap = BitmapFactory.decodeFile(outputFile.absolutePath) ?: return null
-            
-            // 1. Obtener la rotación correcta usando EXIF
-            val exifInterface = ExifInterface(outputFile.absolutePath)
-            val orientation = exifInterface.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_NORMAL
-            )
-            var rotationDegrees = 0
-            val hardwareRotation = getSensorOrientation()
-            Log.e(TAG, "Crop Debug: Hardware Sensor Orientation = $hardwareRotation")
-            when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> rotationDegrees = 90
-                ExifInterface.ORIENTATION_ROTATE_180 -> rotationDegrees = 180
-                ExifInterface.ORIENTATION_ROTATE_270 -> rotationDegrees = 270
-                else -> {
-                    // Forzar rotación si la foto viene en landscape pero la pantalla es portrait
-                    if (rawBitmap.width > rawBitmap.height) {
-                        rotationDegrees = hardwareRotation
-                    }
-                }
-            }
+    private fun rotateBitmap(bitmap: Bitmap, degrees: Int): Bitmap {
+        if (degrees == 0) return bitmap
+        return try {
             val matrix = Matrix()
-            if (rotationDegrees != 0) {
-                matrix.postRotate(rotationDegrees.toFloat())
+            matrix.postRotate(degrees.toFloat())
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated != bitmap) {
+                bitmap.recycle()
             }
-            
-            val rotatedBitmap = Bitmap.createBitmap(
-                rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, true
-            )
-            if (rotatedBitmap != rawBitmap) {
-                rawBitmap.recycle()
+            rotated
+        } catch (e: Exception) {
+            Log.e(TAG, "Error rotando bitmap", e)
+            bitmap
+        }
+    }
+
+    private fun scaleBitmapIfNeeded(bitmap: Bitmap, maxDimension: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+        if (width <= maxDimension && height <= maxDimension) return bitmap
+
+        val ratio = width.toFloat() / height.toFloat()
+        val newWidth: Int
+        val newHeight: Int
+        if (width > height) {
+            newWidth = maxDimension
+            newHeight = (maxDimension / ratio).toInt()
+        } else {
+            newHeight = maxDimension
+            newWidth = (maxDimension * ratio).toInt()
+        }
+
+        return try {
+            val scaled = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+            if (scaled != bitmap) {
+                bitmap.recycle()
             }
-            
-            // 2. Obtener las coordenadas en pantalla de ocrTargetArea y viewFinder
+            scaled
+        } catch (e: Exception) {
+            Log.e(TAG, "Error escalando bitmap", e)
+            bitmap
+        }
+    }
+
+    private fun cropOcrImage(rotatedBitmap: Bitmap): Bitmap {
+        try {
+            // Obtener las coordenadas en pantalla de ocrTargetArea y viewFinder
             val targetView = findViewById<View>(R.id.ocrTargetArea) ?: return rotatedBitmap
             val finder = findViewById<View>(R.id.viewFinder) ?: return rotatedBitmap
             
@@ -276,7 +254,7 @@ class CustomCameraActivity : AppCompatActivity() {
             
             if (finderWidth <= 0 || finderHeight <= 0) return rotatedBitmap
             
-            // 3. Mapear las coordenadas al Bitmap rotado
+            // Mapear las coordenadas al Bitmap rotado
             val scaleX = rotatedBitmap.width.toFloat() / finderWidth.toFloat()
             val scaleY = rotatedBitmap.height.toFloat() / finderHeight.toFloat()
             
@@ -285,40 +263,121 @@ class CustomCameraActivity : AppCompatActivity() {
             val cropWidth = (targetWidth * scaleX).toInt().coerceAtMost(rotatedBitmap.width - cropX)
             val cropHeight = (targetHeight * scaleY).toInt().coerceAtMost(rotatedBitmap.height - cropY)
             
-            Log.e(TAG, "Crop Debug: rotatedBitmap size = ${rotatedBitmap.width}x${rotatedBitmap.height}")
-            Log.e(TAG, "Crop Debug: finder size = ${finderWidth}x${finderHeight}")
-            Log.e(TAG, "Crop Debug: targetView screen coordinates = ($targetX, $targetY), size = ${targetWidth}x${targetHeight}")
-            Log.e(TAG, "Crop Debug: computed crop area = ($cropX, $cropY), size = ${cropWidth}x${cropHeight}")
+            Log.d(TAG, "Crop Debug: rotatedBitmap size = ${rotatedBitmap.width}x${rotatedBitmap.height}")
+            Log.d(TAG, "Crop Debug: finder size = ${finderWidth}x${finderHeight}")
+            Log.d(TAG, "Crop Debug: targetView screen coordinates = ($targetX, $targetY), size = ${targetWidth}x${targetHeight}")
+            Log.d(TAG, "Crop Debug: computed crop area = ($cropX, $cropY), size = ${cropWidth}x${cropHeight}")
             
             if (cropWidth <= 0 || cropHeight <= 0) return rotatedBitmap
             
-            // 4. Recortar la imagen
             val croppedBitmap = Bitmap.createBitmap(rotatedBitmap, cropX, cropY, cropWidth, cropHeight)
             if (croppedBitmap != rotatedBitmap) {
                 rotatedBitmap.recycle()
             }
-            
-            // 5. Sobrescribir el archivo original con la imagen recortada
-            java.io.FileOutputStream(outputFile).use { out ->
-                croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-            }
-            
             return croppedBitmap
         } catch (e: Exception) {
-            Log.e(TAG, "Error al rotar y recortar imagen para OCR", e)
-            return null
+            Log.e(TAG, "Error recortando imagen para OCR", e)
+            return rotatedBitmap
         }
     }
 
-    private fun runOCR(outputFile: File) {
-        val image: InputImage
-        try {
-            val croppedBitmap = rotateAndCropOcrImage(outputFile)
-            image = if (croppedBitmap != null) {
-                InputImage.fromBitmap(croppedBitmap, 0)
-            } else {
-                InputImage.fromFilePath(this, Uri.fromFile(outputFile))
+    private fun takePhoto() {
+        val imageCapture = imageCapture ?: return
+
+        // Deshabilitar botón para evitar múltiples clics
+        btnCapture.isEnabled = false
+
+        imageCapture.takePicture(
+            ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onError(exc: ImageCaptureException) {
+                    btnCapture.isEnabled = true
+                    Log.e(TAG, "Error capturando foto: ${exc.message}", exc)
+                    Toast.makeText(this@CustomCameraActivity, "Error al capturar la foto", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    cameraExecutor.execute {
+                        var processedBitmap: Bitmap? = null
+                        try {
+                            val rawBitmap = imageProxyToBitmap(image)
+                            if (rawBitmap == null) {
+                                runOnUiThread {
+                                    btnCapture.isEnabled = true
+                                    Toast.makeText(this@CustomCameraActivity, "Error al decodificar la foto en memoria", Toast.LENGTH_SHORT).show()
+                                }
+                                return@execute
+                            }
+
+                            // 1. Rotar físicamente la imagen
+                            val rotationDegrees = image.imageInfo.rotationDegrees
+                            val rotatedBitmap = rotateBitmap(rawBitmap, rotationDegrees)
+
+                            val ocrMode = intent.getBooleanExtra("ocr_mode", false)
+                            if (ocrMode) {
+                                // 2a. Si es OCR, recortamos a la rendija
+                                val croppedBitmap = cropOcrImage(rotatedBitmap)
+                                processedBitmap = croppedBitmap
+                                
+                                // Guardar temporal para ML Kit
+                                val outputFile = File(outputFilePath)
+                                java.io.FileOutputStream(outputFile).use { out ->
+                                    croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                                }
+                                
+                                runOnUiThread {
+                                    // Breve vibración física de confirmación al guardar
+                                    try {
+                                        val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+                                        vibrator.vibrate(80)
+                                    } catch (e: Exception) {}
+
+                                    runOCR(outputFile, croppedBitmap)
+                                }
+                            } else {
+                                // 2b. Si es foto estándar, redimensionar a 3264px máx
+                                val scaledBitmap = scaleBitmapIfNeeded(rotatedBitmap, 3264)
+                                processedBitmap = scaledBitmap
+
+                                // Guardar en disco con compresión al 90%
+                                val outputFile = File(outputFilePath)
+                                java.io.FileOutputStream(outputFile).use { out ->
+                                    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                                }
+
+                                runOnUiThread {
+                                    // Breve vibración física de confirmación al guardar
+                                    try {
+                                        val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+                                        vibrator.vibrate(80)
+                                    } catch (e: Exception) {}
+
+                                    val resultIntent = Intent().apply {
+                                        putExtra(RESULT_PHOTO_NAME, outputFile.name)
+                                    }
+                                    setResult(Activity.RESULT_OK, resultIntent)
+                                    finish()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error procesando imagen en memoria", e)
+                            runOnUiThread {
+                                btnCapture.isEnabled = true
+                                Toast.makeText(this@CustomCameraActivity, "Error al procesar y guardar la foto", Toast.LENGTH_SHORT).show()
+                            }
+                        } finally {
+                            processedBitmap?.recycle()
+                            image.close()
+                        }
+                    }
+                }
             }
+        )
+    }
+
+    private fun runOCR(outputFile: File, bitmap: Bitmap) {
+        try {
+            val image = InputImage.fromBitmap(bitmap, 0)
             val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
             recognizer.process(image)
                 .addOnSuccessListener { visionText ->
@@ -343,7 +402,7 @@ class CustomCameraActivity : AppCompatActivity() {
                     finish()
                 }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load image for OCR", e)
+            Log.e(TAG, "Failed to run OCR on bitmap", e)
             val resultIntent = Intent().apply {
                 putExtra(RESULT_PHOTO_NAME, outputFile.name)
                 putExtra("ocr_result", "")
