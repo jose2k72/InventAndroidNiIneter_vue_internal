@@ -139,7 +139,11 @@ window.ModelsFactory = {
             RelacionConParcelaCatalog: null,
             RelacionConParcelaOtroText: '',
             RelacionInformantePropietarioCatalog: 0,
-            _RelacionPropietarioName: ''
+            _RelacionPropietarioName: '',
+            // Firma del entrevistado
+            ConFirma: true,        // true = firma requerida (por defecto)
+            RazonNoFirma: '',      // Código del motivo si ConFirma = false: NQF, NSF, IFF, OTRO
+            RazonNoFirmaOtro: ''   // Texto libre si RazonNoFirma === 'OTRO'
         };
     },
 
@@ -150,6 +154,7 @@ window.ModelsFactory = {
     createSujetoJuridico: function (ctx) {
         return {
             Type: 'SujetoJuridico',
+            DerehoParcelaCatalog: 1, // 1 = Propietario (por defecto). Nota: typo 'Dereho' heredado del DTO
             Identificacion: '',
             RazonSocial: '',
             MuestraDatosRegistrales: false,

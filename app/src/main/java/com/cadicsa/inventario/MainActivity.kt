@@ -6,6 +6,11 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import android.app.ProgressDialog
+import android.content.ContentUris
+import android.database.sqlite.SQLiteDatabase
+import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -64,6 +69,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             initializeMap()
         }
     }
+
+    /** Ruta de la BD externa validada — disponible para las fases de importación */
+    private var validatedExternalDbPath: String? = null
+
+    /** Manager que orquesta las fases 2 y 3 del proceso de importación */
+    private var importManager: ImportManager? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -518,12 +530,16 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val changePassItem = menu?.findItem(R.id.menu_change_password)
         val adminPassItem = menu?.findItem(R.id.menu_admin_passwords)
         val importItem = menu?.findItem(R.id.menu_import_users)
-        
+        val clearDataItem = menu?.findItem(R.id.menu_clear_data)
+        val importDbItem = menu?.findItem(R.id.menu_import_db)
+
         val user = SecurityManager.currentUser
         infoItem?.title = "👤 " + (user?.fullName ?: "Desconocido")
         val isAdmin = user?.isAdmin == true || user?.userName == "ADMIN" || user?.userName == "MASTER"
         importItem?.isVisible = isAdmin
         adminPassItem?.isVisible = isAdmin
+        clearDataItem?.isVisible = isAdmin
+        importDbItem?.isVisible = isAdmin
         changePassItem?.isVisible = user?.userName != "MASTER"
         return true
     }
@@ -533,6 +549,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             R.id.menu_change_password -> { dialogHelper.showChangePasswordDialog(); true }
             R.id.menu_admin_passwords -> { startActivity(Intent(this, ManageUsersActivity::class.java)); true }
             R.id.menu_import_users -> { importDeviceUsersFile(); true }
+            R.id.menu_clear_data -> { clearAllData(); true }
+            R.id.menu_import_db -> { importExternalDb(); true }
             R.id.menu_statistics -> { dialogHelper.showStatisticsDialog(); true }
             R.id.menu_about -> { dialogHelper.showAboutDialog(30); true }
             R.id.menu_exit -> { exitApp(); true }
@@ -557,6 +575,476 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         } catch (e: Exception) {
             Toast.makeText(this, "❌ Error importando: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    /**
+     * Elimina TODOS los registros de encuesta (tabla DATOS).
+     * Requiere doble confirmación explícita del administrador.
+     */
+    private fun clearAllData() {
+        val dbHelper = DatabaseHelper.getInstance(this)
+        val totalRegistros = dbHelper.countAllData()
+
+        // Primera advertencia
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Limpiar Todos los Datos")
+            .setMessage(
+                "Esta acción eliminará PERMANENTEMENTE todos los registros de encuesta.\n\n" +
+                "📊 Registros actuales: $totalRegistros\n\n" +
+                "⛔ Esta operación NO SE PUEDE DESHACER.\n\n" +
+                "¿Desea continuar?"
+            )
+            .setPositiveButton("Continuar ▶") { _, _ ->
+                // Segunda confirmación final
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("🛑 CONFIRMACIÓN FINAL")
+                    .setMessage(
+                        "Va a eliminar $totalRegistros registros de forma IRREVERSIBLE.\n\n" +
+                        "Presione \"ELIMINAR TODO\" para confirmar."
+                    )
+                    .setPositiveButton("ELIMINAR TODO") { _, _ ->
+                        val result = DataCleaner(dbHelper).deleteAll()
+                        if (result.deletedRecords >= 0) {
+                            mapHelper?.loadCapturedPoints(-1)
+                            updateActionBarTitle()
+
+                            if (result.failedPhotos > 0) {
+                                // Advertencia: algunas fotos no pudieron eliminarse
+                                androidx.appcompat.app.AlertDialog.Builder(this)
+                                    .setTitle("⚠️ Limpieza completada con advertencias")
+                                    .setMessage(
+                                        "✅ ${result.deletedRecords} registros eliminados (ID reseteado a 1).\n" +
+                                        "📷 ${result.deletedPhotos} fotos eliminadas.\n\n" +
+                                        "⚠️ ${result.failedPhotos} foto(s) NO pudieron eliminarse del disco.\n" +
+                                        "Puede que estén siendo usadas por otro proceso o que no tengan permisos de escritura."
+                                    )
+                                    .setPositiveButton("Aceptar", null)
+                                    .show()
+                            } else {
+                                Toast.makeText(
+                                    this,
+                                    "✅ ${result.deletedRecords} registros y ${result.deletedPhotos} fotos eliminados. ID reseteado.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        } else {
+                            Toast.makeText(this, "❌ Error al eliminar los datos. Intente nuevamente.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    /**
+     * Fase 1: Abre el navegador de archivos propio para seleccionar una BD SQLite externa.
+     * El flujo continúa en importExternalDb_onFilePathResolved().
+     */
+    private fun importExternalDb() {
+        FileBrowserDialog(
+            activity        = this,
+            validExtensions = setOf("db", "sqlite", "sqlite3", "db3")
+        ) { filePath ->
+            importExternalDb_onFilePathResolved(filePath)
+        }.show()
+    }
+
+    /**
+     * Fase 1b: Recibe el path resuelto del archivo seleccionado, valida la BD y prepara la fase 2.
+     */
+    private fun importExternalDb_onFilePathResolved(filePath: String) {
+        // 1. Validar extensión SQLite
+        val ext = filePath.substringAfterLast('.', "").lowercase()
+        if (ext !in setOf("db", "sqlite", "sqlite3", "db3")) {
+            showImportError(
+                "El archivo seleccionado no tiene una extensión SQLite válida.\n\n" +
+                "Extensiones permitidas: .db · .sqlite · .sqlite3 · .db3\n" +
+                "Extensión recibida: .$ext"
+            )
+            return
+        }
+
+        // 3. Abrir BD externa en modo solo lectura (sin copiar el archivo)
+        val externalDb = try {
+            SQLiteDatabase.openDatabase(filePath, null, SQLiteDatabase.OPEN_READONLY)
+        } catch (e: Exception) {
+            showImportError("No se pudo abrir la base de datos:\n\n${e.message}")
+            return
+        }
+
+        try {
+            // 4. Chequeo 1: ¿existe la tabla DATOS?
+            val tableCursor = externalDb.rawQuery(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='DATOS'", null
+            )
+            val hasTable = tableCursor.moveToFirst()
+            tableCursor.close()
+            if (!hasTable) {
+                showImportError("La base de datos seleccionada no contiene la tabla DATOS.")
+                return
+            }
+
+            // 5. Chequeo 2: columnas mínimas requeridas
+            val required = setOf("IDOBJECT", "DATOS", "FECHA", "LATITUD", "LONGITUD", "LATITUDGPS", "LONGITUDGPS")
+            val colCursor = externalDb.rawQuery("PRAGMA table_info(DATOS)", null)
+            val actual = mutableSetOf<String>()
+            while (colCursor.moveToNext()) {
+                val idx = colCursor.getColumnIndex("name")
+                if (idx >= 0) actual.add(colCursor.getString(idx).uppercase())
+            }
+            colCursor.close()
+            val missing = required - actual
+            if (missing.isNotEmpty()) {
+                showImportError(
+                    "La tabla DATOS no tiene el formato esperado.\n\n" +
+                    "Columnas faltantes: ${missing.joinToString(", ")}"
+                )
+                return
+            }
+
+            // 6. Chequeo 3: ¿no está vacía?
+            val countCursor = externalDb.rawQuery("SELECT COUNT(*) FROM DATOS", null)
+            val count = if (countCursor.moveToFirst()) countCursor.getInt(0) else 0
+            countCursor.close()
+            if (count == 0) {
+                showImportError(
+                    "La tabla DATOS del archivo seleccionado está vacía.\n" +
+                    "No hay registros para importar."
+                )
+                return
+            }
+
+            // 7. Todo validado — guardar ruta y confirmar con el usuario
+            val fileName = java.io.File(filePath).name
+            validatedExternalDbPath = filePath
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("✅ Base de Datos Válida")
+                .setMessage(
+                    "Archivo: $fileName\n" +
+                    "Registros disponibles: $count\n\n" +
+                    "La base de datos está lista para importar."
+                )
+                .setPositiveButton("Continuar") { _, _ ->
+                    importExternalDb_phase2_validateDomain()
+                }
+                .setNegativeButton("Cancelar") { _, _ ->
+                    validatedExternalDbPath = null
+                }
+                .show()
+
+        } finally {
+            externalDb.close()
+        }
+    }
+
+    /**
+     * Fase 2: Valida que TODOS los registros de la BD externa pertenezcan al dominio
+     * geográfico local (polígonos Predios via wkb). Corre en background con progress.
+     * Para en el primer registro inconsistente y reporta con detalle.
+     */
+    private fun importExternalDb_phase2_validateDomain() {
+        val dbPath = validatedExternalDbPath ?: return
+        val localDbHelper = DatabaseHelper.getInstance(this)
+        importManager = try {
+            ImportManager(localDbHelper, dbPath)
+        } catch (e: IllegalArgumentException) {
+            showImportError(e.message ?: "Error de configuración de importación.")
+            validatedExternalDbPath = null
+            return
+        }
+
+        val progressDialog = ProgressDialog(this).apply {
+            setTitle("Validando dominio geográfico")
+            setMessage("Preparando...")
+            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+            setCancelable(false)
+            max = 100
+            show()
+        }
+
+        Thread {
+            val externalDb = try {
+                SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
+            } catch (e: Exception) {
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    showImportError("No se pudo reabrir la base de datos:\n\n${e.message}")
+                    importManager?.clear(); importManager = null
+                    validatedExternalDbPath = null
+                }
+                return@Thread
+            }
+
+            try {
+                val cursor = externalDb.rawQuery(
+                    "SELECT ID, LATITUD, LONGITUD FROM DATOS ORDER BY ID", null
+                )
+                val total = cursor.count
+                var processed = 0
+                var failedId: Int? = null
+                var failedLat = 0.0
+                var failedLng = 0.0
+
+                cursor.use {
+                    while (it.moveToNext()) {
+                        val id  = it.getInt(0)
+                        val lat = it.getDouble(1)
+                        val lng = it.getDouble(2)
+                        processed++
+
+                        runOnUiThread {
+                            progressDialog.progress = if (total > 0) (processed * 100 / total) else 0
+                            progressDialog.setMessage("Verificando $processed de $total...")
+                        }
+
+                        val geom = localDbHelper.getGeometry(lng, lat, "Predios")
+                        if (geom == null) {
+                            failedId  = id
+                            failedLat = lat
+                            failedLng = lng
+                            break
+                        }
+                        // Registrar en diccionario + localRowIds (solo primera vez por predio)
+                        importManager?.addRecord(id, geom)
+                    }
+                }
+
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    if (failedId != null) {
+                        importManager?.clear(); importManager = null
+                        validatedExternalDbPath = null
+                        showImportError(
+                            "Registro fuera del dominio geográfico:\n\n" +
+                            "ID: $failedId\n" +
+                            "Lat: $failedLat\nLng: $failedLng\n\n" +
+                            "Este archivo no pertenece al dominio de esta base de datos.\n" +
+                            "Importación cancelada."
+                        )
+                    } else {
+                        importExternalDb_phase3_showDecision()
+                    }
+                }
+
+            } catch (e: Exception) {
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    showImportError("Error durante la validación geográfica:\n\n${e.message}")
+                    importManager?.clear(); importManager = null
+                    validatedExternalDbPath = null
+                }
+            } finally {
+                externalDb.close()
+            }
+        }.start()
+    }
+
+    /**
+     * Fase 3: Analiza el diccionario y presenta la UI de decisión adecuada.
+     * Sin conflictos → confirmación simple. Con conflictos → checklist multiselección por predio.
+     */
+    private fun importExternalDb_phase3_showDecision() {
+        val manager = importManager ?: return
+        val conflictEntries = manager.conflictEntries()
+        val totalRecords    = manager.totalExternalRecords()
+        val totalPredios    = manager.dictionary.size
+
+        if (conflictEntries.isEmpty()) {
+            // Sin conflictos: confirmación directa
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("✅ Sin Datos Duplicados")
+                .setMessage(
+                    "Listo para importar:\n\n" +
+                    "· Predios: $totalPredios\n" +
+                    "· Registros: $totalRecords\n\n" +
+                    "No se encontraron datos duplicados.\n¿Desea proceder?"
+                )
+                .setPositiveButton("Importar") { _, _ -> importExternalDb_phase3c_execute() }
+                .setNegativeButton("Cancelar") { _, _ ->
+                    importManager?.clear(); importManager = null; validatedExternalDbPath = null
+                }
+                .show()
+        } else {
+            // Con conflictos: checklist multiselección por predio
+            val newCount = manager.newEntries().size
+            val items = conflictEntries.map { entry ->
+                "${entry.localGeom.localizacion}  ·  " +
+                "${entry.externalRowIds.size} entrantes / " +
+                "${entry.localRowIds.size} existentes"
+            }.toTypedArray()
+            val checked = BooleanArray(conflictEntries.size) { true }
+
+            val titleSuffix = if (newCount > 0) "  (+ $newCount nuevos)" else ""
+            val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(
+                    "⚠️ Conflictos — ${conflictEntries.size} predios con datos existentes$titleSuffix\n" +
+                    "Seleccione cuáles desea reemplazar:"
+                )
+                .setMultiChoiceItems(items, checked) { _, which, isChecked ->
+                    checked[which] = isChecked
+                    conflictEntries[which].selectedForImport = isChecked
+                }
+                .setNeutralButton("Desmarcar todos") { _, _ -> } // listener sobreescrito abajo
+                .setPositiveButton("Importar seleccionados") { _, _ ->
+                    importExternalDb_phase3c_execute()
+                }
+                .setNegativeButton("Cancelar") { _, _ ->
+                    importManager?.clear(); importManager = null; validatedExternalDbPath = null
+                }
+                .show()
+
+            // Sobreescribir neutral button para evitar que cierre el diálogo al pulsarlo
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                val allChecked = checked.all { it }
+                val newState   = !allChecked
+                for (i in checked.indices) {
+                    checked[i] = newState
+                    conflictEntries[i].selectedForImport = newState
+                    dialog.listView.setItemChecked(i, newState)
+                }
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).text =
+                    if (newState) "Desmarcar todos" else "Marcar todos"
+            }
+        }
+    }
+
+    /**
+     * Fase 3c: Ejecuta la importación en background thread con transacciones por predio.
+     */
+    private fun importExternalDb_phase3c_execute() {
+        val manager = importManager ?: return
+
+        val progressDialog = ProgressDialog(this).apply {
+            setTitle("Importando datos...")
+            setMessage("Preparando...")
+            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+            setCancelable(false)
+            max = manager.dictionary.size
+            show()
+        }
+
+        Thread {
+            try {
+                val result = manager.executeImport { current, total, message ->
+                    runOnUiThread {
+                        progressDialog.progress = current
+                        progressDialog.setMessage(message)
+                    }
+                }
+
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    mapHelper?.loadCapturedPoints(-1)
+                    updateActionBarTitle()
+
+                    val sb = StringBuilder("Importación completada:\n\n")
+                    if (result.newPredios > 0)
+                        sb.append("· ${result.importedNew} registros importados (${result.newPredios} predios nuevos)\n")
+                    if (result.replacedPredios > 0)
+                        sb.append("· ${result.replacedRecords} registros reemplazados (${result.replacedPredios} predios)\n")
+                    if (result.skippedPredios > 0)
+                        sb.append("· ${result.skippedPredios} predios omitidos por el usuario\n")
+
+                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("✅ Importación Completada")
+                        .setMessage(sb.toString().trim())
+                        .setPositiveButton("OK") { _, _ ->
+                            importManager = null
+                            validatedExternalDbPath = null
+                        }
+                        .show()
+                }
+            } catch (e: ImportManager.ImportTransactionException) {
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    // Recargar mapa para reflejar lo importado hasta el punto de fallo
+                    mapHelper?.loadCapturedPoints(-1)
+                    updateActionBarTitle()
+                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("❌ ERROR CRÍTICO — Importación Abortada")
+                        .setMessage(
+                            "Predio afectado: ${e.localizacion}\n\n" +
+                            "${e.message}\n\n" +
+                            "⚠️ Los predios importados ANTES del fallo se conservan.\n" +
+                            "Los predios restantes NO fueron importados."
+                        )
+                        .setPositiveButton("Aceptar") { _, _ ->
+                            importManager = null
+                            validatedExternalDbPath = null
+                        }
+                        .show()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    showImportError("Error durante la importación:\n\n${e.message}")
+                    importManager = null
+                    validatedExternalDbPath = null
+                }
+            }
+        }.start()
+    }
+
+    /**
+     * Muestra un diálogo de error estandarizado para el flujo de importación.
+     */
+    private fun showImportError(msg: String) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Error de Importación")
+            .setMessage(msg)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    /**
+     * Resuelve la ruta real del sistema de archivos a partir de un content URI.
+     * Requiere permiso MANAGE_EXTERNAL_STORAGE para acceso completo.
+     */
+    private fun getRealFilePathFromUri(uri: Uri): String? {
+        // URI tipo file:// → ruta directa
+        if ("file".equals(uri.scheme, ignoreCase = true)) return uri.path
+
+        // DocumentsProvider (Android 4.4+)
+        if (DocumentsContract.isDocumentUri(this, uri)) {
+            val docId = DocumentsContract.getDocumentId(uri)
+            when (uri.authority) {
+                "com.android.externalstorage.documents" -> {
+                    val parts = docId.split(":")
+                    return if ("primary".equals(parts[0], ignoreCase = true))
+                        "${Environment.getExternalStorageDirectory()}/${parts[1]}"
+                    else
+                        "/storage/${parts[0]}/${parts[1]}"
+                }
+                "com.android.providers.downloads.documents" -> {
+                    return try {
+                        val contentUri = ContentUris.withAppendedId(
+                            Uri.parse("content://downloads/public_downloads"),
+                            docId.toLong()
+                        )
+                        getDataColumn(contentUri)
+                    } catch (e: Exception) { null }
+                }
+            }
+        }
+
+        // Fallback: content:// genérico → columna _data
+        if ("content".equals(uri.scheme, ignoreCase = true)) return getDataColumn(uri)
+
+        return null
+    }
+
+    /** Obtiene el valor de la columna _data de un content URI. */
+    private fun getDataColumn(uri: Uri): String? {
+        contentResolver.query(uri, arrayOf("_data"), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                return try {
+                    cursor.getString(cursor.getColumnIndexOrThrow("_data"))
+                } catch (e: Exception) { null }
+            }
+        }
+        return null
     }
 
     private fun exitApp() {

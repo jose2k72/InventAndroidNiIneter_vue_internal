@@ -280,51 +280,82 @@ const FormEntrevistado = {
 
             <!-- Firma del Entrevistado -->
             <div class="section">
-                <h3 :style="{color: errors.Firma ? 'red' : 'inherit'}">✍️ Firma del Entrevistado *</h3>
-                <div style="margin-bottom: 12px; font-size: 0.9rem; color: #555;">
-                    Por favor, dibuje la firma del entrevistado en el recuadro a continuación.
+                <h3 :style="{color: (errors.Firma || errors.RazonNoFirma) ? 'red' : 'inherit'}">✍️ Firma del Entrevistado</h3>
+
+                <!-- Toggle: ¿puede / va a firmar? -->
+                <div class="form-group checkbox-group" style="margin-bottom: 14px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold;">
+                        <input type="checkbox" v-model="formData.ConFirma" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>✏️ El entrevistado puede / va a firmar</span>
+                    </label>
                 </div>
-                
-                <!-- Si ya hay una firma guardada y no estamos editándola -->
-                <div v-if="formData.FirmaBase64 && !mostrarCanvasFirma" 
-                     style="display: flex; flex-direction: column; align-items: center; gap: 10px; background: #F9F9F9; padding: 15px; border: 1px solid #E0E0E0; border-radius: 8px;">
-                    <img :src="formData.FirmaBase64" alt="Firma registrada" style="max-width: 100%; height: auto; max-height: 150px; background: white; border: 1px solid #CCC; border-radius: 4px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1);" />
-                    <button type="button" @click="activarEdicionFirma" 
-                            style="padding: 8px 16px; background-color: #6200EE; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
-                        🔄 Volver a Firmar
-                    </button>
-                </div>
-                
-                <!-- Si no hay firma o si el usuario quiere volver a firmar -->
-                <div v-else style="display: flex; flex-direction: column; gap: 10px;">
-                    <div style="position: relative; width: 100%; max-width: 100%; margin: 0 auto;">
-                        <canvas ref="canvasFirma" 
-                                style="border: 2px dashed #90CAF9; border-radius: 8px; background-color: #F5F5F5; cursor: crosshair; display: block; width: 100%; height: 300px; box-sizing: border-box;"
-                                @touchstart="onTouchStart"
-                                @touchmove="onTouchMove"
-                                @touchend="onTouchEnd"
-                                @mousedown="onMouseDown"
-                                @mousemove="onMouseMove"
-                                @mouseup="onMouseUp"
-                                @mouseleave="onMouseUp"></canvas>
-                        <div v-if="!firmaDibujada" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #9E9E9E; font-size: 0.9rem; pointer-events: none; text-align: center;">
-                            ✏️ Firme aquí
+
+                <!-- Rama 1: ConFirma = true → Canvas de firma -->
+                <div v-if="formData.ConFirma !== false">
+                    <div style="margin-bottom: 12px; font-size: 0.9rem; color: #555;">
+                        Por favor, dibuje la firma del entrevistado en el recuadro a continuación.
+                    </div>
+
+                    <!-- Si ya hay una firma guardada y no estamos editándola -->
+                    <div v-if="formData.FirmaBase64 && !mostrarCanvasFirma" 
+                         style="display: flex; flex-direction: column; align-items: center; gap: 10px; background: #F9F9F9; padding: 15px; border: 1px solid #E0E0E0; border-radius: 8px;">
+                        <img :src="formData.FirmaBase64" alt="Firma registrada" style="max-width: 100%; height: auto; max-height: 150px; background: white; border: 1px solid #CCC; border-radius: 4px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1);" />
+                        <button type="button" @click="activarEdicionFirma" 
+                                style="padding: 8px 16px; background-color: #6200EE; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                            🔄 Volver a Firmar
+                        </button>
+                    </div>
+
+                    <!-- Si no hay firma o si el usuario quiere volver a firmar -->
+                    <div v-else style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="position: relative; width: 100%; max-width: 100%; margin: 0 auto;">
+                            <canvas ref="canvasFirma" 
+                                    style="border: 2px dashed #90CAF9; border-radius: 8px; background-color: #F5F5F5; cursor: crosshair; display: block; width: 100%; height: 300px; box-sizing: border-box;"
+                                    @touchstart="onTouchStart"
+                                    @touchmove="onTouchMove"
+                                    @touchend="onTouchEnd"
+                                    @mousedown="onMouseDown"
+                                    @mousemove="onMouseMove"
+                                    @mouseup="onMouseUp"
+                                    @mouseleave="onMouseUp"></canvas>
+                            <div v-if="!firmaDibujada" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #9E9E9E; font-size: 0.9rem; pointer-events: none; text-align: center;">
+                                ✏️ Firme aquí
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
+                            <button type="button" @click="limpiarCanvasFirma" 
+                                    style="padding: 8px 16px; background-color: #ECEFF1; color: #37474F; border: 1px solid #CFD8DC; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                                🧹 Limpiar
+                            </button>
+                            <button type="button" @click="guardarFirmaDibujada" 
+                                    style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                                ✔️ Confirmar Firma
+                            </button>
+                            <button v-if="formData.FirmaBase64" type="button" @click="cancelarEdicionFirma" 
+                                    style="padding: 8px 16px; background-color: #78909C; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                                Cancelar
+                            </button>
                         </div>
                     </div>
-                    
-                    <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
-                        <button type="button" @click="limpiarCanvasFirma" 
-                                style="padding: 8px 16px; background-color: #ECEFF1; color: #37474F; border: 1px solid #CFD8DC; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
-                            🧹 Limpiar
-                        </button>
-                        <button type="button" @click="guardarFirmaDibujada" 
-                                style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
-                            ✔️ Confirmar Firma
-                        </button>
-                        <button v-if="formData.FirmaBase64" type="button" @click="cancelarEdicionFirma" 
-                                style="padding: 8px 16px; background-color: #78909C; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
-                            Cancelar
-                        </button>
+                </div>
+
+                <!-- Rama 2: ConFirma = false → Razón de no firma -->
+                <div v-else>
+                    <div class="form-group">
+                        <label :style="{color: errors.RazonNoFirma ? 'red' : 'inherit', fontWeight: errors.RazonNoFirma ? 'bold' : 'normal'}">Razón de no firma *</label>
+                        <select v-model="formData.RazonNoFirma">
+                            <option value="" disabled>Seleccione una razón...</option>
+                            <option value="NQF">No quiso firmar</option>
+                            <option value="NSF">No sabe firmar</option>
+                            <option value="IFF">Impedimento físico de firma</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                    <!-- Patrón "Otro": campo de texto libre -->
+                    <div v-if="formData.RazonNoFirma === 'OTRO'" class="form-group sub-section" style="margin-top: -10px; margin-bottom: 15px;">
+                        <label :style="{color: errors.RazonNoFirmaOtro ? 'red' : 'inherit', fontWeight: errors.RazonNoFirmaOtro ? 'bold' : 'normal'}">Especifique la razón *</label>
+                        <input type="text" v-model="formData.RazonNoFirmaOtro" placeholder="Detalle el motivo...">
                     </div>
                 </div>
             </div>
@@ -767,6 +798,24 @@ const FormEntrevistado = {
             }
         });
 
+        // Al cambiar ConFirma: limpiar datos de la rama que se abandona
+        Vue.watch(() => formData.ConFirma, (newVal) => {
+            if (newVal) {
+                // Activada la firma → limpiar razón de no firma
+                formData.RazonNoFirma = '';
+                formData.RazonNoFirmaOtro = '';
+                delete errors.RazonNoFirma;
+                delete errors.RazonNoFirmaOtro;
+                mostrarCanvasFirma.value = !formData.FirmaBase64;
+            } else {
+                // Desactivada la firma → limpiar firma capturada y resetear canvas
+                formData.FirmaBase64 = '';
+                mostrarCanvasFirma.value = true;
+                firmaDibujada.value = false;
+                delete errors.Firma;
+            }
+        });
+
         const placeholderIdentificacion = Vue.computed(() => {
             const tipo = formData.TipoIdentificacionCatalog;
             if (tipo == 1) return 'Ej: 000-000000-0000A'; // Cédula
@@ -996,10 +1045,21 @@ const FormEntrevistado = {
                 }
             }
 
-            // Validar firma del entrevistado (es obligatoria)
-            if (!formData.FirmaBase64) {
-                errors.Firma = true;
-                errorList.push('Firma del Entrevistado');
+            // Validar firma del entrevistado (condicional según ConFirma)
+            if (formData.ConFirma !== false) {
+                if (!formData.FirmaBase64) {
+                    errors.Firma = true;
+                    errorList.push('Firma del Entrevistado');
+                }
+            } else {
+                if (!formData.RazonNoFirma) {
+                    errors.RazonNoFirma = true;
+                    errorList.push('Razón de no firma');
+                }
+                if (formData.RazonNoFirma === 'OTRO' && !formData.RazonNoFirmaOtro?.trim()) {
+                    errors.RazonNoFirmaOtro = true;
+                    errorList.push('Especificar razón de no firma');
+                }
             }
 
             if (errorList.length > 0) {

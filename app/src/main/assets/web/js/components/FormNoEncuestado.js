@@ -29,12 +29,24 @@ const FormNoEncuestado = {
                 <div class="form-group">
                     <label :style="{color: errors.Descripcion ? 'red' : 'inherit', fontWeight: errors.Descripcion ? 'bold' : 'normal'}">Motivo / Descripción *</label>
                     
-                    <!-- Botones rápidos de prerrelleno -->
-                    <div class="quick-reasons" style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
-                        <button type="button" :style="chipStyle" @click="selectReason('No atendió')">🚪 No atendió</button>
-                        <button type="button" :style="chipStyle" @click="selectReason('No había personas en el lugar')">👥 No había personas</button>
-                        <button type="button" :style="chipStyle" @click="selectReason('Propietario se negó a brindar información (Rechazo)')">🚫 Rechazo de encuesta</button>
-                        <button type="button" :style="chipStyle" @click="selectReason('Vivienda deshabitada / desocupada')">🏠 Vivienda deshabitada</button>
+                    <!-- Botones rápidos de prerrelleno: grid 2×2 con icono arriba y texto abajo -->
+                    <div class="quick-reasons" style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="button" :style="chipStyle" @click="selectReason('No atendió')">
+                            <span style="font-size:22px; line-height:1;">🚪</span>
+                            <span>No atendió</span>
+                        </button>
+                        <button type="button" :style="chipStyle" @click="selectReason('No había personas en el lugar')">
+                            <span style="font-size:22px; line-height:1;">👥</span>
+                            <span>No había personas</span>
+                        </button>
+                        <button type="button" :style="chipStyle" @click="selectReason('Propietario se negó a brindar información (Rechazo)')">
+                            <span style="font-size:22px; line-height:1;">🚫</span>
+                            <span>Rechazo de encuesta</span>
+                        </button>
+                        <button type="button" :style="chipStyle" @click="selectReason('Vivienda deshabitada / desocupada')">
+                            <span style="font-size:22px; line-height:1;">🏠</span>
+                            <span>Vivienda deshabitada</span>
+                        </button>
                     </div>
 
                     <textarea 
@@ -72,14 +84,21 @@ const FormNoEncuestado = {
         const chipStyle = {
             background: '#f1f3f4',
             border: '1px solid #dadce0',
-            borderRadius: '16px',
-            padding: '6px 14px',
+            borderRadius: '12px',
+            padding: '14px 8px',
             fontSize: '13px',
             color: '#3c4043',
             cursor: 'pointer',
             fontWeight: '500',
             transition: 'all 0.2s ease',
-            outline: 'none'
+            outline: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            width: '100%',
+            minHeight: '72px'
         };
 
         // Concatenación inteligente de motivos rápidos

@@ -12,12 +12,15 @@ window.DisplayService = {
 
         const type = data.Type;
         if (type === 'SujetoNatural') {
-            return data.DerehoParcelaCatalog === 2 ? 'POSEEDOR' : 'PROP. NATURAL';
+            return data.DerehoParcelaCatalog === 2 ? 'NAT-POSEEDOR' : 'NAT-PROPIETTARIO';
+        }
+
+        if (type === 'SujetoJuridico') {
+            return data.DerehoParcelaCatalog !== 1 ? 'JUR-POSEEDOR' : 'JUR-PROPIETARIO';
         }
 
         const names = {
             'Ficha': 'ENCUESTA',
-            'SujetoJuridico': 'PROP. JURÍDICA',
             'Entrevistado': 'ENTREVIST.',
             'Familiares': 'FAMILIA',
             'NoEncuestado': 'NO ENCUEST.',

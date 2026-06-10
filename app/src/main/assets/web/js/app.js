@@ -561,13 +561,16 @@ const app = createApp({
             const getWeight = (item) => {
                 const type = item.Data?.Type;
                 if (type === 'Ficha') return 1;
-                if (type === 'SujetoJuridico') return 2;
+                if (type === 'SujetoJuridico') {
+                    // Priorizar Propietario (ID 1) sobre Poseedor
+                    return item.Data.DerehoParcelaCatalog !== 1 ? 3 : 2;
+                }
                 if (type === 'SujetoNatural') {
                     // Priorizar Propietario (1) sobre Poseedor (2)
-                    return item.Data.DerehoParcelaCatalog === 2 ? 4 : 3;
+                    return item.Data.DerehoParcelaCatalog === 2 ? 5 : 4;
                 }
-                if (type === 'Entrevistado') return 5;
-                if (type === 'Familiares') return 6;
+                if (type === 'Entrevistado') return 6;
+                if (type === 'Familiares') return 7;
                 return 99;
             };
 

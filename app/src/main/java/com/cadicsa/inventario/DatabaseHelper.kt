@@ -155,6 +155,34 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         } catch (e: Exception) { false }
     }
 
+    /**
+     * Elimina TODOS los registros de la tabla DATOS y resetea el autoincrement a 1.
+     * Ambas operaciones se ejecutan dentro de una transacción; si alguna falla, se hace rollback.
+     * @return Número de filas eliminadas, o -1 si hubo error.
+     */
+    fun deleteAllData(): Int {
+        val db = writableDatabase
+        db.beginTransaction()
+        return try {
+            val count = db.delete("DATOS", null, null)
+            db.execSQL("DELETE FROM sqlite_sequence WHERE name='DATOS'")
+            db.setTransactionSuccessful()
+            count
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error en deleteAllData: ${e.message}")
+            -1
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** Cuenta el total de registros en la tabla DATOS. */
+    fun countAllData(): Int {
+        readableDatabase.rawQuery("SELECT COUNT(*) FROM DATOS", null).use { cursor ->
+            return if (cursor.moveToFirst()) cursor.getInt(0) else 0
+        }
+    }
+
     fun getAllData(): List<DataItem> {
         val items = mutableListOf<DataItem>()
         readableDatabase.rawQuery("SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER FROM DATOS", null).use { cursor ->

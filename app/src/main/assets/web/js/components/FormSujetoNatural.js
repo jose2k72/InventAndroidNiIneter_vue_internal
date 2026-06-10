@@ -7,7 +7,7 @@ const FormSujetoNatural = {
     props: ['data'],
     template: `
         <div class="form-container">
-            <h2>👤 Propietario Natural / Poseedor</h2>
+            <h2>👤 Sujeto Natural (Propietario / Poseedor)</h2>
             
             <div class="btn-group" style="margin-bottom: 20px;">
                 <button type="button" class="btn btn-success" @click="save">

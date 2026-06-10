@@ -7,7 +7,7 @@ const FormSujetoJuridico = {
     props: ['data'],
     template: `
         <div class="form-container">
-            <h2>🏢 Propietario Jurídico</h2>
+            <h2>🏢 Sujeto Jurídico (Propietario / Poseedor)</h2>
             
             <div class="btn-group" style="margin-bottom: 20px;">
                 <button type="button" class="btn btn-success" @click="save">
@@ -19,7 +19,7 @@ const FormSujetoJuridico = {
             </div>
 
             <!-- Propietarios Catastrales Jurídicos Detectados en el Mapa -->
-            <div class="section" v-if="propietariosDisponibles.length > 0">
+            <div class="section" v-if="propietariosDisponibles.length > 0 && formData.DerehoParcelaCatalog === 1">
                 <h3>🏢 Empresas Propietarias en Mapa</h3>
                 <div style="margin-bottom: 12px; padding: 10px; background-color: #E3F2FD; border: 1px solid #90CAF9; border-radius: 8px; font-size: 0.9rem; color: #0D47A1;">
                     Se detectaron <strong>{{ propietariosDisponibles.length }}</strong> entidad(es)/empresa(s) en el predio. Si alguna corresponde al propietario actual, selecciónela para rellenar la Razón Social.
@@ -46,7 +46,18 @@ const FormSujetoJuridico = {
                     ❌ Descartar selección / Limpiar Razón Social
                 </button>
             </div>
-            
+
+            <div class="section">
+                <h3>⚖️ Derecho sobre la Parcela</h3>
+                <div class="form-group">
+                    <label :style="{color: errors.DerehoParcelaCatalog ? 'red' : 'inherit', fontWeight: errors.DerehoParcelaCatalog ? 'bold' : 'normal'}">Derecho Parcelario *</label>
+                    <select v-model.number="formData.DerehoParcelaCatalog">
+                        <option :value="null" disabled>Seleccione...</option>
+                        <option v-for="opt in catalogos.TipoDerecho" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="section">
                 <h3>🆔 Identificación y Razón Social</h3>
                 
@@ -89,7 +100,7 @@ const FormSujetoJuridico = {
                     </div>
                 </div>
 
-            <div class="section">
+            <div class="section" v-if="formData.DerehoParcelaCatalog === 1">
                 <h3>📜 Registro Público</h3>
                 
                 <div class="form-group checkbox-group">
@@ -131,7 +142,7 @@ const FormSujetoJuridico = {
                 </div>
             </div>
 
-            <div class="section">
+            <div class="section" v-if="formData.DerehoParcelaCatalog === 1">
                 <h3>👥 Composición y Miembros</h3>
                 
                 <div class="form-group checkbox-group">
@@ -253,31 +264,38 @@ const FormSujetoJuridico = {
 
         // Catálogos reactivos (Se cargan dinámicamente de /data/)
         const catalogos = Vue.reactive({
-            TipoPersonaJuridica: []
+            TipoPersonaJuridica: [],
+            TipoDerecho: []
         });
 
-        // Función para desacoplar catálogo
+        // Función para desacoplar catálogos
         const cargarCatalogos = async () => {
-            const fileName = 'TipoPersonaJuridica.json';
-            try {
-                let data = null;
-                if (window.Android && window.Android.loadCatalogJson) {
-                    const str = window.Android.loadCatalogJson(fileName);
-                    if (str) data = JSON.parse(str);
-                }
-                if (!data) {
-                    const response = await fetch('data/' + fileName);
-                    if (response.ok) data = await response.json();
-                }
+            const mapeo = {
+                TipoPersonaJuridica: 'TipoPersonaJuridica.json',
+                TipoDerecho: 'TipoDerecho.json'
+            };
 
-                if (data) {
-                    catalogos.TipoPersonaJuridica = data.map(item => ({
-                        ...item,
-                        id: isNaN(parseInt(item.id)) ? item.id : parseInt(item.id)
-                    }));
+            for (const [key, fileName] of Object.entries(mapeo)) {
+                try {
+                    let data = null;
+                    if (window.Android && window.Android.loadCatalogJson) {
+                        const str = window.Android.loadCatalogJson(fileName);
+                        if (str) data = JSON.parse(str);
+                    }
+                    if (!data) {
+                        const response = await fetch('data/' + fileName);
+                        if (response.ok) data = await response.json();
+                    }
+
+                    if (data) {
+                        catalogos[key] = data.map(item => ({
+                            ...item,
+                            id: isNaN(parseInt(item.id)) ? item.id : parseInt(item.id)
+                        }));
+                    }
+                } catch (e) {
+                    console.error(`❌ Error al desacoplar catálogo ${fileName}:`, e);
                 }
-            } catch (e) {
-                console.error(`❌ Error al desacoplar catálogo ${fileName}:`, e);
             }
         };
 
@@ -387,6 +405,23 @@ const FormSujetoJuridico = {
             }
         });
 
+        // Ocultar secciones registrales y de miembros si el derecho no es Propietario (ID 1)
+        Vue.watch(() => formData.DerehoParcelaCatalog, (newVal) => {
+            if (newVal !== 1) {
+                formData.MuestraDatosRegistrales = false;
+                formData.RegistradaEn = '';
+                formData.FechaRegistro = null;
+                fechaRegistroUI.value = '';
+                formData.MuestraDatosDeMiembros = false;
+                formData.NroSocios = 0;
+                formData.NroSocias = 0;
+                formData.Denominacion = '';
+                delete errors.RegistradaEn;
+                delete errors.FechaRegistro;
+                delete errors.SeccionMiembros;
+            }
+        });
+
         Vue.onMounted(() => {
             cargarCatalogos();
             cargarPropietariosCatastrales();
@@ -437,6 +472,11 @@ const FormSujetoJuridico = {
                 errorList.push('No. RUC');
             }
 
+
+            if (!formData.DerehoParcelaCatalog) {
+                errors.DerehoParcelaCatalog = true;
+                errorList.push('Derecho Parcelario');
+            }
 
             if (!formData.RazonSocial?.trim()) {
                 errors.RazonSocial = true;
