@@ -66,7 +66,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS objects (id INTEGER PRIMARY KEY, minX FLOAT, minY FLOAT, maxX FLOAT, maxY FLOAT, XCentroid FLOAT, YCentroid FLOAT, LOCALIZACION TEXT, layer TEXT, idLayer INTEGER, idPredio INTEGER, wkt TEXT)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS objects (id INTEGER PRIMARY KEY, minX FLOAT, minY FLOAT, maxX FLOAT, maxY FLOAT, XCentroid FLOAT, YCentroid FLOAT, LOCALIZACION TEXT, layer TEXT, idLayer INTEGER, idPredio INTEGER, wkt TEXT, wkb BLOB)")
         db.execSQL("CREATE TABLE IF NOT EXISTS DATOS (ID INTEGER PRIMARY KEY AUTOINCREMENT, IDOBJECT INTEGER, DATOS TEXT, FECHA DATETIME, SINCRONIZADO BOOLEAN, IMEI TEXT, ANDROID_ID TEXT, LATITUD DOUBLE, LONGITUD DOUBLE, LATITUDGPS DOUBLE, LONGITUDGPS DOUBLE, LAYER TEXT, IDLAYER INTEGER, IDPREDIO INTEGER, CREADO_POR TEXT, FECHA_UPDATE DATETIME, ACTUALIZADO_POR TEXT)")
         db.execSQL("CREATE TABLE IF NOT EXISTS tiles (x INTEGER, y INTEGER, z INTEGER, s INTEGER, tile BLOB, PRIMARY KEY (x, y, z, s))")
         db.execSQL("CREATE TABLE IF NOT EXISTS config (ID INTEGER PRIMARY KEY AUTOINCREMENT, VARIABLE TEXT, VALOR TEXT)")
@@ -347,5 +347,20 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     fun getTodayStatisticsCount(): Int {
         val todayStr = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.US).format(java.util.Date())
         return getDailyStatisticsMap()[todayStr] ?: 0
+    }
+
+    /**
+     * Busca el WKB de un predio por su localización. Retorna null si no se encuentra.
+     */
+    fun getPredioWkbByLocalizacion(localizacion: String): ByteArray? {
+        val db = readableDatabase
+        val query = "SELECT wkb FROM objects WHERE layer='Predios' AND LOCALIZACION = ? COLLATE NOCASE LIMIT 1"
+        var wkb: ByteArray? = null
+        db.rawQuery(query, arrayOf(localizacion)).use { cursor ->
+            if (cursor.moveToFirst()) {
+                wkb = cursor.getBlob(0)
+            }
+        }
+        return wkb
     }
 }

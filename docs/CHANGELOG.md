@@ -4,6 +4,14 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-06-30] - Localización Directa de Predios y Resolución de Fallos Espaciales
+
+### 📍 Localización Alfanumérica y Búsqueda Radial de Lote
+- **Nueva Herramienta "Localizar Predio y Abrir Ficha"**: Se agregó una nueva opción en el menú principal para buscar predios directamente por su código de localización (ej. `T-5987231323534`), permitiendo abrir la ficha catastral instantáneamente saltándose el flujo clásico de tocar el mapa.
+- **Bypass de Bounding Box (`MainActivity.kt` & `SpatialHelper.kt`)**: Se modificó la arquitectura de la consulta espacial para solventar fallos en polígonos delgados o anomalías geométricas. Ahora, en lugar de usar un Bounding Box estricto que fallaba cuando el texto del lote quedaba muy alejado del predio, el sistema recupera la geometría de la base de datos por ID, calcula el **Polo de Inaccesibilidad**, interseca el Municipio, Sector y Manzana, y usa una búsqueda radial generosa (~160 metros) para atrapar el identificador de Lote más cercano al polo.
+
+---
+
 ## [2026-06-08] - Simplificación de Uniones Catastrales, Foto de Frente Obligatoria y Autoscroll
 
 ### 📸 Validación de Foto de Frente y Autoscroll en Ficha (`FormFicha.js`)

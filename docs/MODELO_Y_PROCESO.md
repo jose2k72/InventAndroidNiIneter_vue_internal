@@ -135,6 +135,13 @@ Para evitar errores de interpretación al proyectar el DTO hacia la Tríada de R
 *   **Razón**: La entidad solo posee límites normalizados fiables a nivel de **Municipio y Departamento**. Exigir catálogos en niveles inferiores bloquearía el levantamiento en zonas rurales o urbanas no saneadas.
 *   **Realidad del Terreno**: La App ignora las delimitaciones teóricas de límites urbanos/rurales institucionales. El objetivo es capturar el estado real de la verdad física sobre el terreno en el momento del levantamiento.
 
+### 4.4 Relación de Sectores y Manzanas (Evolución de Capas)
+*   **Historial**: En fases iniciales, las capas `Sectores` y `Manzanas` se trataron como equivalentes en la base de datos (con una relación exacta 1:1 de 23 registros cada una), utilizándose indistintamente para referirse a la manzana de terreno.
+*   **Separación de Conceptos**: A partir de ahora, se establece la distinción conceptual formal:
+    *   **Sector**: Capa de división territorial superior.
+    *   **Manzana**: Capa correspondiente a las manzanas físicas de terreno.
+*   **Diseño Futuro (Relación 1 a N)**: Se contempla que un único `Sector` albergue múltiples `Manzanas`. Las consultas espaciales en la base de datos y la lógica de negocio (como `SpatialHelper.kt`) deben evolucionar para consumir explícitamente la capa `Manzanas` cuando se busque la manzana colindante o de origen de un predio, en lugar de consultar la capa `Sectores`.
+
 ---
 
 ## 5. Tareas Pendientes y Deuda Técnica

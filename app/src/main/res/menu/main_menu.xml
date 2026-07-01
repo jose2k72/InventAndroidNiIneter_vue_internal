@@ -64,6 +64,16 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_search_predio"
+        android:title="Buscar Predio (Polígono)"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_locate_and_open"
+        android:title="Localizar Predio y Abrir Ficha"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_about"
         android:title="Acerca de"
         android:icon="@android:drawable/ic_menu_info_details"

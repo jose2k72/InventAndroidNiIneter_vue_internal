@@ -6,6 +6,10 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import android.widget.LinearLayout
+import android.widget.CheckBox
+import android.widget.ListView
+import android.widget.ArrayAdapter
 import android.app.ProgressDialog
 import android.content.ContentUris
 import android.database.sqlite.SQLiteDatabase
@@ -47,6 +51,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     
     // TileOverlay para tiles offline
     private var tileOverlay: com.google.android.gms.maps.model.TileOverlay? = null
+    private var searchPolygonOverlay: com.google.android.gms.maps.model.Polygon? = null
     
     // ID del último dato guardado en esta sesión
     private var lastSavedDataId: Int = -1
@@ -425,6 +430,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
      * pasa por aquí. Resuelve toda la información espacial del predio y lanza FormActivity.
      */
     private fun handleMapPosition(latLng: com.google.android.gms.maps.model.LatLng, singleGroupPoint: Boolean = true) {
+        searchPolygonOverlay?.remove()
+        searchPolygonOverlay = null
+        
         val dbHelper = DatabaseHelper.getInstance(this)
 
         // 1. Interceptar la geometría del predio en base a las coordenadas de click/marcador
@@ -480,7 +488,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
         if (lote.isNullOrEmpty()) {
-            Toast.makeText(this, "⚠️ Error: No se pudo identificar el lote para este predio", Toast.LENGTH_LONG).show()
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Lote No Identificado")
+                .setMessage("No se pudo identificar el lote para este predio.\n\nClick en:\nLat: $targetLat\nLng: $targetLng")
+                .setPositiveButton("OK", null)
+                .show()
             return
         }
         if (geom.localizacion.isNullOrEmpty()) {
@@ -539,11 +551,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val clearDataItem = menu?.findItem(R.id.menu_clear_data)
         val importDbItem = menu?.findItem(R.id.menu_import_db)
         val exportDbItem = menu?.findItem(R.id.menu_export_db)
+        val searchPredioItem = menu?.findItem(R.id.menu_search_predio)
 
         val user = SecurityManager.currentUser
         infoItem?.title = "👤 " + (user?.fullName ?: "Desconocido")
         val isAdmin = user?.isAdmin == true || user?.userName == "ADMIN" || user?.userName == "MASTER"
         importItem?.isVisible = isAdmin
+        searchPredioItem?.isVisible = isAdmin
         adminPassItem?.isVisible = isAdmin
         clearDataItem?.isVisible = isAdmin
         importDbItem?.isVisible = isAdmin
@@ -561,6 +575,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             R.id.menu_import_db -> { importExternalDb(); true }
             R.id.menu_export_db -> { exportExternalDb(); true }
             R.id.menu_statistics -> { dialogHelper.showStatisticsDialog(); true }
+            R.id.menu_search_predio -> { showSearchPredioDialog(); true }
+            R.id.menu_locate_and_open -> { showLocateAndOpenDialog(); true }
             R.id.menu_about -> { dialogHelper.showAboutDialog(30); true }
             R.id.menu_exit -> { exitApp(); true }
             else -> super.onOptionsItemSelected(item)
@@ -1123,7 +1139,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         .setPositiveButton("OK", null)
                         .show()
                 } else {
-                    exportExternalDb_phase2_selectPredios(manager, localizacionesMap)
+                    val targetDbFile = java.io.File(dirPath, AppConfig.DATABASE_NAME)
+                    if (targetDbFile.exists()) {
+                        androidx.appcompat.app.AlertDialog.Builder(this)
+                            .setTitle("⚠️ Base de Datos Existente")
+                            .setMessage("Se detectó un archivo '${AppConfig.DATABASE_NAME}' en el directorio seleccionado. Si continúa, este archivo se sobrescribirá por completo.\n\n¿Desea continuar?")
+                            .setPositiveButton("Continuar") { _, _ ->
+                                exportExternalDb_phase2_selectPredios(manager, localizacionesMap)
+                            }
+                            .setNegativeButton("Cancelar") { _, _ ->
+                                exportExternalDb() // Reabre el selector de directorios
+                            }
+                            .show()
+                    } else {
+                        exportExternalDb_phase2_selectPredios(manager, localizacionesMap)
+                    }
                 }
             } catch (e: IllegalArgumentException) {
                 androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1142,37 +1172,127 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun exportExternalDb_phase2_selectPredios(manager: ExportManager, localizacionesMap: Map<String, Int>) {
-        val keys = localizacionesMap.keys.toList()
-        val items = keys.map { loc -> "$loc  ·  (${localizacionesMap[loc]} puntos)" }.toTypedArray()
-        val checked = BooleanArray(keys.size) { true }
+        val context = this
+        val predioList = localizacionesMap.keys.toList()
+        val manzanaList = try { manager.getExportableManzanas() } catch(e: Exception) { emptyList() }
+
+        // Estados de selección
+        val checkedPredios = BooleanArray(predioList.size) { true }
+        val checkedManzanas = BooleanArray(manzanaList.size) { true }
+
+        // Crear contenedor principal
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(36, 24, 36, 16)
+        }
+
+        // CheckBox superior
+        val checkBox = CheckBox(context).apply {
+            text = "Exportación por manzanas"
+            isChecked = false
+            textSize = 16f
+            setPadding(0, 0, 0, 24)
+        }
+        container.addView(checkBox)
+
+        // ListView multiselección
+        val listView = ListView(context).apply {
+            choiceMode = ListView.CHOICE_MODE_MULTIPLE
+            divider = null
+        }
+        container.addView(listView)
+
+        // Textos para los adapters
+        val predioTexts = predioList.map { loc -> "$loc  ·  (${localizacionesMap[loc]} puntos)" }
+        val manzanaTexts = manzanaList.map { m -> "${m.codManzana}  ·  (${m.predios.size} predios, ${m.totalRecords} puntos)" }
+
+        // Función para poblar/refrescar la lista según el modo actual
+        fun refreshList(showManzanas: Boolean) {
+            val items = if (showManzanas) manzanaTexts else predioTexts
+            val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_multiple_choice, items)
+            listView.adapter = adapter
+
+            // Aplicar selecciones guardadas
+            val activeChecked = if (showManzanas) checkedManzanas else checkedPredios
+            for (i in activeChecked.indices) {
+                listView.setItemChecked(i, activeChecked[i])
+            }
+        }
+
+        // Inicializar por defecto (por predio)
+        refreshList(false)
+
+        // Listener del checkbox para alternar modos
+        checkBox.setOnCheckedChangeListener { _, isChecked ->
+            // 1. Guardar estado del modo anterior
+            val wasManzana = !isChecked
+            val oldChecked = if (wasManzana) checkedManzanas else checkedPredios
+            for (i in oldChecked.indices) {
+                oldChecked[i] = listView.isItemChecked(i)
+            }
+
+            // 2. Cargar y aplicar estado del nuevo modo
+            refreshList(isChecked)
+        }
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Seleccione los predios a exportar:")
-            .setMultiChoiceItems(items, checked) { _, which, isChecked ->
-                checked[which] = isChecked
-            }
+            .setTitle("Seleccione los elementos a exportar:")
+            .setView(container)
             .setNeutralButton("Desmarcar todos") { _, _ -> } // Se sobrescribe abajo
             .setPositiveButton("Exportar") { _, _ ->
-                val selected = mutableListOf<String>()
-                for (i in checked.indices) {
-                    if (checked[i]) selected.add(keys[i])
+                // Guardar la selección final activa en la lista
+                val isManzanaMode = checkBox.isChecked
+                val activeChecked = if (isManzanaMode) checkedManzanas else checkedPredios
+                for (i in activeChecked.indices) {
+                    activeChecked[i] = listView.isItemChecked(i)
                 }
-                if (selected.isEmpty()) {
-                    Toast.makeText(this, "Debe seleccionar al menos un predio para exportar", Toast.LENGTH_SHORT).show()
+
+                // Resolver lista de predios a exportar
+                val selectedPredios = mutableListOf<String>()
+                if (isManzanaMode) {
+                    for (i in checkedManzanas.indices) {
+                        if (checkedManzanas[i]) {
+                            selectedPredios.addAll(manzanaList[i].predios)
+                        }
+                    }
                 } else {
-                    exportExternalDb_phase3_execute(manager, selected)
+                    for (i in checkedPredios.indices) {
+                        if (checkedPredios[i]) {
+                            selectedPredios.add(predioList[i])
+                        }
+                    }
+                }
+
+                // Limpiar duplicados y ejecutar
+                val finalSelection = selectedPredios.distinct()
+                if (finalSelection.isEmpty()) {
+                    Toast.makeText(context, "Debe seleccionar al menos un elemento para exportar", Toast.LENGTH_SHORT).show()
+                } else {
+                    exportExternalDb_phase3_execute(manager, finalSelection)
                 }
             }
             .setNegativeButton("Cancelar", null)
             .show()
 
-        // Sobrescribir neutral button para marcar/desmarcar todos sin cerrar diálogo
+        // Sobrescribir neutral button para alternar marcar/desmarcar todos sin cerrar diálogo
         dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-            val allChecked = checked.all { it }
+            val isManzanaMode = checkBox.isChecked
+            val activeChecked = if (isManzanaMode) checkedManzanas else checkedPredios
+            
+            // Determinar si todos están marcados
+            var allChecked = true
+            for (i in activeChecked.indices) {
+                if (!listView.isItemChecked(i)) {
+                    allChecked = false
+                    break
+                }
+            }
             val newState = !allChecked
-            for (i in checked.indices) {
-                checked[i] = newState
-                dialog.listView.setItemChecked(i, newState)
+
+            // Aplicar nuevo estado visual y guardarlo
+            for (i in activeChecked.indices) {
+                activeChecked[i] = newState
+                listView.setItemChecked(i, newState)
             }
             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).text =
                 if (newState) "Desmarcar todos" else "Marcar todos"
@@ -1225,6 +1345,179 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }.start()
+    }
+
+    private fun showSearchPredioDialog() {
+        val input = android.widget.EditText(this)
+        input.hint = "Ej: 01-01-01-01-001"
+        
+        val lp = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT
+        )
+        input.layoutParams = lp
+        val container = android.widget.LinearLayout(this)
+        container.setPadding(50, 20, 50, 0)
+        container.addView(input)
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Buscar Predio")
+            .setMessage("Ingrese la localización del predio:")
+            .setView(container)
+            .setPositiveButton("Buscar") { _, _ ->
+                val localizacion = input.text.toString().trim()
+                if (localizacion.isNotEmpty()) {
+                    searchAndDrawPredio(localizacion)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun searchAndDrawPredio(localizacion: String) {
+        searchPolygonOverlay?.remove()
+        searchPolygonOverlay = null
+
+        val dbHelper = DatabaseHelper.getInstance(this)
+        val wkbBytes = dbHelper.getPredioWkbByLocalizacion(localizacion)
+
+        if (wkbBytes == null) {
+            Toast.makeText(this, "No se encontró el predio con localización: $localizacion", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val geom = GeometryUtil.wkbToGeometry(wkbBytes)
+        if (geom == null) {
+            Toast.makeText(this, "No se pudo interpretar la geometría del predio", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val polygonCoordinates = GeometryUtil.getPolygonCoordinates(geom)
+        if (polygonCoordinates.isEmpty()) {
+            Toast.makeText(this, "La geometría no es un polígono válido", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val polygonOptions = com.google.android.gms.maps.model.PolygonOptions()
+            .strokeColor(android.graphics.Color.RED)
+            .strokeWidth(3f)
+            .fillColor(android.graphics.Color.argb(100, 255, 0, 0))
+            .zIndex(4000f)
+
+        val boundsBuilder = com.google.android.gms.maps.model.LatLngBounds.Builder()
+
+        for (ring in polygonCoordinates) {
+            polygonOptions.addAll(ring)
+            for (point in ring) {
+                boundsBuilder.include(point)
+            }
+        }
+
+        searchPolygonOverlay = mMap.addPolygon(polygonOptions)
+
+        try {
+            val bounds = boundsBuilder.build()
+            val dbMaxZoom = dbHelper.getMaxZoom()
+            val finalMaxZoom = if (dbMaxZoom > 0) kotlin.math.min(21, dbMaxZoom).toFloat() else 21f
+            
+            mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds(bounds, 100), object : GoogleMap.CancelableCallback {
+                override fun onFinish() {
+                    if (mMap.cameraPosition.zoom > finalMaxZoom) {
+                        mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.zoomTo(finalMaxZoom))
+                    }
+                }
+                override fun onCancel() {}
+            })
+        } catch (e: Exception) {
+            val pole = GeometryUtil.getPoleOfInaccessibility(geom)
+            mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(pole, 20f))
+        }
+    }
+
+    private fun showLocateAndOpenDialog() {
+        val input = android.widget.EditText(this)
+        input.hint = "Ej: 01-01-01-01-001"
+        
+        val lp = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT
+        )
+        input.layoutParams = lp
+        val container = android.widget.LinearLayout(this)
+        container.setPadding(50, 20, 50, 0)
+        container.addView(input)
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Localizar Predio y Abrir Ficha")
+            .setMessage("Ingrese la localización del predio:")
+            .setView(container)
+            .setPositiveButton("Localizar") { _, _ ->
+                val localizacion = input.text.toString().trim()
+                if (localizacion.isNotEmpty()) {
+                    locateAndOpenFicha(localizacion)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun locateAndOpenFicha(localizacion: String) {
+        val dbHelper = DatabaseHelper.getInstance(this)
+        
+        // Obtenemos el registro de geometría completo usando la nueva función
+        val geom = com.cadicsa.inventario.utils.SpatialHelper.getGeometryByLocalizacion(dbHelper.readableDatabase, localizacion)
+        if (geom == null) {
+            Toast.makeText(this, "No se encontró el predio con localización: $localizacion", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // Calculamos el polo de inaccesibilidad a partir del JTS Geometry
+        val jtsGeom = geom.jtsGeom
+        if (jtsGeom == null) {
+            Toast.makeText(this, "El predio encontrado no tiene geometría válida", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        val pole = GeometryUtil.getPoleOfInaccessibility(jtsGeom)
+        mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(pole, 21f))
+        
+        // Extracción manual de datos esquivando BoundingBox estricto
+        val mun = dbHelper.getMunicipiosAt(pole.longitude, pole.latitude)
+        val mza = dbHelper.getManzanaForPredio(jtsGeom)
+        val sec = mza
+        val lote = com.cadicsa.inventario.utils.SpatialHelper.getLoteClosestToPoint(dbHelper.readableDatabase, pole.longitude, pole.latitude)
+        val area = GeometryUtil.calculateArea32616(jtsGeom)
+        
+        if (mun.isNullOrEmpty()) {
+            Toast.makeText(this, "⚠️ Error: No se pudo identificar el municipio en el polo matemático", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (mza.isNullOrEmpty()) {
+            Toast.makeText(this, "⚠️ Error: No se pudo identificar la manzana intersectando el predio", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (lote.isNullOrEmpty()) {
+            Toast.makeText(this, "⚠️ Error: No se encontró ningún texto de Lote cercano al polo matemático", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        val intent = Intent(this, FormActivity::class.java).apply {
+            putExtra(FormActivity.EXTRA_LATITUDE, pole.latitude)
+            putExtra(FormActivity.EXTRA_LONGITUDE, pole.longitude)
+            putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
+            putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
+            putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
+            putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
+            putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
+            putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
+            putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
+            putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
+            putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
+            putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
+            putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
+            putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
+        }
+        startActivity(intent)
     }
 
     override fun onDestroy() {

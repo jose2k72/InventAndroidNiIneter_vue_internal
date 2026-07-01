@@ -209,6 +209,26 @@ object GeometryUtil {
         return getPolylineCoordinates(geom)
     }
 
+    fun getPolygonCoordinates(geom: JtsGeometry): List<List<com.google.android.gms.maps.model.LatLng>> {
+        val result = mutableListOf<List<com.google.android.gms.maps.model.LatLng>>()
+        try {
+            when (geom) {
+                is org.locationtech.jts.geom.Polygon -> {
+                    val ring = geom.exteriorRing
+                    result.add((0 until ring.numPoints).map { com.google.android.gms.maps.model.LatLng(ring.getCoordinateN(it).y, ring.getCoordinateN(it).x) })
+                }
+                is org.locationtech.jts.geom.MultiPolygon -> {
+                    (0 until geom.numGeometries).forEach { i ->
+                        val poly = geom.getGeometryN(i) as org.locationtech.jts.geom.Polygon
+                        val ring = poly.exteriorRing
+                        result.add((0 until ring.numPoints).map { com.google.android.gms.maps.model.LatLng(ring.getCoordinateN(it).y, ring.getCoordinateN(it).x) })
+                    }
+                }
+            }
+        } catch (e: Exception) {}
+        return result
+    }
+
     /**
      * Calcula el Polo de Inaccesibilidad (centro del círculo máximo inscrito)
      * de una geometría poligonal usando JTS.

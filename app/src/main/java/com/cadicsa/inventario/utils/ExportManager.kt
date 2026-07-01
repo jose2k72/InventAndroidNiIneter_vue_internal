@@ -5,8 +5,10 @@ import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import com.cadicsa.inventario.AppConfig
 import com.cadicsa.inventario.DatabaseHelper
+import com.cadicsa.inventario.GeometryUtil
 import org.json.JSONObject
 import java.io.File
+import org.locationtech.jts.geom.Geometry as JtsGeometry
 
 /**
  * Gestiona el proceso de exportación hacia una BD SQLite externa en un directorio seleccionado.
@@ -18,6 +20,12 @@ import java.io.File
  *  - Copia selectivamente los registros de DATOS y las fotos asociadas de los predios seleccionados.
  *  - Limpia archivos copiados si la transacción o el copiado fallan.
  */
+data class ManzanaExportInfo(
+    val codManzana: String,
+    val predios: MutableList<String> = mutableListOf(),
+    var totalRecords: Int = 0
+)
+
 class ExportManager(
     private val localDbHelper: DatabaseHelper,
     private val targetDirPath: String
@@ -67,6 +75,86 @@ class ExportManager(
             }
         }
         return map
+    }
+
+    fun getExportableManzanas(): List<ManzanaExportInfo> {
+        val resultList = mutableListOf<ManzanaExportInfo>()
+        
+        // 1. Cargar las manzanas y sus geometrías
+        val manzanas = mutableListOf<Pair<String, JtsGeometry>>()
+        val queryManzanas = "SELECT LOCALIZACION, wkb FROM objects WHERE layer = 'Manzanas' COLLATE NOCASE"
+        localDbHelper.readableDatabase.rawQuery(queryManzanas, null).use { cursor ->
+            while (cursor.moveToNext()) {
+                val loc = cursor.getString(0) ?: continue
+                val wkb = cursor.getBlob(1) ?: continue
+                val geom = GeometryUtil.wkbToGeometry(wkb) ?: continue
+                manzanas.add(Pair(loc, geom))
+            }
+        }
+
+        // Estructura temporal para agrupar
+        val groups = mutableMapOf<String, ManzanaExportInfo>()
+        for (m in manzanas) {
+            groups[m.first] = ManzanaExportInfo(m.first)
+        }
+        val fallbackGroup = ManzanaExportInfo("Sin Manzana")
+
+        // 2. Consultar predios exportables con su WKB y conteo de encuestas
+        val queryPredios = """
+            SELECT o.LOCALIZACION, o.wkb, COUNT(d.ID)
+            FROM DATOS d
+            JOIN objects o ON d.IDOBJECT = o.id
+            WHERE o.LOCALIZACION IS NOT NULL AND o.LOCALIZACION != ''
+            GROUP BY o.LOCALIZACION
+        """
+        localDbHelper.readableDatabase.rawQuery(queryPredios, null).use { cursor ->
+            while (cursor.moveToNext()) {
+                val predioLoc = cursor.getString(0)
+                val wkb = cursor.getBlob(1)
+                val count = cursor.getInt(2)
+
+                if (wkb == null) {
+                    fallbackGroup.predios.add(predioLoc)
+                    fallbackGroup.totalRecords += count
+                    continue
+                }
+
+                val predioGeom = GeometryUtil.wkbToGeometry(wkb)
+                if (predioGeom == null) {
+                    fallbackGroup.predios.add(predioLoc)
+                    fallbackGroup.totalRecords += count
+                    continue
+                }
+
+                // 3. Cruzar con las manzanas
+                var matched = false
+                for (m in manzanas) {
+                    if (m.second.intersects(predioGeom)) {
+                        groups[m.first]?.predios?.add(predioLoc)
+                        groups[m.first]?.let { it.totalRecords += count }
+                        matched = true
+                        break
+                    }
+                }
+
+                if (!matched) {
+                    fallbackGroup.predios.add(predioLoc)
+                    fallbackGroup.totalRecords += count
+                }
+            }
+        }
+
+        // Construir resultado filtrando manzanas vacías
+        for (mInfo in groups.values) {
+            if (mInfo.predios.isNotEmpty()) {
+                resultList.add(mInfo)
+            }
+        }
+        if (fallbackGroup.predios.isNotEmpty()) {
+            resultList.add(fallbackGroup)
+        }
+
+        return resultList.sortedBy { it.codManzana }
     }
 
     data class ExportResult(

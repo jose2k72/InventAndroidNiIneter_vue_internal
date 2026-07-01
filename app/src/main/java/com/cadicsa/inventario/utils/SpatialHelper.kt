@@ -147,29 +147,90 @@ object SpatialHelper {
         return null
     }
 
+    private fun isPointInAnyOtherPredio(db: SQLiteDatabase, geomPoint: org.locationtech.jts.geom.Geometry, excludeGeom: org.locationtech.jts.geom.Geometry): Boolean {
+        val envelope = geomPoint.envelopeInternal
+        // Ampliamos ligeramente el sobre para asegurarnos de capturar los predios adyacentes
+        val tolerance = 0.0005
+        val query = """
+            SELECT wkb 
+            FROM objects 
+            WHERE layer = 'Predios' COLLATE NOCASE
+            AND minX <= ${SpatialNormalizer.format(envelope.maxX + tolerance)} AND maxX >= ${SpatialNormalizer.format(envelope.minX - tolerance)}
+            AND minY <= ${SpatialNormalizer.format(envelope.maxY + tolerance)} AND maxY >= ${SpatialNormalizer.format(envelope.minY - tolerance)}
+        """.trimIndent()
+        
+        val cursor = db.rawQuery(query, null)
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val wkbBytes = cursor.getBlob(0) ?: continue
+                    val geomPredioVecino = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    
+                    // Verificamos si este predio vecino es distinto al nuestro y contiene al punto
+                    if (!geomPredioVecino.equalsExact(excludeGeom) && geomPredioVecino.intersects(geomPoint)) {
+                        return true
+                    }
+                } while (cursor.moveToNext())
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SpatialHelper", "Error en isPointInAnyOtherPredio: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+        return false
+    }
+
     fun getLoteForPredio(db: SQLiteDatabase, geomPredio: org.locationtech.jts.geom.Geometry): String? {
         val envelope = geomPredio.envelopeInternal
+        val tolerance = 0.0005 // ~55 metros
         val query = """
             SELECT LOCALIZACION, wkb 
             FROM objects 
             WHERE layer = 'PredNumber' COLLATE NOCASE
-            AND minX <= ${SpatialNormalizer.format(envelope.maxX)} AND maxX >= ${SpatialNormalizer.format(envelope.minX)}
-            AND minY <= ${SpatialNormalizer.format(envelope.maxY)} AND maxY >= ${SpatialNormalizer.format(envelope.minY)}
+            AND minX <= ${SpatialNormalizer.format(envelope.maxX + tolerance)} AND maxX >= ${SpatialNormalizer.format(envelope.minX - tolerance)}
+            AND minY <= ${SpatialNormalizer.format(envelope.maxY + tolerance)} AND maxY >= ${SpatialNormalizer.format(envelope.minY - tolerance)}
         """.trimIndent()
 
         val cursor = db.rawQuery(query, null)
+        var bestOrphanMatch: String? = null
+        var minOrphanDistance = Double.MAX_VALUE
+        val candidates = mutableListOf<Pair<String, org.locationtech.jts.geom.Geometry>>()
+
         try {
             if (cursor.moveToFirst()) {
                 do {
                     val wkbBytes = cursor.getBlob(1) ?: continue
                     val geomLote = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    val idLote = cursor.getString(0)
+
+                    // Fase 1: Intersección estricta (Prioridad Absoluta)
                     if (geomPredio.intersects(geomLote)) {
-                        val result = cursor.getString(0)
-                        android.util.Log.d("SpatialHelper", "Lote encontrado por intersección de predio: $result")
-                        return result
+                        android.util.Log.d("SpatialHelper", "Lote encontrado por intersección estricta: $idLote")
+                        return idLote
                     }
+                    
+                    candidates.add(Pair(idLote, geomLote))
                 } while (cursor.moveToNext())
             }
+            
+            // Fase 2: Lógica Failsafe (Punto Huérfano) para los candidatos recolectados
+            for ((idLote, geomLote) in candidates) {
+                // Filtro de Dueño: descartar si el punto cae dentro de algún otro polígono vecino
+                if (!isPointInAnyOtherPredio(db, geomLote, geomPredio)) {
+                    val distance = geomPredio.distance(geomLote)
+                    if (distance < minOrphanDistance) {
+                        minOrphanDistance = distance
+                        bestOrphanMatch = idLote
+                    }
+                }
+            }
+            
+            // Asignación si encontramos un punto huérfano dentro del límite de tolerancia
+            if (bestOrphanMatch != null && minOrphanDistance <= tolerance) {
+                android.util.Log.d("SpatialHelper", "Lote huérfano asignado por proximidad (dist: $minOrphanDistance): $bestOrphanMatch")
+                return bestOrphanMatch
+            }
+
         } catch (e: Exception) {
             android.util.Log.e("SpatialHelper", "Error en getLoteForPredio: ${e.message}")
         } finally {
@@ -541,4 +602,66 @@ object SpatialHelper {
         val geomWGS84: JtsGeometry, val geomCRTM05: JtsGeometry,
         var distancia: Double = 0.0, var direccion: String = ""
     )
+
+    fun getGeometryByLocalizacion(db: SQLiteDatabase, localizacion: String, layer: String = "Predios"): Geometry? {
+        val query = """
+            SELECT id, YCentroid, XCentroid, LOCALIZACION, idLayer, idPredio, wkb 
+            FROM objects 
+            WHERE layer = '$layer' COLLATE NOCASE
+            AND LOCALIZACION = ? COLLATE NOCASE
+            LIMIT 1
+        """.trimIndent()
+        
+        var geom: Geometry? = null
+        db.rawQuery(query, arrayOf(localizacion)).use { cursor ->
+            if (cursor.moveToFirst()) {
+                val wkbBytes = cursor.getBlob(6)
+                if (wkbBytes != null) {
+                    val jtsGeom = GeometryUtil.wkbToGeometry(wkbBytes)
+                    if (jtsGeom != null) {
+                        geom = Geometry(
+                            id = cursor.getInt(0),
+                            localizacion = cursor.getString(3) ?: "",
+                            layer = layer,
+                            idLayer = cursor.getInt(4),
+                            idPredio = cursor.getInt(5),
+                            jtsGeom = jtsGeom
+                        )
+                    }
+                }
+            }
+        }
+        return geom
+    }
+
+    fun getLoteClosestToPoint(db: SQLiteDatabase, lng: Double, lat: Double): String? {
+        val pointGeom = org.locationtech.jts.geom.GeometryFactory().createPoint(Coordinate(lng, lat))
+        val tolerance = 0.0015 // ~160 metros
+        val query = """
+            SELECT LOCALIZACION, wkb 
+            FROM objects 
+            WHERE layer = 'PredNumber' COLLATE NOCASE
+            AND minX <= ${SpatialNormalizer.format(lng + tolerance)} AND maxX >= ${SpatialNormalizer.format(lng - tolerance)}
+            AND minY <= ${SpatialNormalizer.format(lat + tolerance)} AND maxY >= ${SpatialNormalizer.format(lat - tolerance)}
+        """.trimIndent()
+
+        var bestMatch: String? = null
+        var minDistance = Double.MAX_VALUE
+        
+        db.rawQuery(query, null).use { cursor ->
+            if (cursor.moveToFirst()) {
+                do {
+                    val loc = cursor.getString(0) ?: continue
+                    val wkbBytes = cursor.getBlob(1) ?: continue
+                    val geomLote = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    val dist = geomLote.distance(pointGeom)
+                    if (dist < minDistance) {
+                        minDistance = dist
+                        bestMatch = loc
+                    }
+                } while (cursor.moveToNext())
+            }
+        }
+        return bestMatch
+    }
 }

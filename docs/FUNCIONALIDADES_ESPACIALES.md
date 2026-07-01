@@ -20,13 +20,16 @@ Esta tabla muestra todos los registros de inventario (Encuestas Catastrales, Pro
 ### 1.3 Autodetectar Dirección por Frente de Calle Recto (Manzana)
 Permite autocompletar la dirección en los formularios (`FormFicha`, `FormSujetoNatural`, `FormEntrevistado`) a partir de fichas catastrales registradas en la misma acera de la manzana, asegurando consistencia de calle.
 - **Lógica de Frente de Calle**: 
-  1. El sistema recupera el polígono de la manzana (`Sectores`) que interseca al predio de origen.
+  1. El sistema recupera el polígono de la manzana (capa `Manzanas`, anteriormente resuelto en `Sectores`) que interseca al predio de origen.
   2. Extrae el contorno exterior de la manzana y lo subdivide en segmentos individuales con sus respectivos rumbos geométricos (bearings).
   3. Identifica cuáles segmentos colindan con el predio origen (con tolerancia cartográfica de 2 metros) o localiza el más cercano si se trata de un predio interior.
   4. Realiza una propagación (en sentido horario y antihorario) acumulando segmentos contiguos para definir la calle recta del predio. El trazado se interrumpe al detectar esquinas si el cambio de dirección entre segmentos contiguos es $>35^\circ$ o si la desviación acumulada total es $>50^\circ$ respecto al segmento de arranque.
   5. Consulta todas las encuestas guardadas en la manzana y filtra para conservar únicamente aquellas cuyos predios colinden con los segmentos de calle resultantes de la propagación.
   6. Los resultados se ordenan por orden de cercanía (distancia euclidiana del punto de la encuesta al predio de origen) y se calculan las orientaciones cardinales precisas (N, S, E, O, etc.).
 - **Interacción**: Despliega en la interfaz Vue un listado limpio con las fichas vecinas de la misma calle, mostrando su localización predial, rumbo relativo y la dirección escrita. Al seleccionar una, el sistema auto-completa los campos residenciales/direccionales correspondientes.
+
+> [!NOTE]
+> **Transición de Capa Manzanas**: Aunque anteriormente las manzanas físicas se consultaban directamente de la capa `Sectores` (debido a su relación 1:1), el sistema ha sido actualizado para priorizar la capa `Manzanas` en el motor espacial, previniendo fallos futuros cuando la relación pase a ser de 1 a N.
 
  ---
  
@@ -64,6 +67,14 @@ Permite autocompletar la dirección en los formularios (`FormFicha`, `FormSujeto
 El sistema ha mejorado la lógica de captura al presionar sobre un polígono del mapa:
 - **Centrado en el Polo de Inaccesibilidad (PIA)**: Si el predio seleccionado no posee encuestas creadas, se calcula el punto interior más lejano a los bordes del polígono (`GeometryUtil.getPoleOfInaccessibility`) para situar de forma óptima el pin en el mapa.
 - **Consolidación Catastral Forzada**: Si el predio ya cuenta con registros previos, cualquier nueva encuesta para ese mismo polígono hereda obligatoriamente la coordenada de latitud y longitud del primer registro, evitando la superposición desordenada de múltiples pins dentro de un mismo predio.
+
+### 3.3 Localización Alfanumérica de Predios (Bypass de Restricciones Geométricas)
+Para resolver casos críticos en polígonos extremadamente delgados (como callejones o remanentes) donde el texto de identificación catastral (Lote o `PredNumber`) queda gráficamente por fuera del límite espacial (Bounding Box) del polígono, se diseñó la herramienta **Localizar Predio y Abrir Ficha**:
+- **Consulta Geométrica por ID**: Se extrae la geometría y los identificadores (ID, Layer, Predio) de la base de datos usando directamente la cadena de localización (ej. `T-5987231323534`) sin recurrir a intersección en pantalla.
+- **Deducción de Metadatos Híbrida**: 
+  - *Municipio, Manzana y Sector* se obtienen cruzando el objeto geométrico del predio directamente.
+  - *Lote* implementa un bypass de Bounding Box (`SpatialHelper.getLoteClosestToPoint`): realiza una búsqueda **radial abierta** (~160 metros) alrededor del Polo de Inaccesibilidad del predio y captura el texto de Lote geográficamente más cercano al centro matemático, garantizando que el identificador nunca se pierda a pesar de desfases cartográficos.
+- **Lanzamiento Inmediato**: Esta rutina omite los callbacks visuales del mapa para abrir el formulario (Index) instantáneamente con toda la información georreferenciada.
 
  ---
  
