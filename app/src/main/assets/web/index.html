@@ -439,23 +439,23 @@
             <!-- Formulario Acera -->
             <form-acera v-if="formType === 'Acera'" :data="formData" :localizacion="localizacion" :lat-lng="latLng"
                 :local-proj="localProj" :fotos="fotos" @save="sendData" @cancel="volver"
-                @camera="openCamera"></form-acera>
+                @camera="openCamera" @import-photos="importPhotos"></form-acera>
 
             <!-- Formulario Costo -->
             <form-costo v-if="formType === 'Costo'" :data="formData" :localizacion="localizacion" :lat-lng="latLng"
                 :local-proj="localProj" :fotos="fotos" @save="sendData" @cancel="volver"
-                @camera="openCamera"></form-costo>
+                @camera="openCamera" @import-photos="importPhotos"></form-costo>
 
             <!-- Formularios INETER -->
             <form-ficha v-if="formType === 'Ficha'" :data="formData" :localizacion="localizacion" :fotos="fotos"
                 @save="sendData" @cancel="volver" @camera="openCamera(false)" @camera-frente="openCamera(true)"
-                @ocr-scan="scanField"></form-ficha>
+                @ocr-scan="scanField" @import-photos="importPhotos"></form-ficha>
             <form-sujeto-natural v-if="formType === 'SujetoNatural'" :data="formData" @save="sendData" @cancel="volver"
-                @camera="openCamera" @ocr-scan="scanField"></form-sujeto-natural>
+                @camera="openCamera" @ocr-scan="scanField" @import-photos="importPhotos"></form-sujeto-natural>
             <form-sujeto-juridico v-if="formType === 'SujetoJuridico'" :data="formData" @save="sendData"
-                @cancel="volver" @camera="openCamera" @ocr-scan="scanField"></form-sujeto-juridico>
+                @cancel="volver" @camera="openCamera" @ocr-scan="scanField" @import-photos="importPhotos"></form-sujeto-juridico>
             <form-entrevistado v-if="formType === 'Entrevistado'" :data="formData" @save="sendData" @cancel="volver"
-                @camera="openCamera" @ocr-scan="scanField"></form-entrevistado>
+                @camera="openCamera" @ocr-scan="scanField" @import-photos="importPhotos"></form-entrevistado>
             <form-familiares v-if="formType === 'Familiares'" :data="formData" @save="sendData"
                 @cancel="volver" @ocr-scan="scanField"></form-familiares>
             <form-no-encuestado v-if="formType === 'NoEncuestado'" :data="formData" @save="sendData"
@@ -476,6 +476,11 @@
             <catalogo-selector-two-levels @cancel="cancelMunicipio"
                 @select="onMunicipioSelect"></catalogo-selector-two-levels>
         </div>
+
+        <!-- Vista Global File Browser -->
+        <div v-else-if="operation === 'FileBrowser'">
+            <file-browser :prefix="currentPhotoPrefix" @cancel="cancelFileBrowser" @select="onFilesImported"></file-browser>
+        </div>
     </div>
 
     <!-- Utilidades y Servicios -->
@@ -492,6 +497,7 @@
     <script src="js/app.js"></script>
 
     <!-- Componentes Vue (se registran en la app ya creada) -->
+    <script src="js/components/FileBrowser.js"></script>
     <script src="js/components/CatalogoSelector.js"></script>
     <script src="js/components/CatalogoSelectorGrande.js"></script>
     <script src="js/components/CatalogoSelectorTwoLevels.js"></script>

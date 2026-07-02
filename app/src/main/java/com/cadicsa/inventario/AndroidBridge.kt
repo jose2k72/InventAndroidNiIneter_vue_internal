@@ -194,6 +194,88 @@ class AndroidBridge(activity: FormActivity) {
     }
 
     @JavascriptInterface
+    fun listDirectory(path: String?): String {
+        val jsonArray = org.json.JSONArray()
+        val rootDir = android.os.Environment.getExternalStorageDirectory()
+        val target = if (path.isNullOrEmpty()) rootDir else java.io.File(path)
+
+        if (target.exists() && target.isDirectory) {
+            // Añadir directorio padre si no estamos en la raíz
+            if (target.absolutePath != rootDir.absolutePath && target.parentFile != null) {
+                val parentObj = org.json.JSONObject()
+                parentObj.put("name", "..")
+                parentObj.put("path", target.parentFile!!.absolutePath)
+                parentObj.put("isDirectory", true)
+                jsonArray.put(parentObj)
+            }
+            
+            target.listFiles()?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))?.forEach { file ->
+                val isImage = file.name.lowercase().endsWith(".jpg") || file.name.lowercase().endsWith(".png") || file.name.lowercase().endsWith(".jpeg")
+                if (file.isDirectory || isImage) {
+                    val obj = org.json.JSONObject()
+                    obj.put("name", file.name)
+                    obj.put("path", file.absolutePath)
+                    obj.put("isDirectory", file.isDirectory)
+                    obj.put("size", file.length())
+                    obj.put("lastModified", file.lastModified())
+                    jsonArray.put(obj)
+                }
+            }
+        }
+        return jsonArray.toString()
+    }
+
+    @JavascriptInterface
+    fun processSelectedFiles(pathsJson: String, prefix: String?) {
+        val act = activity ?: return
+        Thread {
+            try {
+                val paths = org.json.JSONArray(pathsJson)
+                val calendar = java.util.Calendar.getInstance()
+                val format = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US)
+                val safePrefix = prefix?.replace("[^a-zA-Z0-9._-]".toRegex(), "_") ?: ""
+                val truncatedPrefix = if (safePrefix.length > 50) safePrefix.substring(0, 50) else safePrefix
+                
+                val dirApp = AppConfig.getStorageDirectory()
+                AppConfig.ensureStorageDirectoryExists()
+                
+                for (i in 0 until paths.length()) {
+                    val filePath = paths.getString(i)
+                    val sourceFile = java.io.File(filePath)
+                    
+                    if (sourceFile.exists()) {
+                        val timeStamp = format.format(calendar.time)
+                        val photoName = if (truncatedPrefix.isNotEmpty()) {
+                            "${truncatedPrefix}_${timeStamp}.jpg"
+                        } else {
+                            "${timeStamp}.jpg"
+                        }
+                        
+                        val destFile = java.io.File(dirApp, photoName)
+                        sourceFile.copyTo(destFile, overwrite = true)
+                        
+                        val base64 = act.imageHelper.convertImageToBase64(destFile)
+                        
+                        android.media.MediaScannerConnection.scanFile(
+                            act,
+                            arrayOf(destFile.absolutePath),
+                            arrayOf("image/jpeg"),
+                            null
+                        )
+                        
+                        act.notifyPhotoCaptured(photoName, base64)
+                        
+                        // Incrementar el calendario en 1 segundo para garantizar nombre único
+                        calendar.add(java.util.Calendar.SECOND, 1)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    @JavascriptInterface
     fun scanFieldOCR(targetField: String) {
         activity?.runOnUiThread {
             activity?.imageHelper?.launchCameraForOCR(targetField)

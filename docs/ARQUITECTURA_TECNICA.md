@@ -85,6 +85,22 @@ Una vez que el motor nativo retorna el texto leído mediante `window.onOcrResult
 
 ---
 
+### 3.3 Flujo de Importación Masiva de Imágenes (File Importer)
+
+Como alternativa a la captura en tiempo real, el sistema permite la importación masiva de imágenes preexistentes navegando por el sistema de archivos del dispositivo, operando indistintamente a nivel visual como si hubiesen sido tomadas con la cámara.
+
+1.  **Llamado a Importación (Web/Vue)**: El usuario presiona el botón "IMPORTAR FOTOS". Vue inicializa la vista global `FileBrowser` y oculta temporalmente el formulario activo.
+2.  **Exploración de Directorios**: El componente interactúa en tiempo real con Android mediante el puente nativo llamando a `Android.listDirectory(path)`, recibiendo la lista de carpetas y archivos en formato JSON para navegación interactiva sin depender de la UI estandar confusa de Android.
+3.  **Selección Múltiple y Confirmación**: El usuario selecciona múltiples archivos en una carpeta y presiona "Importar". Vue recolecta las rutas absolutas y llama a `Android.processSelectedFiles(jsonPaths, prefijo)`.
+4.  **Procesamiento Asíncrono (Kotlin)**:
+    *   La copia física de los archivos originales al directorio privado de la app se ejecuta en un hilo secundario (`Thread`). **Los archivos originales nunca se mueven ni se alteran.**
+    *   **Nomenclatura (Renombrado Matemático)**: El sistema instancia un objeto `Calendar` al inicio de la importación. Para garantizar la unicidad de cada imagen y mantener el estándar de la app, se suma exactamente 1 segundo (`calendar.add(Calendar.SECOND, 1)`) a la marca de tiempo base por cada archivo procesado. Así, los nombres generados son consecutivos: `{PREFIJO}_20240510_142030.jpg`, `{PREFIJO}_20240510_142031.jpg`, etc.
+    *   Se notifica al Media Scanner del sistema operativo para registrar las nuevas copias físicas.
+    *   Android envía la versión miniatura (Base64) de vuelta a Vue llamando individualmente a `window.addPhoto`.
+5.  **Reintegración Reactiva (Vue)**: La aplicación web oculta el explorador de archivos, restaura el estado previo (`Edit` o `Create`) e inyecta de forma reactiva las nuevas fotos en el arreglo del formulario, mostrándolas de forma idéntica a las capturadas.
+
+---
+
 ## 4. Interfaz Javascript (API Bridge)
 
 El objeto global `Android` inyectado en el WebView expone los siguientes métodos clave:
@@ -98,6 +114,8 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 | `Android.deleteData(id)` | Elimina un registro por ID. | `id` (int) |
 | `Android.getRutasAdyacentes()` | Obtiene rutas viales cercanas al predio. | - |
 | `Android.getIdObject()` | Obtiene el ID del predio seleccionado. | - |
+| `Android.listDirectory(path)` | Explora el sistema de archivos local (Retorna JSON). | `path` (String) |
+| `Android.processSelectedFiles(paths, prefijo)` | Copia y renombra masivamente fotos seleccionadas. | `paths` (String JSON), `prefijo` (String) |
 | `Android.getLocalizacion()` | Obtiene ubicación textual del predio. | - |
 | `Android.getLat()` / `getLng()` | Obtiene coordenadas de clic en el mapa. | - |
 

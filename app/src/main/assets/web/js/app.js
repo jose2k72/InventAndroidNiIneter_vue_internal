@@ -51,6 +51,9 @@ const app = createApp({
 
         // Datos del formulario actual
         const formData = ref({});
+        const formsConFirma = ref({});
+        
+        const currentPhotoPrefix = ref('');
 
         // Fotos - Estado visible en UI
         const fotos = ref([]);
@@ -421,6 +424,38 @@ const app = createApp({
             }
         };
 
+        // Importar fotos múltiples
+        const importPhotos = () => {
+            let noEncuesta = '';
+            if (formData.value && formData.value.NoEncuesta) {
+                noEncuesta = formData.value.NoEncuesta;
+            } else if (listData.value) {
+                const ficha = listData.value.find(item => item.Data && item.Data.Type === 'Ficha');
+                if (ficha && ficha.Data && ficha.Data.NoEncuesta) {
+                    noEncuesta = ficha.Data.NoEncuesta;
+                }
+            }
+
+            currentPhotoPrefix.value = noEncuesta;
+            savedScrollPos.value = window.scrollY;
+            operation.value = 'FileBrowser';
+        };
+        
+        const cancelFileBrowser = () => {
+            operation.value = formType.value ? (currentId.value ? 'Edit' : 'Create') : 'List';
+            currentPhotoPrefix.value = '';
+        };
+
+        const onFilesImported = (paths, prefix) => {
+            if (typeof Android !== 'undefined' && Android.processSelectedFiles) {
+                Android.processSelectedFiles(JSON.stringify(paths), prefix);
+            } else {
+                console.warn('Android.processSelectedFiles no está disponible');
+            }
+            cancelFileBrowser();
+        };
+
+
         // Lanzar escaneo OCR en un campo específico
         const scanField = (fieldName) => {
             if (typeof Android !== 'undefined' && typeof Android.scanFieldOCR === 'function') {
@@ -441,7 +476,7 @@ const app = createApp({
         // Restaurar scroll al volver de selectores
         Vue.watch(operation, (newOp, oldOp) => {
             const viewsWithScroll = ['Edit', 'Create'];
-            const selectors = ['SelectCatalog', 'SelectMunicipio'];
+            const selectors = ['SelectCatalog', 'SelectMunicipio', 'FileBrowser'];
 
             if (viewsWithScroll.includes(newOp) && selectors.includes(oldOp)) {
                 Vue.nextTick(() => {
@@ -643,6 +678,10 @@ const app = createApp({
             updateData,
             editItem,
             openCamera,
+            importPhotos,
+            currentPhotoPrefix,
+            cancelFileBrowser,
+            onFilesImported,
             scanField,
             resetForm,
             startCreate,

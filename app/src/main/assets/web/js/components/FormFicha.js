@@ -449,9 +449,14 @@ const FormFicha = {
             <!-- Fotografías Adicionales -->
             <div class="section">
                 <h3>📸 Fotografías Adicionales ({{ fotosGenerales.length }})</h3>
-                <button type="button" class="btn btn-camera" style="width: 100%; margin-bottom: 10px;" @click="capturarFoto">
-                    📷 CAPTURAR FOTO ADICIONAL
-                </button>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button type="button" class="btn btn-camera" style="flex: 1;" @click="capturarFoto">
+                        📷 CAPTURAR FOTO ADICIONAL
+                    </button>
+                    <button type="button" class="btn btn-camera" style="flex: 1; background-color: #607d8b;" @click="$emit('import-photos')">
+                        📁 IMPORTAR FOTOS
+                    </button>
+                </div>
                 <div v-if="fotosGenerales.length > 0" class="photos-grid">
                     <div v-for="(foto, index) in fotosGenerales" :key="index" class="photo-item">
                         <img :src="foto.data" class="photo-thumbnail" @click="verFoto(foto)">

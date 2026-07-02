@@ -4,6 +4,16 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-07-02] - File Importer y Explorador Nativo de Imágenes
+
+### 📁 Explorador de Archivos In-App y Renombrado Matemático
+- **Navegador de Archivos (FileBrowser.js)**: Se diseñó e integró un explorador de archivos global dentro de la aplicación Vue (con `position: fixed` para sobreponerse a las vistas), permitiendo la exploración de directorios locales mediante `Android.listDirectory(path)`.
+- **Selección Múltiple y Copia Segura**: El sistema permite marcar múltiples imágenes en una carpeta e importarlas. Un proceso en segundo plano en Kotlin (`Android.processSelectedFiles`) se encarga de crear copias físicas de los archivos seleccionados hacia el directorio privado de la aplicación sin alterar ni mover los originales.
+- **Nomenclatura Geométrica (Timestamp Secuencial)**: Se eliminó el nombrado basado en índices simples (ej. `_0`, `_1`). Ahora el sistema instancia un calendario único e incrementa +1 segundo matemático a cada copia generada en un lote de importación. Esto garantiza que cada foto mantenga nombres únicos, estructurados de manera idéntica a las capturadas con la cámara (ej. `{PREFIJO}_20240510_142030.jpg`, `{PREFIJO}_20240510_142031.jpg`).
+- **Restauración de Estado (UI)**: Corrección crítica en la máquina de estados de Vue (`app.js`) para garantizar que al cerrar o finalizar la importación mediante el `FileBrowser`, la aplicación restaure correctamente el estado activo anterior (`Edit` o `Create`) en el `FormFicha.js` evitando la pantalla blanca, y renderizando las nuevas imágenes reactivamente a través de las notificaciones Base64.
+
+---
+
 ## [2026-06-30] - Localización Directa de Predios y Resolución de Fallos Espaciales
 
 ### 📍 Localización Alfanumérica y Búsqueda Radial de Lote
