@@ -441,9 +441,14 @@ const FormFicha = {
                 <div v-else style="text-align: center; padding: 15px; border: 1px dashed #ccc; border-radius: 6px; margin-bottom: 10px; background-color: #fff;">
                     <span style="color: #d32f2f; font-size: 0.85rem; font-weight: 500;">⚠️ Se requiere capturar la foto del frente.</span>
                 </div>
-                <button type="button" class="btn btn-camera" style="width: 100%; background-color: #1565C0; color: white;" @click="capturarFotoFrente">
-                    📷 CAPTURAR FOTO FRENTE *
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-camera" style="flex: 1; background-color: #1565C0; color: white;" @click="capturarFotoFrente">
+                        📷 CAPTURAR FOTO *
+                    </button>
+                    <button type="button" class="btn btn-camera" style="flex: 1; background-color: #607d8b; color: white;" @click="$emit('import-photo-frente')">
+                        📁 IMPORTAR FOTO *
+                    </button>
+                </div>
             </div>
 
             <!-- Fotografías Adicionales -->
@@ -948,9 +953,6 @@ const FormFicha = {
                     confirmText: 'Sí, eliminar',
                     cancelText: 'Cancelar',
                     onConfirm: () => {
-                        if (typeof Android !== 'undefined' && typeof Android.deletePhotoFile === 'function') {
-                            Android.deletePhotoFile(formData.FotoFrente);
-                        }
                         if (window.deletePhoto) {
                             window.deletePhoto(formData.FotoFrente);
                         } else {
@@ -960,9 +962,6 @@ const FormFicha = {
                 });
             } else {
                 if (confirm('¿Desea eliminar la foto del frente?')) {
-                    if (typeof Android !== 'undefined' && typeof Android.deletePhotoFile === 'function') {
-                        Android.deletePhotoFile(formData.FotoFrente);
-                    }
                     if (window.deletePhoto) {
                         window.deletePhoto(formData.FotoFrente);
                     } else {

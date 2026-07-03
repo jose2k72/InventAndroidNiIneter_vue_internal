@@ -39,10 +39,10 @@ Para garantizar la integridad del inventario, los registros se dividen en dos ca
 
 ## 2. Gestión Transaccional de Archivos
 
-El ciclo de vida de las fotografías está estrictamente controlado por las acciones del usuario:
+El ciclo de vida de las fotografías está controlado exclusivamente por las acciones explícitas del usuario. La regla fundamental es: **si el formulario no se guarda, el estado de la base de datos debe quedar intacto en disco**.
 
-- **Rollback (Cancelar)**: Si el usuario toma fotos pero decide **CANCELAR** el formulario, el sistema purga inmediatamente los archivos físicos del disco de Android.
-- **Commit (Guardar)**: Solo al presionar **GUARDAR**, el sistema confirma las fotos nuevas y ejecuta el borrado físico de aquellas fotos que el usuario marcó para eliminar de la galería.
+- **Rollback (Cancelar)**: Las fotos nuevas capturadas/importadas en la sesión se borran físicamente del disco. Las fotos originales de la BD que el usuario marcó para borrar **se conservan** intactas. Al reabrir el registro, la BD recarga su estado previo.
+- **Commit (Guardar)**: Las fotos marcadas para borrar se eliminan físicamente. Si la **Foto del Frente** fue reemplazada, el archivo anterior se elimina del disco para evitar archivos huérfanos.
 
 ---
 
@@ -84,4 +84,7 @@ El ciclo de vida de las fotografías está estrictamente controlado por las acci
 ## 4. Gestión de Archivos y Fotos
 
 - **Captura Transaccional**: Las fotografías tomadas durante la edición solo se confirman en el almacenamiento final si el usuario guarda el formulario. Si cancela, los archivos temporales son purgados automáticamente.
-- **Nomenclatura**: [Localización]_[Ruta]_[Timestamp].jpg para facilitar la auditoría externa fuera de la base de datos.
+- **Nomenclatura**: `{NoEncuesta}_{yyyyMMdd_HHmmss_SSS}.jpg` para garantizar unicidad y facilitar la auditoría externa fuera de la base de datos.
+- **Foto del Frente (`FotoFrente`)**: Campo obligatorio con tracking independiente. Su valor original se captura como snapshot (`fotoFrenteOriginal`) al abrir el registro, permitiendo detectar reemplazos y limpiar correctamente el archivo anterior al guardar.
+- **Fotos Adicionales (`Imagenes`)**: Gestionadas mediante tres arreglos de estado (`fotosOriginales`, `fotosNuevas`, `fotosMarcadasBorrar`). Los cambios se materializan en disco únicamente al confirmar con "Guardar".
+- **Restricción en Importación**: El `FileBrowser` opera en modo selección única (`singleselection`) al importar la Foto del Frente, y en modo múltiple para fotos adicionales.

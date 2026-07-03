@@ -59,9 +59,10 @@ const app = createApp({
         const fotos = ref([]);
 
         // Tracking transaccional de fotos
-        const fotosOriginales = ref([]);      // Fotos que venían de la BD (snapshot)
+        const fotosOriginales = ref([]);      // Fotos que venían de la BD (snapshot de Imagenes)
         const fotosNuevas = ref([]);          // Fotos tomadas en esta sesión (ya en disco)
         const fotosMarcadasBorrar = ref([]);  // Fotos originales "eliminadas" (aún en disco)
+        const fotoFrenteOriginal = ref('');   // Snapshot del nombre de FotoFrente al abrir el registro
 
         // Referencia para copia de datos
         const pendingCopyData = ref(null);
@@ -163,6 +164,7 @@ const app = createApp({
             fotosOriginales.value = [];
             fotosNuevas.value = [];
             fotosMarcadasBorrar.value = [];
+            fotoFrenteOriginal.value = ''; // Registro nuevo: no hay FotoFrente previa
 
             if (pendingCopyData.value) {
                 // Usar datos de copia si existen
@@ -230,6 +232,9 @@ const app = createApp({
             // Limpiar listas de tracking
             fotosNuevas.value = [];
             fotosMarcadasBorrar.value = [];
+
+            // Capturar snapshot de FotoFrente al abrir el registro (para detectar reemplazos al guardar)
+            fotoFrenteOriginal.value = item.Data.FotoFrente || '';
 
             // Cargar fotos usando el servicio central
             if (item.Data.Imagenes) {
@@ -425,7 +430,8 @@ const app = createApp({
         };
 
         // Importar fotos múltiples
-        const importPhotos = () => {
+        const importPhotos = (isFrente = false) => {
+            tomandoFotoFrente.value = isFrente;
             let noEncuesta = '';
             if (formData.value && formData.value.NoEncuesta) {
                 noEncuesta = formData.value.NoEncuesta;
@@ -444,6 +450,7 @@ const app = createApp({
         const cancelFileBrowser = () => {
             operation.value = formType.value ? (currentId.value ? 'Edit' : 'Create') : 'List';
             currentPhotoPrefix.value = '';
+            tomandoFotoFrente.value = false; // Siempre limpiar el flag al salir del FileBrowser
         };
 
         const onFilesImported = (paths, prefix) => {
@@ -452,7 +459,12 @@ const app = createApp({
             } else {
                 console.warn('Android.processSelectedFiles no está disponible');
             }
-            cancelFileBrowser();
+            // Si es foto del frente (tomandoFotoFrente=true), NO cerrar el FileBrowser todavía.
+            // El cierre ocurrirá en PhotoService.handleAndroidPhoto después de que Kotlin
+            // procese la imagen y llame a window.addPhoto, evitando así el race condition.
+            if (!tomandoFotoFrente.value) {
+                cancelFileBrowser();
+            }
         };
 
 
@@ -508,12 +520,14 @@ const app = createApp({
                 fotosOriginales,
                 fotosNuevas,
                 fotosMarcadasBorrar,
+                fotoFrenteOriginal, // <- Snapshot del nombre de FotoFrente al abrir el registro
                 formData,
                 listData,
                 updateData,
-                openCatalog,    // <- Selector catálogo grande (Profesión, etc.)
-                openMunicipio,  // <- Selector municipio dos niveles
-                tomandoFotoFrente
+                openCatalog,      // <- Selector catálogo grande (Profesión, etc.)
+                openMunicipio,    // <- Selector municipio dos niveles
+                tomandoFotoFrente,
+                cancelFileBrowser // <- Necesario para que photoService cierre el browser tras importar FotoFrente
             };
             console.log('✅ Vue app context guardado globalmente (con tracking de fotos)');
 
@@ -680,6 +694,7 @@ const app = createApp({
             openCamera,
             importPhotos,
             currentPhotoPrefix,
+            tomandoFotoFrente,
             cancelFileBrowser,
             onFilesImported,
             scanField,

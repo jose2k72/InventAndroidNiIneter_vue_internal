@@ -445,11 +445,11 @@ const FormSujetoJuridico = {
             let valor = formData.Identificacion.trim().toUpperCase();
             formData.Identificacion = valor;
 
-            // RUC format: 1 letter followed by 12 digits
-            const esValido = /^[A-Z]\d{12}$/.test(valor);
+            // RUC format: 1 letter followed by 13 digits
+            const esValido = /^[A-Z]\d{13}$/.test(valor);
             if (!esValido) {
                 errors.Identificacion = true;
-                errors.IdentificacionMsg = 'RUC inválido (1 letra seguida de 12 números)';
+                errors.IdentificacionMsg = 'RUC inválido (1 letra seguida de 13 números)';
             } else {
                 delete errors.Identificacion;
                 delete errors.IdentificacionMsg;

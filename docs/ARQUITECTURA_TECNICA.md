@@ -91,13 +91,17 @@ Como alternativa a la captura en tiempo real, el sistema permite la importación
 
 1.  **Llamado a Importación (Web/Vue)**: El usuario presiona el botón "IMPORTAR FOTOS". Vue inicializa la vista global `FileBrowser` y oculta temporalmente el formulario activo.
 2.  **Exploración de Directorios**: El componente interactúa en tiempo real con Android mediante el puente nativo llamando a `Android.listDirectory(path)`, recibiendo la lista de carpetas y archivos en formato JSON para navegación interactiva sin depender de la UI estandar confusa de Android.
-3.  **Selección Múltiple y Confirmación**: El usuario selecciona múltiples archivos en una carpeta y presiona "Importar". Vue recolecta las rutas absolutas y llama a `Android.processSelectedFiles(jsonPaths, prefijo)`.
+3.  **Selección y Confirmación**:
+    *   Si es importación de **Foto del Frente** (campo obligatorio único): la interfaz fuerza la selección de **una sola foto** (`singleselection=true` en `FileBrowser`). El formulario permanece oculto hasta que Android termina de copiar el archivo y notifica.
+    *   Si es importación de **Fotos Adicionales**: el usuario puede seleccionar múltiples archivos. Vue recolecta las rutas absolutas y llama a `Android.processSelectedFiles(jsonPaths, prefijo)`, cerrando el `FileBrowser` inmediatamente.
 4.  **Procesamiento Asíncrono (Kotlin)**:
     *   La copia física de los archivos originales al directorio privado de la app se ejecuta en un hilo secundario (`Thread`). **Los archivos originales nunca se mueven ni se alteran.**
-    *   **Nomenclatura (Renombrado Matemático)**: El sistema instancia un objeto `Calendar` al inicio de la importación. Para garantizar la unicidad de cada imagen y mantener el estándar de la app, se suma exactamente 1 segundo (`calendar.add(Calendar.SECOND, 1)`) a la marca de tiempo base por cada archivo procesado. Así, los nombres generados son consecutivos: `{PREFIJO}_20240510_142030.jpg`, `{PREFIJO}_20240510_142031.jpg`, etc.
+    *   **Nomenclatura (Timestamp con milisegundos)**: Cada archivo procesado recibe un timestamp único con milisegundos (`yyyyMMdd_HHmmss_SSS`) generado dentro del bucle, garantizando unicidad absoluta incluso en importaciones rápidas: `{PREFIJO}_20240510_142030_123.jpg`.
     *   Se notifica al Media Scanner del sistema operativo para registrar las nuevas copias físicas.
     *   Android envía la versión miniatura (Base64) de vuelta a Vue llamando individualmente a `window.addPhoto`.
-5.  **Reintegración Reactiva (Vue)**: La aplicación web oculta el explorador de archivos, restaura el estado previo (`Edit` o `Create`) e inyecta de forma reactiva las nuevas fotos en el arreglo del formulario, mostrándolas de forma idéntica a las capturadas.
+5.  **Reintegración Reactiva y Control de Cierre (Vue)**:
+    *   **Foto del Frente**: el `FileBrowser` permanece visible hasta recibir la confirmación de `window.addPhoto`. Solo entonces `PhotoService.handleAndroidPhoto` asigna el nombre al campo `formData.FotoFrente` y llama a `cancelFileBrowser()`, garantizando que el watcher de `FormFicha` detecte el valor correcto al montarse. Esto elimina el *race condition* donde el componente se remontaba antes de que el archivo estuviese disponible en disco.
+    *   **Fotos Adicionales**: el `FileBrowser` se cierra inmediatamente tras confirmar la selección; las fotos se inyectan reactivamente en el arreglo del formulario al llegar los callbacks de `window.addPhoto`.
 
 ---
 
@@ -223,10 +227,36 @@ Debido a la ausencia de extensiones SpatiaLite nativas en algunos entornos y par
 
 ## 2. Gestión Transaccional de Archivos
 
-El ciclo de vida de las fotografías está estrictamente controlado por las acciones del usuario:
+El ciclo de vida de las fotografías está estrictamente controlado por las acciones del usuario. El sistema distingue entre dos tipos de fotos con lógicas de tracking independientes:
 
-- **Rollback (Cancelar)**: Si el usuario toma fotos pero decide **CANCELAR** el formulario, el sistema purga inmediatamente los archivos físicos del disco de Android.
-- **Commit (Guardar)**: Solo al presionar **GUARDAR**, el sistema confirma las fotos nuevas y ejecuta el borrado físico de aquellas fotos que el usuario marcó para eliminar de la galería.
+### 2.1 Fotos Generales (`formData.Imagenes`)
+
+Se rastrean mediante tres arreglos reactivos en `app.js`:
+
+| Arreglo | Contenido |
+|---|---|
+| `fotosOriginales` | Snapshot inmutable de las fotos de la BD al abrir el registro |
+| `fotosNuevas` | Fotos capturadas/importadas en la sesión actual (ya en disco) |
+| `fotosMarcadasBorrar` | Fotos originales que el usuario eliminó (aún en disco, pendientes) |
+
+- **Rollback (Cancelar)**: Las `fotosNuevas` se borran físicamente del disco. Las `fotosMarcadasBorrar` se descartan sin borrar — los archivos originales quedan intactos. Al reabrir el registro, la DB recarga el estado original.
+- **Commit (Guardar)**: Las `fotosMarcadasBorrar` se eliminan físicamente del disco y todos los arreglos de tracking se limpian.
+
+### 2.2 Foto del Frente del Predio (`formData.FotoFrente`)
+
+Campo obligatorio único con tracking propio independiente de `Imagenes`:
+
+- **`fotoFrenteOriginal`** (`ref` en `app.js`): Captura el nombre del archivo de FotoFrente en el momento de abrir el registro. Se inicializa en `updateData()` y se limpia a `''` en `resetForm()` (registro nuevo).
+- **Rollback (Cancelar)**: Si se capturó/importó una nueva FotoFrente, el archivo nuevo se borra del disco (estaba en `fotosNuevas`). `volver()` limpia `formData`, por lo que al reabrir el registro la FotoFrente original de la BD se muestra correctamente.
+- **Commit (Guardar) con reemplazo**: Si `formData.FotoFrente !== fotoFrenteOriginal`, `commit()` borra el archivo viejo del disco, evitando archivos huérfanos.
+- **Eliminar FotoFrente original**: `handleAndroidDelete` detecta si el archivo eliminado es la FotoFrente original (comparando con `fotoFrenteOriginal`) y la marca en `fotosMarcadasBorrar` para borrado diferido, manteniendo el archivo seguro hasta confirmar con "Guardar".
+
+### 2.3 Control de Cierre del FileBrowser (Anti Race Condition)
+
+El `FileBrowser` se cierra en momentos distintos según el tipo de importación:
+
+- **Fotos Adicionales**: `onFilesImported` llama a `cancelFileBrowser()` síncronamente tras despachar el trabajo a Kotlin. El `FileBrowser` se cierra de inmediato.
+- **Foto del Frente**: `onFilesImported` NO cierra el `FileBrowser`. El cierre ocurre en `PhotoService.handleAndroidPhoto`, **después** de que Kotlin haya copiado el archivo, notificado vía `window.addPhoto`, y el campo `formData.FotoFrente` se haya actualizado. Esto garantiza que el watcher de `FormFicha` (`Vue.watch(() => formData.FotoFrente, cargarFotoFrente)`) se dispare con el valor correcto al montarse el componente.
 
 ---
 

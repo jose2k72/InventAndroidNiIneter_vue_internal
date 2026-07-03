@@ -231,15 +231,15 @@ class AndroidBridge(activity: FormActivity) {
         Thread {
             try {
                 val paths = org.json.JSONArray(pathsJson)
-                val calendar = java.util.Calendar.getInstance()
-                val format = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US)
-                val safePrefix = prefix?.replace("[^a-zA-Z0-9._-]".toRegex(), "_") ?: ""
-                val truncatedPrefix = if (safePrefix.length > 50) safePrefix.substring(0, 50) else safePrefix
-                
                 val dirApp = AppConfig.getStorageDirectory()
                 AppConfig.ensureStorageDirectoryExists()
                 
                 for (i in 0 until paths.length()) {
+                    val calendar = java.util.Calendar.getInstance()
+                    val format = java.text.SimpleDateFormat("yyyyMMdd_HHmmss_SSS", java.util.Locale.US)
+                    val safePrefix = prefix?.replace("[^a-zA-Z0-9._-]".toRegex(), "_") ?: ""
+                    val truncatedPrefix = if (safePrefix.length > 50) safePrefix.substring(0, 50) else safePrefix
+                    
                     val filePath = paths.getString(i)
                     val sourceFile = java.io.File(filePath)
                     

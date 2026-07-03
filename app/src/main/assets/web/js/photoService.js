@@ -63,6 +63,12 @@ window.PhotoService = {
                 }
                 ctx.tomandoFotoFrente.value = false;
                 ctx.fotosNuevas.value.push({ ...fotoObj });
+                // Cerrar el FileBrowser AHORA que la foto ya está asignada en formData.
+                // Esto garantiza que el watcher de FormFicha se dispare con el valor correcto
+                // y evita el race condition donde el componente se remontaba antes de tener la foto.
+                if (typeof ctx.cancelFileBrowser === 'function') {
+                    ctx.cancelFileBrowser();
+                }
             } else {
                 // Actualizar estado Vue general
                 ctx.fotos.value.push(fotoObj);
@@ -89,15 +95,22 @@ window.PhotoService = {
         try {
             const esNueva = ctx.fotosNuevas.value.some(f => f.name === filename);
             const esOriginal = ctx.fotosOriginales.value.some(f => f.name === filename);
+            // Verificar si es la FotoFrente que vino de la DB (no vive en fotosOriginales
+            // porque es un campo separado de Imagenes, necesita su propio tracking)
+            const esFotoFrenteOriginal = ctx.fotoFrenteOriginal?.value && ctx.fotoFrenteOriginal.value === filename;
 
             if (esNueva) {
                 // Borrado físico inmediato para fotos nuevas no guardadas aún en el registro
                 this.deletePhotosFromDisk([{ name: filename }]);
                 const idx = ctx.fotosNuevas.value.findIndex(f => f.name === filename);
                 if (idx > -1) ctx.fotosNuevas.value.splice(idx, 1);
-            } else if (esOriginal) {
+            } else if (esOriginal || esFotoFrenteOriginal) {
                 // Marcado de borrado diferido para fotos que ya pertenecen al registro persistido
-                const foto = ctx.fotosOriginales.value.find(f => f.name === filename);
+                // (incluyendo FotoFrente original que vive en campo separado, no en Imagenes)
+                const nombre = esFotoFrenteOriginal ? filename : null;
+                const foto = esOriginal
+                    ? ctx.fotosOriginales.value.find(f => f.name === filename)
+                    : { name: filename, data: null };
                 if (foto) ctx.fotosMarcadasBorrar.value.push({ ...foto });
             }
 
@@ -132,10 +145,21 @@ window.PhotoService = {
             this.deletePhotosFromDisk(ctx.fotosMarcadasBorrar.value);
         }
 
-        // 2. Limpiar estados de tracking
+        // 2. Si FotoFrente fue reemplazada en esta sesión, borrar el archivo anterior del disco
+        // (la foto nueva ya quedó asignada en formData.FotoFrente; la vieja no está en fotosMarcadasBorrar
+        // porque el sistema de reemplazo no pasa por eliminar-primero-luego-agregar)
+        const fotoFrenteNueva = ctx.formData.value?.FotoFrente || '';
+        const fotoFrenteVieja = ctx.fotoFrenteOriginal?.value || '';
+        if (fotoFrenteVieja && fotoFrenteNueva && fotoFrenteNueva !== fotoFrenteVieja) {
+            console.log(`💡 FotoFrente reemplazada: borrando archivo anterior '${fotoFrenteVieja}' del disco`);
+            this.deletePhotosFromDisk([{ name: fotoFrenteVieja }]);
+        }
+
+        // 3. Limpiar estados de tracking
         ctx.fotosOriginales.value = [];
         ctx.fotosNuevas.value = [];
         ctx.fotosMarcadasBorrar.value = [];
+        if (ctx.fotoFrenteOriginal) ctx.fotoFrenteOriginal.value = '';
     },
 
     /**

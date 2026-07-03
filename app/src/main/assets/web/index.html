@@ -449,7 +449,7 @@
             <!-- Formularios INETER -->
             <form-ficha v-if="formType === 'Ficha'" :data="formData" :localizacion="localizacion" :fotos="fotos"
                 @save="sendData" @cancel="volver" @camera="openCamera(false)" @camera-frente="openCamera(true)"
-                @ocr-scan="scanField" @import-photos="importPhotos"></form-ficha>
+                @ocr-scan="scanField" @import-photos="importPhotos(false)" @import-photo-frente="importPhotos(true)"></form-ficha>
             <form-sujeto-natural v-if="formType === 'SujetoNatural'" :data="formData" @save="sendData" @cancel="volver"
                 @camera="openCamera" @ocr-scan="scanField" @import-photos="importPhotos"></form-sujeto-natural>
             <form-sujeto-juridico v-if="formType === 'SujetoJuridico'" :data="formData" @save="sendData"
@@ -479,7 +479,7 @@
 
         <!-- Vista Global File Browser -->
         <div v-else-if="operation === 'FileBrowser'">
-            <file-browser :prefix="currentPhotoPrefix" @cancel="cancelFileBrowser" @select="onFilesImported"></file-browser>
+            <file-browser :prefix="currentPhotoPrefix" :singleselection="tomandoFotoFrente" @cancel="cancelFileBrowser" @select="onFilesImported"></file-browser>
         </div>
     </div>
 

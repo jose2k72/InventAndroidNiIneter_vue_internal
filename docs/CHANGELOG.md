@@ -4,6 +4,23 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-07-02] - Consolidación del Sistema Transaccional de Fotos y Corrección de Race Condition
+
+### 📸 Race Condition en Importación de Foto del Frente (`app.js`, `photoService.js`, `FileBrowser.js`)
+- **Corrección de Race Condition crítico**: Al importar la Foto del Frente obligatoria, el `FileBrowser` ya no se cerraba antes de que Kotlin terminara de copiar el archivo. El cierre del browser se delegó a `PhotoService.handleAndroidPhoto`, que se ejecuta *después* de recibir la confirmación de Android vía `window.addPhoto`. Esto garantiza que el campo `formData.FotoFrente` tenga el valor correcto cuando el watcher de `FormFicha` se dispara al remontarse el componente.
+- **Modo de selección única en FileBrowser**: Se corrigió la sensibilidad de mayúsculas del prop (`singleselection` en minúsculas) en `FileBrowser.js` para que Vue/DOM lo interprete correctamente. Al importar Foto del Frente, el browser se abre en modo single-select; al importar fotos adicionales, en modo multi-select.
+- **Reset de estado `tomandoFotoFrente`**: `cancelFileBrowser()` en `app.js` ahora resetea `tomandoFotoFrente.value = false` para evitar que el flag quede atascado en `true` si el usuario cancela el explorador de archivos sin seleccionar nada.
+
+### 🗂️ Tracking Independiente de `FotoFrente` (`app.js`, `photoService.js`)
+- **Nueva ref `fotoFrenteOriginal`**: Se agregó un snapshot reactivo del nombre del archivo de FotoFrente al momento de abrir el registro (`updateData()`). Se limpia en `resetForm()` para registros nuevos y se expone en `vueAppContext`.
+- **Eliminación de archivos huérfanos en Guardar**: `commit()` en `photoService.js` detecta si la FotoFrente fue reemplazada comparando `formData.FotoFrente` contra `fotoFrenteOriginal`. Si difieren, el archivo anterior se borra del disco al confirmar con "Guardar", evitando la acumulación de archivos sin referencia.
+- **Eliminación de FotoFrente original reconocida**: `handleAndroidDelete` ahora identifica si el archivo eliminado es la FotoFrente original (antes no era detectado por ninguna rama, ya que vive en un campo separado de `Imagenes`). Al reconocerla, la marca en `fotosMarcadasBorrar` para borrado diferido — el archivo permanece seguro hasta que el usuario confirme con "Guardar". Si el usuario cancela, la FotoFrente original no se borra.
+
+### ✅ Validación de RUC (`FormSujetoJuridico.js`, `FormSujetoNatural.js`, `FormEntrevistado.js`)
+- Regla corregida de 1 letra + 12 dígitos a **1 letra + 13 dígitos** (`/^[A-Z]\d{13}$/`) según el formato real del RUC nicaragüense.
+
+---
+
 ## [2026-07-02] - File Importer y Explorador Nativo de Imágenes
 
 ### 📁 Explorador de Archivos In-App y Renombrado Matemático

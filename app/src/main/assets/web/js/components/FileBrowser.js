@@ -65,6 +65,10 @@ const FileBrowser = {
         prefix: {
             type: String,
             default: ''
+        },
+        singleselection: {
+            type: Boolean,
+            default: false
         }
     },
     setup(props, { emit }) {
@@ -124,7 +128,11 @@ const FileBrowser = {
             if (index > -1) {
                 selectedPaths.value.splice(index, 1);
             } else {
-                selectedPaths.value.push(file.path);
+                if (props.singleselection) {
+                    selectedPaths.value = [file.path];
+                } else {
+                    selectedPaths.value.push(file.path);
+                }
             }
         };
 

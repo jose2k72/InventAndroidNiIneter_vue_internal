@@ -705,9 +705,9 @@ const FormSujetoNatural = {
                 esValido = /^\d{12}$/.test(valor); 
                 mensaje = 'Residencia inválida (Debe tener exactamente 12 números)';
             } else if (tipo == 4) { 
-                // RUC: 1 Letra + 12 dígitos
-                esValido = /^[A-Z]\d{12}$/.test(valor); 
-                mensaje = 'RUC inválido (1 letra seguida de 12 números)';
+                // RUC: 1 Letra + 13 dígitos
+                esValido = /^[A-Z]\d{13}$/.test(valor); 
+                mensaje = 'RUC inválido (1 letra seguida de 13 números)';
             } else { 
                 // Otros
                 esValido = /^[A-Z0-9\-]+$/.test(valor);
