@@ -38,60 +38,65 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
      * Implementa agrupamiento por proximidad (3m) y lógica de colores.
      */
     fun loadCapturedPoints(lastSavedDataId: Int) {
-        captureMarkers.forEach { it.remove() }
-        captureMarkers.clear()
-
         val dbHelper = DatabaseHelper.getInstance(activity)
-        val allData = dbHelper.getAllData()
-        if (allData.isEmpty()) return
-
-        // 1. Agrupar puntos en un radio de 3 metros
-        val groups = mutableListOf<DataGroup>()
-        allData.forEach { item ->
-            val existingGroup = groups.find { g ->
-                calculateDistance(LatLng(item.latitud, item.longitud), LatLng(g.centerLat, g.centerLng)) <= 3.0
-            }
-            if (existingGroup != null) {
-                existingGroup.items.add(item)
-            } else {
-                val newGroup = DataGroup(item.latitud, item.longitud)
-                newGroup.items.add(item)
-                groups.add(newGroup)
-            }
-        }
-
-        // 2. Pintar un marcador por cada grupo con el color correspondiente
-        groups.forEach { group ->
-            val markerColor = calculateGroupColor(group.items)
-            val isLastSaved = group.items.any { it.id == lastSavedDataId }
-            
-            // Usamos la posición del primer elemento para el marcador
-            val firstItem = group.items.first()
-            val marker = mMap.addMarker(
-                MarkerOptions()
-                    .position(LatLng(firstItem.latitud, firstItem.longitud))
-                    .title("Unidad: ${group.items.size} registros")
-                    .snippet("ID base: ${firstItem.id}")
-                    .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
-            )
-            
-            marker?.let {
-                // El tag se usa en el listener de clic para saber qué abrir
-                it.tag = "${SpatialNormalizer.format(firstItem.latitud)},${SpatialNormalizer.format(firstItem.longitud)}"
-                captureMarkers.add(it)
+        
+        kotlin.concurrent.thread {
+            val allData = dbHelper.getAllData()
+            if (allData.isEmpty()) {
+                activity.runOnUiThread {
+                    captureMarkers.forEach { it.remove() }
+                    captureMarkers.clear()
+                }
+                return@thread
             }
 
-            // Si es el último guardado, superponemos el ojito negro exactamente en el centro de su cabeza
-            if (isLastSaved) {
-                val eyeMarker = mMap.addMarker(
-                    MarkerOptions()
-                        .position(LatLng(firstItem.latitud, firstItem.longitud))
-                        .icon(createBlackEyeIcon())
-                        .anchor(0.5f, 5.0f) // Matemáticamente alineado con el "ojito" del pin nativo (30dp arriba del punto de anclaje)
-                        .zIndex((marker?.zIndex ?: 1.0f) + 1f)
-                )
-                eyeMarker?.let {
-                    captureMarkers.add(it)
+            // 1. Agrupar puntos linealmente por IDOBJECT (consolidación catastral)
+            val groupedByObject = allData.groupBy { it.idObject }
+            val groups = groupedByObject.map { (_, items) ->
+                val firstItem = items.first()
+                val group = DataGroup(firstItem.latitud, firstItem.longitud)
+                group.items.addAll(items)
+                group
+            }
+
+            // 2. Pintar un marcador por cada grupo con el color correspondiente en el hilo principal
+            activity.runOnUiThread {
+                captureMarkers.forEach { it.remove() }
+                captureMarkers.clear()
+
+                groups.forEach { group ->
+                    val markerColor = calculateGroupColor(group.items)
+                    val isLastSaved = group.items.any { it.id == lastSavedDataId }
+                    
+                    // Usamos la posición del primer elemento para el marcador
+                    val firstItem = group.items.first()
+                    val marker = mMap.addMarker(
+                        MarkerOptions()
+                            .position(LatLng(firstItem.latitud, firstItem.longitud))
+                            .title("Unidad: ${group.items.size} registros")
+                            .snippet("ID base: ${firstItem.id}")
+                            .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
+                    )
+                    
+                    marker?.let {
+                        // El tag se usa en el listener de clic para saber qué abrir
+                        it.tag = "${SpatialNormalizer.format(firstItem.latitud)},${SpatialNormalizer.format(firstItem.longitud)}"
+                        captureMarkers.add(it)
+                    }
+
+                    // Si es el último guardado, superponemos el ojito negro exactamente en el centro de su cabeza
+                    if (isLastSaved) {
+                        val eyeMarker = mMap.addMarker(
+                            MarkerOptions()
+                                .position(LatLng(firstItem.latitud, firstItem.longitud))
+                                .icon(createBlackEyeIcon())
+                                .anchor(0.5f, 5.0f) // Matemáticamente alineado con el "ojito" del pin nativo (30dp arriba del punto de anclaje)
+                                .zIndex((marker?.zIndex ?: 1.0f) + 1f)
+                        )
+                        eyeMarker?.let {
+                            captureMarkers.add(it)
+                        }
+                    }
                 }
             }
         }
@@ -114,17 +119,12 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
         var esUnionPredio = false
 
         items.forEach { item ->
-            try {
-                val json = JSONObject(item.data)
-                val type = json.optString("Type")
-                when (type) {
-                    "Ficha" -> tieneFicha = true
-                    "Entrevistado" -> tieneEntrevistado = true
-                    "SujetoNatural", "SujetoJuridico" -> tieneDuenio = true
-                    "NoEncuestado" -> esNoEncuestado = true
-                    "UnionConPredio" -> esUnionPredio = true
-                }
-            } catch (e: Exception) {}
+            val dataStr = item.data
+            if (dataStr.contains("\"Type\":\"Ficha\"")) tieneFicha = true
+            else if (dataStr.contains("\"Type\":\"Entrevistado\"")) tieneEntrevistado = true
+            else if (dataStr.contains("\"Type\":\"SujetoNatural\"") || dataStr.contains("\"Type\":\"SujetoJuridico\"")) tieneDuenio = true
+            else if (dataStr.contains("\"Type\":\"NoEncuestado\"")) esNoEncuestado = true
+            else if (dataStr.contains("\"Type\":\"UnionConPredio\"")) esUnionPredio = true
         }
 
         if (esNoEncuestado) return 0f // HUE_RED

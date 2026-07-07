@@ -158,24 +158,32 @@ class FormImageHelper(private val activity: FormActivity) {
     }
 
     private fun processCapturedPhoto() {
-        try {
-            val photoFile = File(currentPhotoPath)
-            val base64 = convertImageToBase64(photoFile)
-            
-            // Notificar al Media Scanner
-            android.media.MediaScannerConnection.scanFile(
-                activity,
-                arrayOf(currentPhotoPath),
-                arrayOf("image/jpeg"),
-                null
-            )
-            
-            // Notificar a Vue vía Webview de la actividad
-            activity.notifyPhotoCaptured(currentPhotoName, base64)
-            Log.d(TAG, "✅ Foto procesada y enviada a Vue")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error procesando foto: ${e.message}")
-            Toast.makeText(activity, "Error procesando foto", Toast.LENGTH_SHORT).show()
+        val photoPath = currentPhotoPath
+        val photoName = currentPhotoName
+        kotlin.concurrent.thread {
+            try {
+                val photoFile = File(photoPath)
+                val base64 = convertImageToBase64(photoFile)
+                
+                // Notificar al Media Scanner
+                android.media.MediaScannerConnection.scanFile(
+                    activity,
+                    arrayOf(photoPath),
+                    arrayOf("image/jpeg"),
+                    null
+                )
+                
+                // Notificar a Vue vía Webview de la actividad en el hilo principal
+                activity.runOnUiThread {
+                    activity.notifyPhotoCaptured(photoName, base64)
+                }
+                Log.d(TAG, "✅ Foto procesada y enviada a Vue en hilo de fondo")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error procesando foto: ${e.message}")
+                activity.runOnUiThread {
+                    Toast.makeText(activity, "Error procesando foto", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -222,11 +230,9 @@ class FormImageHelper(private val activity: FormActivity) {
     
     fun convertImageToBase64(imageFile: File): String {
         return try {
-            val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
-            val outputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-            val byteArray = outputStream.toByteArray()
-            Base64.encodeToString(byteArray, Base64.NO_WRAP)
+            if (!imageFile.exists()) return ""
+            val bytes = imageFile.readBytes()
+            Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
             Log.e(TAG, "Error Base64: ${e.message}")
             ""

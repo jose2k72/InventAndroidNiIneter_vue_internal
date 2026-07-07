@@ -434,89 +434,93 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         searchPolygonOverlay = null
         
         val dbHelper = DatabaseHelper.getInstance(this)
+        
+        kotlin.concurrent.thread {
+            // 1. Interceptar la geometría del predio en base a las coordenadas de click/marcador (Operación pesada / BD)
+            val geom = dbHelper.getGeometry(latLng.longitude, latLng.latitude)
+            if (geom == null) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Ningún objeto interceptado", Toast.LENGTH_SHORT).show()
+                }
+                return@thread
+            }
 
-        // 1. Interceptar la geometría del predio en base a las coordenadas de click/marcador
-        val geom = dbHelper.getGeometry(latLng.longitude, latLng.latitude)
-        if (geom == null) {
-            Toast.makeText(this, "Ningún objeto interceptado", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // 2. Determinar los puntos capturados existentes para la coordenada destino:
-        // - Si singleGroupPoint == true: Se consultan todos los puntos existentes del predio (agrupación clásica única).
-        // - Si singleGroupPoint == false: Se consultan sólo los puntos del predio a menos de 3.0 metros del click (agrupación por cercanía).
-        val existingPoints = if (singleGroupPoint) {
-            dbHelper.getDataByObjectId(geom.id)
-        } else {
-            dbHelper.getDataByObjectId(geom.id, latLng.latitude, latLng.longitude, 3.0)
-        }
-
-        val targetLat: Double
-        val targetLng: Double
-        if (existingPoints.isNotEmpty()) {
-            // 3a. Snapping: Si ya existe un punto en el conjunto evaluado, se reutiliza su coordenada
-            targetLat = existingPoints[0].latitud
-            targetLng = existingPoints[0].longitud
-        } else {
-            // 3b. Creación de punto nuevo:
-            if (singleGroupPoint) {
-                // En agrupación única, el primer punto del predio se sitúa en su polo de inaccesibilidad
-                val pole = GeometryUtil.getPoleOfInaccessibility(geom.jtsGeom!!)
-                targetLat = pole.latitude
-                targetLng = pole.longitude
+            // 2. Determinar los puntos capturados existentes para la coordenada destino (Operación pesada / BD)
+            val existingPoints = if (singleGroupPoint) {
+                dbHelper.getDataByObjectId(geom.id)
             } else {
-                // En agrupación por cercanía, los puntos nuevos se posicionan exactamente donde el usuario hizo click
-                targetLat = latLng.latitude
-                targetLng = latLng.longitude
+                dbHelper.getDataByObjectId(geom.id, latLng.latitude, latLng.longitude, 3.0)
+            }
+
+            val targetLat: Double
+            val targetLng: Double
+            if (existingPoints.isNotEmpty()) {
+                // 3a. Snapping: Si ya existe un punto en el conjunto evaluado, se reutiliza su coordenada
+                targetLat = existingPoints[0].latitud
+                targetLng = existingPoints[0].longitud
+            } else {
+                // 3b. Creación de punto nuevo:
+                if (singleGroupPoint) {
+                    // En agrupación única, el primer punto del predio se sitúa en su polo de inaccesibilidad (Operación pesada JTS)
+                    val pole = GeometryUtil.getPoleOfInaccessibility(geom.jtsGeom!!)
+                    targetLat = pole.latitude
+                    targetLng = pole.longitude
+                } else {
+                    // En agrupación por cercanía, los puntos nuevos se posicionan exactamente donde el usuario hizo click
+                    targetLat = latLng.latitude
+                    targetLng = latLng.longitude
+                }
+            }
+
+            // Recolección de datos espaciales (Operación pesada JTS / BD)
+            val mun  = dbHelper.getMunicipiosAt(latLng.longitude, latLng.latitude)
+            val mza  = dbHelper.getManzanaForPredio(geom.jtsGeom!!)
+            val sec  = mza // Sector = Manzana (misma entidad catastral)
+            val lote = dbHelper.getLoteForPredio(geom.jtsGeom!!)
+            val area = GeometryUtil.calculateArea32616(geom.jtsGeom!!)
+
+            // Validación de datos esenciales y lanzamiento (en Hilo Principal)
+            runOnUiThread {
+                if (mun.isNullOrEmpty()) {
+                    Toast.makeText(this@MainActivity, "⚠️ Error: No se pudo identificar el municipio en esta zona", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                if (mza.isNullOrEmpty()) {
+                    Toast.makeText(this@MainActivity, "⚠️ Error: No se pudo identificar la manzana para este predio", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                if (lote.isNullOrEmpty()) {
+                    android.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("Lote No Identificado")
+                        .setMessage("No se pudo identificar el lote para este predio.\n\nClick en:\nLat: $targetLat\nLng: $targetLng")
+                        .setPositiveButton("OK", null)
+                        .show()
+                    return@runOnUiThread
+                }
+                if (geom.localizacion.isNullOrEmpty()) {
+                    Toast.makeText(this@MainActivity, "⚠️ Error: El predio seleccionado no tiene código de localización", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+
+                val intent = Intent(this@MainActivity, FormActivity::class.java).apply {
+                    putExtra(FormActivity.EXTRA_LATITUDE, targetLat)
+                    putExtra(FormActivity.EXTRA_LONGITUDE, targetLng)
+                    putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
+                    putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
+                    putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
+                    putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
+                    putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
+                    putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
+                    putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
+                    putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
+                    putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
+                    putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
+                    putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
+                    putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
+                }
+                startActivity(intent)
             }
         }
-
-        // Recolección de datos espaciales
-        val mun  = dbHelper.getMunicipiosAt(latLng.longitude, latLng.latitude)
-        val mza  = dbHelper.getManzanaForPredio(geom.jtsGeom!!)
-        val sec  = mza // Sector = Manzana (misma entidad catastral)
-        val lote = dbHelper.getLoteForPredio(geom.jtsGeom!!)
-        val area = GeometryUtil.calculateArea32616(geom.jtsGeom!!)
-
-        // Validación de datos esenciales
-        if (mun.isNullOrEmpty()) {
-            Toast.makeText(this, "⚠️ Error: No se pudo identificar el municipio en esta zona", Toast.LENGTH_LONG).show()
-            return
-        }
-        if (mza.isNullOrEmpty()) {
-            Toast.makeText(this, "⚠️ Error: No se pudo identificar la manzana para este predio", Toast.LENGTH_LONG).show()
-            return
-        }
-        if (lote.isNullOrEmpty()) {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Lote No Identificado")
-                .setMessage("No se pudo identificar el lote para este predio.\n\nClick en:\nLat: $targetLat\nLng: $targetLng")
-                .setPositiveButton("OK", null)
-                .show()
-            return
-        }
-        if (geom.localizacion.isNullOrEmpty()) {
-            Toast.makeText(this, "⚠️ Error: El predio seleccionado no tiene código de localización", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        val intent = Intent(this, FormActivity::class.java).apply {
-            putExtra(FormActivity.EXTRA_LATITUDE, targetLat)
-            putExtra(FormActivity.EXTRA_LONGITUDE, targetLng)
-            putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
-            putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
-            putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
-            putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
-            putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
-            putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
-            putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
-            putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
-            putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
-            putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
-            putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
-            putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
-        }
-        startActivity(intent)
     }
 
     private fun checkEncuestador() {
@@ -1464,60 +1468,70 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun locateAndOpenFicha(localizacion: String) {
         val dbHelper = DatabaseHelper.getInstance(this)
         
-        // Obtenemos el registro de geometría completo usando la nueva función
-        val geom = com.cadicsa.inventario.utils.SpatialHelper.getGeometryByLocalizacion(dbHelper.readableDatabase, localizacion)
-        if (geom == null) {
-            Toast.makeText(this, "No se encontró el predio con localización: $localizacion", Toast.LENGTH_LONG).show()
-            return
-        }
+        kotlin.concurrent.thread {
+            // 1. Obtener geometría en segundo plano (BD / WKB)
+            val geom = com.cadicsa.inventario.utils.SpatialHelper.getGeometryByLocalizacion(dbHelper.readableDatabase, localizacion)
+            if (geom == null) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "No se encontró el predio con localización: $localizacion", Toast.LENGTH_LONG).show()
+                }
+                return@thread
+            }
 
-        // Calculamos el polo de inaccesibilidad a partir del JTS Geometry
-        val jtsGeom = geom.jtsGeom
-        if (jtsGeom == null) {
-            Toast.makeText(this, "El predio encontrado no tiene geometría válida", Toast.LENGTH_LONG).show()
-            return
+            val jtsGeom = geom.jtsGeom
+            if (jtsGeom == null) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "El predio encontrado no tiene geometría válida", Toast.LENGTH_LONG).show()
+                }
+                return@thread
+            }
+            
+            // 2. Calcular polo de inaccesibilidad (Operación pesada JTS)
+            val pole = GeometryUtil.getPoleOfInaccessibility(jtsGeom)
+            
+            // 3. Obtener metadatos espaciales en segundo plano (BD / JTS)
+            val mun = dbHelper.getMunicipiosAt(pole.longitude, pole.latitude)
+            val mza = dbHelper.getManzanaForPredio(jtsGeom)
+            val sec = mza
+            val lote = com.cadicsa.inventario.utils.SpatialHelper.getLoteClosestToPoint(dbHelper.readableDatabase, pole.longitude, pole.latitude)
+            val area = GeometryUtil.calculateArea32616(jtsGeom)
+            
+            // 4. Operación visual e inicio de actividad en el Hilo Principal
+            runOnUiThread {
+                mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(pole, 21f))
+                
+                if (mun.isNullOrEmpty()) {
+                    Toast.makeText(this@MainActivity, "⚠️ Error: No se pudo identificar el municipio en el polo matemático", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                if (mza.isNullOrEmpty()) {
+                    Toast.makeText(this@MainActivity, "⚠️ Error: No se pudo identificar la manzana intersectando el predio", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                if (lote.isNullOrEmpty()) {
+                    Toast.makeText(this@MainActivity, "⚠️ Error: No se encontró ningún texto de Lote cercano al polo matemático", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                
+                val intent = Intent(this@MainActivity, FormActivity::class.java).apply {
+                    putExtra(FormActivity.EXTRA_LATITUDE, pole.latitude)
+                    putExtra(FormActivity.EXTRA_LONGITUDE, pole.longitude)
+                    putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
+                    putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
+                    putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
+                    putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
+                    putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
+                    putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
+                    putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
+                    putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
+                    putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
+                    putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
+                    putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
+                    putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
+                }
+                startActivity(intent)
+            }
         }
-        
-        val pole = GeometryUtil.getPoleOfInaccessibility(jtsGeom)
-        mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(pole, 21f))
-        
-        // Extracción manual de datos esquivando BoundingBox estricto
-        val mun = dbHelper.getMunicipiosAt(pole.longitude, pole.latitude)
-        val mza = dbHelper.getManzanaForPredio(jtsGeom)
-        val sec = mza
-        val lote = com.cadicsa.inventario.utils.SpatialHelper.getLoteClosestToPoint(dbHelper.readableDatabase, pole.longitude, pole.latitude)
-        val area = GeometryUtil.calculateArea32616(jtsGeom)
-        
-        if (mun.isNullOrEmpty()) {
-            Toast.makeText(this, "⚠️ Error: No se pudo identificar el municipio en el polo matemático", Toast.LENGTH_LONG).show()
-            return
-        }
-        if (mza.isNullOrEmpty()) {
-            Toast.makeText(this, "⚠️ Error: No se pudo identificar la manzana intersectando el predio", Toast.LENGTH_LONG).show()
-            return
-        }
-        if (lote.isNullOrEmpty()) {
-            Toast.makeText(this, "⚠️ Error: No se encontró ningún texto de Lote cercano al polo matemático", Toast.LENGTH_LONG).show()
-            return
-        }
-        
-        val intent = Intent(this, FormActivity::class.java).apply {
-            putExtra(FormActivity.EXTRA_LATITUDE, pole.latitude)
-            putExtra(FormActivity.EXTRA_LONGITUDE, pole.longitude)
-            putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
-            putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
-            putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
-            putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
-            putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
-            putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
-            putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
-            putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
-            putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
-            putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
-            putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
-            putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
-        }
-        startActivity(intent)
     }
 
     override fun onDestroy() {

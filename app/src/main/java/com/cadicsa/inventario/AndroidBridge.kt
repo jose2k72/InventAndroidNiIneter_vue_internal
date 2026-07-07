@@ -85,18 +85,7 @@ class AndroidBridge(activity: FormActivity) {
         val act = activity ?: return "[]"
         return try {
             val dbHelper = DatabaseHelper.getInstance(act)
-            val items = dbHelper.getDataByProximity(act.latitude, act.longitude, 3.0, false)
-            
-            val result = StringBuilder("[")
-            items.forEachIndexed { index, item ->
-                result.append("{\"Id\":${item.id},")
-                result.append("\"Data\": ${item.data},")
-                result.append("\"IdObject\":${item.idObject},")
-                result.append("\"Fecha\": \"${item.fecha}\"}")
-                if (index < items.size - 1) result.append(",")
-            }
-            result.append("]")
-            result.toString()
+            dbHelper.getList(act.idObject)
         } catch (e: Exception) {
             android.util.Log.e("AndroidBridge", "Error en getData: ${e.message}")
             "[]"
