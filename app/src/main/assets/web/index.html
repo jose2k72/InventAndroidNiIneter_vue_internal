@@ -459,7 +459,7 @@
             <form-familiares v-if="formType === 'Familiares'" :data="formData" @save="sendData"
                 @cancel="volver" @ocr-scan="scanField"></form-familiares>
             <form-no-encuestado v-if="formType === 'NoEncuestado'" :data="formData" @save="sendData"
-                @cancel="volver"></form-no-encuestado>
+                @cancel="volver" @camera="openCamera" @import-photos="importPhotos" @export-photo="startExportPhoto"></form-no-encuestado>
             <form-union-con-predio v-if="formType === 'UnionConPredio'" :data="formData" @save="sendData"
                 @cancel="volver"></form-union-con-predio>
         </div>
@@ -479,7 +479,7 @@
 
         <!-- Vista Global File Browser -->
         <div v-else-if="operation === 'FileBrowser'">
-            <file-browser :prefix="currentPhotoPrefix" :singleselection="tomandoFotoFrente" @cancel="cancelFileBrowser" @select="onFilesImported"></file-browser>
+            <file-browser :prefix="currentPhotoPrefix" :singleselection="tomandoFotoFrente" :folder-selection="isExportingPhoto" @cancel="cancelFileBrowser" @select="onFilesImported" @select-folder="onFolderSelected"></file-browser>
         </div>
     </div>
 

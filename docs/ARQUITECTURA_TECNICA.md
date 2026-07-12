@@ -53,6 +53,7 @@ El sistema de captura fotográfica y reconocimiento óptico de caracteres (OCR) 
     *   `FormActivity.kt` lanza la cámara interna integrada (desarrollada con **CameraX**).
     *   Se utiliza un flujo basado en `ProcessCameraProvider` enlazando en paralelo el caso de uso `Preview` (visor en vivo) y `ImageCapture` (captura en alta calidad).
     *   **Nomenclatura física**: Las fotos se guardan en el almacenamiento privado de la app con el nombre `{PREFIJO}_{TIMESTAMP}.jpg`.
+    *   **Inyección EXIF**: Si el dispositivo cuenta con señal GPS georreferenciada activa al abrir el formulario, Kotlin captura la latitud y longitud, y las inyecta en formato de grados racionales en la cabecera EXIF (`ExifInterface`) de la imagen JPEG antes de guardarla.
 4.  **Retorno a Vue**: Al finalizar, Android convierte la imagen capturada a miniatura Base64 e invoca `window.addPhoto(nombreArchivo, base64)` para renderizarla en la interfaz web de manera inmediata.
 
 ---
@@ -105,6 +106,23 @@ Como alternativa a la captura en tiempo real, el sistema permite la importación
 
 ---
 
+### 3.4 Exploración de Directorios y Exportación de Fotos (File Exporter)
+
+El sistema permite a los usuarios exportar imágenes almacenadas localmente en la app a directorios específicos del dispositivo utilizando la misma interfaz del explorador de archivos.
+
+1.  **Llamado a Exportación (Vue)**: El usuario pulsa "Exportar foto". Vue activa el estado reactivo `isExportingPhoto=true` y despliega la vista global `FileBrowser` en modo de navegación de carpetas.
+2.  **Exploración de Carpetas (`FileBrowser.js` con `folderSelection`)**: 
+    *   Al estar activo `folderSelection`, el componente oculta los archivos comunes de imagen y lista únicamente los subdirectorios.
+    *   La barra de herramientas del pie muestra la ruta actual navegada y expone el botón verde **"📁 Seleccionar carpeta"**.
+3.  **Confirmación y Copia Nativa (Android Bridge)**:
+    *   Al presionar el botón de selección, se emite el evento `@select-folder` pasando la ruta absoluta.
+    *   Vue invoca al puente nativo: `Android.exportPhoto(nombreArchivo, rutaDestino)`.
+    *   Kotlin ejecuta la copia asíncrona del archivo JPEG utilizando `File.copyTo()`.
+    *   Se actualiza el Media Scanner para que el archivo sea reconocido inmediatamente en la galería de fotos del sistema operativo Android.
+    *   Se muestra un mensaje flotante (Toast) de confirmación con el resultado.
+
+---
+
 ## 4. Interfaz Javascript (API Bridge)
 
 El objeto global `Android` inyectado en el WebView expone los siguientes métodos clave:
@@ -120,6 +138,7 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 | `Android.getIdObject()` | Obtiene el ID del predio seleccionado. | - |
 | `Android.listDirectory(path)` | Explora el sistema de archivos local (Retorna JSON). | `path` (String) |
 | `Android.processSelectedFiles(paths, prefijo)` | Copia y renombra masivamente fotos seleccionadas. | `paths` (String JSON), `prefijo` (String) |
+| `Android.exportPhoto(filename, destinationPath)` | Copia una foto a una carpeta de almacenamiento externo. | `filename` (String), `destinationPath` (String) |
 | `Android.getLocalizacion()` | Obtiene ubicación textual del predio. | - |
 | `Android.getLat()` / `getLng()` | Obtiene coordenadas de clic en el mapa. | - |
 

@@ -22,6 +22,7 @@ const FileBrowser = {
                     Carpeta vacía
                 </div>
                 <div v-for="(file, index) in files" :key="index" 
+                     v-show="!folderSelection || file.isDirectory || file.name === '..'"
                      @click="handleItemClick(file)"
                      style="display: flex; align-items: center; padding: 12px; background: white; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer;"
                      :style="{ border: isSelected(file) ? '2px solid #1565C0' : '2px solid transparent' }">
@@ -50,11 +51,15 @@ const FileBrowser = {
             <!-- Footer Toolbar -->
             <div style="background-color: white; padding: 15px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.1);">
                 <div style="font-weight: bold; color: #333;">
-                    Seleccionados: {{ selectedPaths.length }}
+                    <span v-if="folderSelection">Carpeta: {{ currentPath ? currentPath.split('/').pop() : 'Raíz' }}</span>
+                    <span v-else>Seleccionados: {{ selectedPaths.length }}</span>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn btn-secondary" @click="$emit('cancel')">Cancelar</button>
-                    <button type="button" class="btn btn-primary" :disabled="selectedPaths.length === 0" @click="confirmSelection" style="background-color: #1565C0; color: white;">
+                    <button v-if="folderSelection" type="button" class="btn btn-primary" @click="confirmFolderSelection" style="background-color: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold;">
+                        📁 Seleccionar carpeta
+                    </button>
+                    <button v-else type="button" class="btn btn-primary" :disabled="selectedPaths.length === 0" @click="confirmSelection" style="background-color: #1565C0; color: white;">
                         Importar
                     </button>
                 </div>
@@ -67,6 +72,10 @@ const FileBrowser = {
             default: ''
         },
         singleselection: {
+            type: Boolean,
+            default: false
+        },
+        folderSelection: {
             type: Boolean,
             default: false
         }
@@ -146,6 +155,10 @@ const FileBrowser = {
             }
         };
 
+        const confirmFolderSelection = () => {
+            emit('select-folder', currentPath.value);
+        };
+
         const formatSize = (bytes) => {
             if (bytes === 0) return '0 B';
             const k = 1024;
@@ -172,6 +185,7 @@ const FileBrowser = {
             handleItemClick,
             isSelected,
             confirmSelection,
+            confirmFolderSelection,
             formatSize,
             formatDate
         };

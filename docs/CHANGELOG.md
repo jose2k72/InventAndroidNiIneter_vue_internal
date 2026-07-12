@@ -4,6 +4,25 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-07-11] - Foto Opcional, Geolocalización EXIF y Exportación en Predio No Encuestado
+
+### 🚫 Predio No Encuestado (`FormNoEncuestado.js`, `NoEncuestado.cs`)
+- **Fotografía Opcional**: Se incorporó el soporte para capturar una única foto opcional en el formulario de predio no encuestado, persistiendo su nombre en el campo `Imagenes` en el cliente y en el servidor C#.
+- **Reordenación Visual**: Se movió la tarjeta de **Ubicación de Referencia** al tope del formulario (antes de la sección de visita).
+- **Simplificación de Interfaz de Fotos**:
+  - Al no haber foto: Solo se muestra el botón "Tomar Foto" con ancho completo para forzar la captura directa con la cámara nativa de la tablet (se quitó el botón "Importar").
+  - Al haber foto: Se eliminó el botón "Ver foto" de la base (la visualización a pantalla completa se realiza al tocar la miniatura de la imagen) y se muestra únicamente el botón "Exportar foto". Se conserva la papelera roja sobre la imagen para eliminación física diferida.
+
+### 🌐 Geolocalización EXIF de Fotos (`CustomCameraActivity.kt`, `FormImageHelper.kt`)
+- **Inyección GPS en Metadatos**: Se implementó la escritura automática de coordenadas GPS (latitud y longitud) en los metadatos EXIF del archivo de imagen físico (JPEG) utilizando la codificación manual de grados racionales de `android.media.ExifInterface`.
+- **Propagación Global**: La geolocalización aplica de forma transparente a todas las fotos tomadas en el formulario de la app (Foto de Frente, Fotos Adicionales de Ficha y Foto de No Encuestado) si la señal de georreferenciación en la tablet está activa.
+
+### 📥 Exportación a Carpetas Reutilizando el FileBrowser (`FileBrowser.js`, `app.js`, `index.html`, `AndroidBridge.kt`)
+- **Propiedad `folderSelection`**: Se extendió el explorador de archivos in-app (`FileBrowser.js`) para admitir la navegación exclusiva de directorios. En este modo se ocultan los archivos comunes y se muestra el botón "📁 Seleccionar carpeta" para confirmar la ruta.
+- **Puente Nativo de Exportación**: Se agregó el método `exportPhoto` en el puente Android de Kotlin (`AndroidBridge.kt`) para copiar físicamente archivos de la app a rutas de almacenamiento externo elegidas por el usuario y registrar el cambio en el Media Scanner.
+
+---
+
 ## [2026-07-02] - Consolidación del Sistema Transaccional de Fotos y Corrección de Race Condition
 
 ### 📸 Race Condition en Importación de Foto del Frente (`app.js`, `photoService.js`, `FileBrowser.js`)

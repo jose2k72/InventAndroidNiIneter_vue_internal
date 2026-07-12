@@ -148,6 +148,8 @@ class FormImageHelper(private val activity: FormActivity) {
         photoFile?.let { file ->
             val intent = Intent(activity, CustomCameraActivity::class.java).apply {
                 putExtra(CustomCameraActivity.EXTRA_OUTPUT_PATH, file.absolutePath)
+                putExtra("gps_latitude", activity.gpsLatitude)
+                putExtra("gps_longitude", activity.gpsLongitude)
                 if (currentOcrField != null) {
                     putExtra("ocr_mode", true)
                     putExtra("ocr_target", currentOcrField)

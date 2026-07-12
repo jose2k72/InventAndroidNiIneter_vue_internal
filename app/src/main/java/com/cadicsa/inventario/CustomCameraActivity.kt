@@ -345,6 +345,34 @@ class CustomCameraActivity : AppCompatActivity() {
                                     scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
                                 }
 
+                                // Inyectar coordenadas GPS en EXIF si están disponibles
+                                val gpsLatitude = intent.getDoubleExtra("gps_latitude", 0.0)
+                                val gpsLongitude = intent.getDoubleExtra("gps_longitude", 0.0)
+                                if (gpsLatitude != 0.0 || gpsLongitude != 0.0) {
+                                    try {
+                                        val exifInterface = ExifInterface(outputFilePath)
+                                        
+                                        val decimalToGPS = { decimal: Double ->
+                                            val absVal = Math.abs(decimal)
+                                            val degrees = absVal.toInt()
+                                            val minutesNotTruncated = (absVal - degrees) * 60
+                                            val minutes = minutesNotTruncated.toInt()
+                                            val seconds = (minutesNotTruncated - minutes) * 60
+                                            "$degrees/1,$minutes/1,${(seconds * 1000).toInt()}/1000"
+                                        }
+
+                                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, decimalToGPS(gpsLatitude))
+                                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, if (gpsLatitude >= 0) "N" else "S")
+                                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, decimalToGPS(gpsLongitude))
+                                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, if (gpsLongitude >= 0) "E" else "W")
+                                        
+                                        exifInterface.saveAttributes()
+                                        Log.d(TAG, "EXIF Lat/Lng guardado nativamente: $gpsLatitude, $gpsLongitude")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error guardando EXIF Lat/Lng: ${e.message}")
+                                    }
+                                }
+
                                 runOnUiThread {
                                     // Breve vibración física de confirmación al guardar
                                     try {

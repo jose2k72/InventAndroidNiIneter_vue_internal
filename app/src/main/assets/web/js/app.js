@@ -68,6 +68,8 @@ const app = createApp({
         const pendingCopyData = ref(null);
 
         const tomandoFotoFrente = ref(false);
+        const isExportingPhoto = ref(false);
+        const photoToExport = ref('');
 
         // Helper para obtener el contexto de auditoria y ubicación
         const getContext = () => ({
@@ -412,6 +414,8 @@ const app = createApp({
                 let noEncuesta = '';
                 if (formData.value && formData.value.NoEncuesta) {
                     noEncuesta = formData.value.NoEncuesta;
+                } else if (formData.value && formData.value.Type === 'NoEncuestado' && formData.value.Localizacion) {
+                    noEncuesta = formData.value.Localizacion.replace(/[^a-zA-Z0-9]/g, '_');
                 } else if (listData.value) {
                     const ficha = listData.value.find(item => item.Data && item.Data.Type === 'Ficha');
                     if (ficha && ficha.Data && ficha.Data.NoEncuesta) {
@@ -435,6 +439,8 @@ const app = createApp({
             let noEncuesta = '';
             if (formData.value && formData.value.NoEncuesta) {
                 noEncuesta = formData.value.NoEncuesta;
+            } else if (formData.value && formData.value.Type === 'NoEncuestado' && formData.value.Localizacion) {
+                noEncuesta = formData.value.Localizacion.replace(/[^a-zA-Z0-9]/g, '_');
             } else if (listData.value) {
                 const ficha = listData.value.find(item => item.Data && item.Data.Type === 'Ficha');
                 if (ficha && ficha.Data && ficha.Data.NoEncuesta) {
@@ -451,6 +457,8 @@ const app = createApp({
             operation.value = formType.value ? (currentId.value ? 'Edit' : 'Create') : 'List';
             currentPhotoPrefix.value = '';
             tomandoFotoFrente.value = false; // Siempre limpiar el flag al salir del FileBrowser
+            isExportingPhoto.value = false;
+            photoToExport.value = '';
         };
 
         const onFilesImported = (paths, prefix) => {
@@ -465,6 +473,32 @@ const app = createApp({
             if (!tomandoFotoFrente.value) {
                 cancelFileBrowser();
             }
+        };
+
+        const startExportPhoto = (filename) => {
+            photoToExport.value = filename;
+            isExportingPhoto.value = true;
+            savedScrollPos.value = window.scrollY;
+            operation.value = 'FileBrowser';
+        };
+
+        const onFolderSelected = (folderPath) => {
+            if (typeof Android !== 'undefined' && Android.exportPhoto) {
+                const res = Android.exportPhoto(photoToExport.value, folderPath);
+                if (Android.showToast) {
+                    if (res.startsWith('Success')) {
+                        Android.showToast('✅ Foto exportada exitosamente.');
+                    } else {
+                        Android.showToast('❌ ' + res);
+                    }
+                } else {
+                    alert(res);
+                }
+            } else {
+                console.log(`Exportación de prueba: ${photoToExport.value} -> ${folderPath}`);
+                alert(`Exportando ${photoToExport.value} a la carpeta: ${folderPath}`);
+            }
+            cancelFileBrowser();
         };
 
 
@@ -527,7 +561,10 @@ const app = createApp({
                 openCatalog,      // <- Selector catálogo grande (Profesión, etc.)
                 openMunicipio,    // <- Selector municipio dos niveles
                 tomandoFotoFrente,
-                cancelFileBrowser // <- Necesario para que photoService cierre el browser tras importar FotoFrente
+                cancelFileBrowser, // <- Necesario para que photoService cierre el browser tras importar FotoFrente
+                isExportingPhoto,
+                onFolderSelected,
+                startExportPhoto
             };
             console.log('✅ Vue app context guardado globalmente (con tracking de fotos)');
 
@@ -697,6 +734,9 @@ const app = createApp({
             tomandoFotoFrente,
             cancelFileBrowser,
             onFilesImported,
+            isExportingPhoto,
+            startExportPhoto,
+            onFolderSelected,
             scanField,
             resetForm,
             startCreate,

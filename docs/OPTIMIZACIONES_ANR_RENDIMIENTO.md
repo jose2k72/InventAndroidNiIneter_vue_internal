@@ -66,3 +66,54 @@ Este documento detalla los problemas de rendimiento (bloqueos del hilo de interf
 | **Agrupación en Mapa** | UI Thread (Bloqueante) | Background Thread + UI | `O(N^2)` geodésico (Lento) | `O(N)` por ID (Instantáneo) |
 | **Carga de Estadísticas** | UI Thread (Bloqueante) | UI Thread (Ligero) | Carga total y cálculo espacial | Consulta SQL agregada (`< 1ms`) |
 | **Acciones de Mapa** | UI Thread (Bloqueante) | Background Thread + UI | Cargas JTS y consultas de capa | Segundo plano (UI reactiva) |
+
+---
+
+## 6. Rendimiento de Marcadores en Alta Densidad (Propuestas de Mejora)
+
+### Diagnóstico de Latencia
+A pesar de que el agrupamiento de puntos por predio (`idObject`) se procesa en complejidad lineal $O(N)$ en un hilo secundario (`Background Thread`), persiste un cuello de botella en el hilo de interfaz de usuario (`UI Thread`) cuando el volumen total de registros históricos en la tabla `DATOS` crece significativamente.
+
+*   **Causa Raíz**: El método `loadCapturedPoints()` realiza la instanciación gráfica de todos los marcadores simultáneamente en el hilo principal mediante `mMap.addMarker(...)` dentro del bloque `activity.runOnUiThread`. El motor de renderizado de Google Maps procesa secuencialmente cada marcador en pantalla, lo que genera micro-congelamientos (lags o drops de frames) si se cargan miles de elementos de forma concurrente.
+
+### Soluciones Diseñadas para Futuras Implementaciones
+
+Para solventar esta limitación en escenarios catastrales masivos de alta densidad, se han propuesto tres enfoques técnicos:
+
+#### A. Filtrado por Región Visible (Viewport Culling - Recomendado)
+*   **Mecánica**: Evitar renderizar marcadores de predios que están fuera de la pantalla. Se configura un escuchador de movimiento de cámara (`setOnCameraIdleListener`) en `MainActivity.kt`.
+*   **Lógica**: En el hilo secundario de `MapHelper.kt`, se obtiene el límite de la caja visible (`mMap.projection.visibleRegion.latLngBounds`) y se filtra la lista de grupos antes de llamar al hilo de UI:
+    ```kotlin
+    val bounds = mMap.projection.visibleRegion.latLngBounds
+    val visibleGroups = groups.filter { bounds.contains(LatLng(it.centerLat, it.centerLng)) }
+    ```
+*   **Resultado**: El hilo de UI solo dibuja los marcadores que el usuario ve físicamente en pantalla, reduciendo el conteo de miles a unas decenas, haciendo la carga instantánea.
+
+#### B. Carga Doblada o en Lotes (Chunked Rendering)
+*   **Mecánica**: Mitigar el bloqueo del hilo de UI fragmentando la inserción de marcadores en lotes secuenciales discretos (ej: de 50 en 50 marcadores).
+*   **Lógica**: Se utiliza un `Handler(Looper.getMainLooper())` para intercalar pequeñas pausas de milisegundos entre cada lote.
+*   **Resultado**: El mapa mantiene su tasa de refresco táctil (responsiveness) ya que el hilo de UI puede procesar gestos del usuario en los intervalos de pausa de renderizado.
+
+#### C. Agrupamiento de Rejilla (Clustered Markers)
+*   **Mecánica**: Integrar la biblioteca `Google Maps Android API Utility Library` para usar `ClusterManager`.
+*   **Resultado**: Se consolidan marcadores adyacentes en burbujas numéricas a zoom bajo, expandiéndose a pines individuales solo en acercamiento catastral.
+
+---
+
+## 7. Futura Transición a Subgrupos de Levantamiento dentro del Mismo Predio
+
+En el futuro, el sistema catastral podría transicionar de un conteo/marcado plano por predio único (`idObject`) a admitir **múltiples subgrupos o unidades independientes dentro del mismo predio físico**. Esto tiene implicaciones directas en la carga del mapa y en el cómputo estadístico.
+
+### Implicaciones del Cambio
+1.  **En los Marcadores (`MapHelper`)**: Ya no se pintará un único pin por predio. Se requerirá un agrupamiento jerárquico de doble nivel:
+    *   **Nivel 1**: Agrupar todos los registros pertenecientes al mismo predio (`idObject`).
+    *   **Nivel 2**: Dentro de cada predio, subagrupar espacialmente por distancia (ej: puntos separados por más de 3 o 5 metros) para pintar múltiples pins independientes representando subunidades catastrales dentro del mismo polígono.
+2.  **En las Estadísticas (`DatabaseHelper`)**: El indicador de rendimiento en la barra de herramientas y los reportes diarios ya no podrán usar un simple `COUNT(DISTINCT IDOBJECT)`. Deberán contabilizar el total de subgrupos o unidades independientes trabajadas por día.
+
+### Estrategias de Optimización Diseñadas para este Escenario
+Realizar un agrupamiento de doble nivel con análisis de distancias espaciales puede degradar severamente el rendimiento si no se optimiza de antemano. Se proponen las siguientes medidas de control:
+
+*   **Indexación por Subunidad en DB**: Introducir a nivel de base de datos una columna indexada de subunidad catastral (ej. `SUB_PREDIO_ID`). Esto permitiría que SQLite haga la agrupación jerárquica a nivel de consulta agregada, manteniendo la complejidad en el dispositivo en $O(N)$ y evitando cálculos geodésicos en memoria.
+*   **Viewport Culling Jerárquico**: Correr el algoritmo de subagrupación por distancia geodésica **únicamente** para aquellos predios (`idObject`) que intersectan la región visible de la cámara del mapa (`visibleRegion`), reduciendo a un puñado el volumen de datos que requiere cálculo geométrico.
+*   **Uso de Estructuras de Partición Espacial en Memoria**: Si el cálculo debe realizarse en Kotlin en caliente, utilizar un **Quadtree** o **R-Tree** liviano en memoria para agrupar los puntos de un predio, reduciendo la complejidad del clustering espacial de $O(N^2)$ a $O(N \log N)$.
+*   **Caché de Agrupamiento por Predio**: Implementar una tabla o estructura de caché de subgrupos. Si un predio no ha recibido nuevos registros ni modificaciones de posición, se reutiliza su distribución de marcadores calculada previamente, evitando reprocesamientos redundantes en `onResume()`.

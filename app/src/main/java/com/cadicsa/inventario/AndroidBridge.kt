@@ -183,6 +183,37 @@ class AndroidBridge(activity: FormActivity) {
     }
 
     @JavascriptInterface
+    fun exportPhoto(filename: String, destinationDirectoryPath: String): String {
+        return try {
+            val sourceFile = java.io.File(AppConfig.getStorageDirectory(), filename)
+            if (!sourceFile.exists()) {
+                return "Error: El archivo de origen no existe."
+            }
+            val destDir = java.io.File(destinationDirectoryPath)
+            if (!destDir.exists() || !destDir.isDirectory) {
+                return "Error: El directorio de destino no es válido o no existe."
+            }
+            val destFile = java.io.File(destDir, filename)
+            sourceFile.copyTo(destFile, overwrite = true)
+            
+            // Notificar al Media Scanner para que sea visible en la galería
+            activity?.let { act ->
+                android.media.MediaScannerConnection.scanFile(
+                    act,
+                    arrayOf(destFile.absolutePath),
+                    arrayOf("image/jpeg"),
+                    null
+                )
+            }
+            
+            "Success: Archivo exportado exitosamente a " + destFile.absolutePath
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidBridge", "Error al exportar foto: ${e.message}", e)
+            "Error al exportar foto: ${e.message}"
+        }
+    }
+
+    @JavascriptInterface
     fun listDirectory(path: String?): String {
         val jsonArray = org.json.JSONArray()
         val rootDir = android.os.Environment.getExternalStorageDirectory()
