@@ -86,6 +86,7 @@ Este documento detalla los problemas de rendimiento (bloqueos del hilo de interf
 | **Pintado en Mapa** | UI Thread (Bloqueante) | Incremental quirúrgico | Redibujado de todo el set | Solo elementos modificados / visibles |
 | **Carga de Estadísticas** | UI Thread (Bloqueante) | UI Thread (Ligero) | Carga total y cálculo espacial | Consulta SQL agregada (`< 1ms`) |
 | **Acciones de Mapa** | UI Thread (Bloqueante) | Background Thread + UI | Cargas JTS y consultas de capa | Segundo plano (UI reactiva) |
+| **Recarga al Retornar**| UI Thread + DB (Bloqueante) | Background Thread + UI (Fino) | Consulta masiva total de BD (`allData`) | Consulta puntual por `IDOBJECT` (`< 1ms`) |
 
 ---
 
@@ -106,3 +107,50 @@ Realizar un agrupamiento de doble nivel con análisis de distancias espaciales p
 *   **Viewport Culling Jerárquico**: Correr el algoritmo de subagrupación por distancia geodésica **únicamente** para aquellos predios (`idObject`) que intersectan la región visible de la cámara del mapa (`visibleRegion`), reduciendo a un puñado el volumen de datos que requiere cálculo geométrico.
 *   **Uso de Estructuras de Partición Espacial en Memoria**: Si el cálculo debe realizarse en Kotlin en caliente, utilizar un **Quadtree** o **R-Tree** liviano en memoria para agrupar los puntos de un predio, reduciendo la complejidad del clustering espacial de $O(N^2)$ a $O(N \log N)$.
 *   **Caché de Agrupamiento por Predio**: Implementar una tabla o estructura de caché de subgrupos. Si un predio no ha recibido nuevos registros ni modificaciones de posición, se reutiliza su distribución de marcadores calculada previamente, evitando reprocesamientos redundantes en `onResume()`.
+
+---
+
+## 8. Actualización Quirúrgica Puntual al Retornar del Formulario
+
+*   **Problema Original**: Cada vez que el usuario regresaba de completar una encuesta catastral en `FormActivity`, `MainActivity.onResume()` invocaba incondicionalmente a `loadCapturedPoints()`, obligando a SQLite a ejecutar una lectura masiva total de la tabla `DATOS` (`getAllData()`) y a realizar agrupaciones y mapeos redundantes de todos los marcadores del dispositivo.
+*   **Solución Implementada**:
+    *   **Registro del Predio Modificado**: `AndroidBridge.kt` escribe en SharedPreferences el ID del predio (`last_saved_id_object` en `sendData` o `last_deleted_id_object` en `deleteData`) que fue alterado durante el ciclo de vida del formulario.
+    *   **Refresco Focalizado**: Al retornar, `onResume()` detecta si hay alguna clave de predio modificado. De ser así, se llama a `MapHelper.updateSingleObjectMarker(idObject, lastSavedDataId)`, el cual realiza una consulta SQL focalizada (`WHERE IDOBJECT = ?`).
+    *   **Mutación Quirúrgica en Memoria**: El marcador correspondiente al predio es modificado o eliminado directamente en caliente en la pantalla y en las colecciones en memoria (`activeMarkers`), dejando el resto del mapa intacto.
+    *   **Bypass en Cancelación**: Si el usuario sale del formulario sin guardar ni borrar registros, no se registran flags de cambio en SharedPreferences y la recarga en `onResume` se omite por completo (complejidad $O(0)$), evitando parpadeos de pantalla o consumo de CPU.
+
+*   **Archivos Afectados**:
+    *   [DatabaseHelper.kt](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/DatabaseHelper.kt#L170-175) (método `getObjectIdByDataId`).
+    *   [AndroidBridge.kt](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/AndroidBridge.kt#L115-120) y [AndroidBridge.kt:L157-172](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/AndroidBridge.kt#L157-172) (registro en SharedPreferences).
+    *   [MapHelper.kt](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/utils/MapHelper.kt#L220-320) (método `updateSingleObjectMarker`).
+    *   [MainActivity.kt](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/MainActivity.kt#L137-160) (lógica de desvío en `onResume`).
+
+---
+
+## 9. Carga Dinámica por Viewport / Bounding Box y Eventos de Cámara (Panning/Zoom)
+
+*   **Problema Original**: Cuando el usuario se desplazaba lateralmente (panning) o realizaba Zoom Out para ampliar la visualización, los marcadores que entraban en pantalla no se mostraban de forma automática por la ausencia de un escuchador de cámara en Google Maps. A su vez, hacer Zoom In y retornar de una encuesta borraba quirúrgicamente los marcadores de la periferia, y al hacer Zoom Out estos no volvían a cargarse, dejando el mapa desincronizado e incompleto.
+*   **Solución Implementada**:
+    *   **Consulta por Bounding Box**: Se implementó `getDataInBounds` en `DatabaseHelper.kt` para realizar una consulta SQL de rangos geográficos indexados (`LATITUD BETWEEN ? AND ? AND LONGITUD BETWEEN ? AND ?`), reduciendo el lote de base de datos a solo los registros visibles en pantalla (complejidad $O(1)$ en I/O de disco).
+    *   **Listener de Cámara en Reposo**: En `MainActivity.onMapReady()`, se registró `mMap.setOnCameraIdleListener` para que al finalizar cualquier movimiento táctil o cambio de zoom, se invoque la recarga incremental `mapHelper?.loadCapturedPoints()`.
+    *   **Refresco Incremental e Integrado**: `loadCapturedPoints` extrae las coordenadas extremas del visor (`visibleBounds`), consulta SQLite por Bounding Box, y de forma quirúrgica añade los pines que entran al visor y remueve de la memoria/pantalla los que salen, manteniendo estable la GPU y la RAM.
+
+*   **Archivos Afectados**:
+    *   [DatabaseHelper.kt](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/DatabaseHelper.kt#L210-245) (método `getDataInBounds`).
+    *   [MapHelper.kt](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/utils/MapHelper.kt#L50-65) (condición de bounds en `loadCapturedPoints`).
+    *   [MainActivity.kt](file:///d:/SRC.PROJECTS/NI.INETER.CADIC/SRC.ANDROID/src.android.ineter.vue.internal/app/src/main/java/com/cadicsa/inventario/MainActivity.kt#L245-250) (registro de `setOnCameraIdleListener`).
+
+---
+
+## 10. Directrices de Sincronización para Aplicaciones Hermanas (Portabilidad)
+
+> [!WARNING]
+> **Compatibilidad Inter-Aplicaciones**: Esta base de código se comparte como plantilla o núcleo de otras aplicaciones de levantamiento (ej: "Inv Goico", "Masaya", "Calle Blanco", etc.). Es fundamental revisar si estas aplicaciones hermanas heredaron la carga masiva e ineficiente de base de datos, o la falta de actualización al desplazarse en el mapa.
+
+### Puntos Clave para la Orientación de Futuros Agentes / Desarrolladores:
+1.  **Portar la Actualización al Retornar (`onResume`)**:
+    *   Revisar si `MainActivity.onResume()` realiza cargas incondicionales de toda la BD (`loadCapturedPoints`).
+    *   Si es así, crear `getObjectIdByDataId` en `DatabaseHelper.kt`, registrar `last_saved_id_object` / `last_deleted_id_object` en `AndroidBridge.kt`, e implementar `updateSingleObjectMarker` en `MapHelper.kt`.
+2.  **Portar el Refresco Dinámico de Cámara (`onCameraIdle`)**:
+    *   Revisar si el mapa carece de actualización al desplazarse.
+    *   Si se añade `setOnCameraIdleListener`, es **obligatorio** portar también `getDataInBounds` en `DatabaseHelper.kt` para evitar que la tablet sufra micro-congelamientos por consultar toda la base de datos masivamente en cada parada del dedo.

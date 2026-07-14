@@ -115,6 +115,7 @@ class AndroidBridge(activity: FormActivity) {
             act.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
                 .edit()
                 .putInt("last_saved_data_id", resultId)
+                .putInt("last_saved_id_object", act.idObject)
                 .apply()
             
             android.util.Log.d("AndroidBridge", "✅ Dato guardado (ID: $resultId)")
@@ -158,7 +159,14 @@ class AndroidBridge(activity: FormActivity) {
                 }
             }
 
+            val idObject = dbHelper.getObjectIdByDataId(id)
             if (dbHelper.deleteRow(id)) {
+                if (idObject > 0) {
+                    act.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+                        .edit()
+                        .putInt("last_deleted_id_object", idObject)
+                        .apply()
+                }
                 act.runOnUiThread {
                     Toast.makeText(act, "Registro y fotos eliminados", Toast.LENGTH_SHORT).show()
                 }

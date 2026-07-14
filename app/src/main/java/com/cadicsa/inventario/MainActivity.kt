@@ -137,11 +137,26 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             startLocationUpdates()
         }
         
-        lastSavedDataId = getSharedPreferences("app_prefs", MODE_PRIVATE).getInt("last_saved_data_id", -1)
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        lastSavedDataId = prefs.getInt("last_saved_data_id", -1)
+        val lastSavedIdObject = prefs.getInt("last_saved_id_object", -1)
+        val lastDeletedIdObject = prefs.getInt("last_deleted_id_object", -1)
+        
         updateActionBarTitle()
         if (mapInitialized) {
             tileOverlay?.clearTileCache()
-            mapHelper?.loadCapturedPoints(lastSavedDataId)
+            if (lastSavedIdObject > 0 || lastDeletedIdObject > 0) {
+                val editor = prefs.edit()
+                if (lastSavedIdObject > 0) {
+                    mapHelper?.updateSingleObjectMarker(lastSavedIdObject, lastSavedDataId)
+                    editor.remove("last_saved_id_object")
+                }
+                if (lastDeletedIdObject > 0) {
+                    mapHelper?.updateSingleObjectMarker(lastDeletedIdObject, lastSavedDataId)
+                    editor.remove("last_deleted_id_object")
+                }
+                editor.apply()
+            }
         }
     }
 
@@ -228,6 +243,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             } else {
                 false
             }
+        }
+
+        mMap.setOnCameraIdleListener {
+            mapHelper?.loadCapturedPoints(lastSavedDataId)
         }
 
         mapHelper?.loadCapturedPoints(lastSavedDataId)

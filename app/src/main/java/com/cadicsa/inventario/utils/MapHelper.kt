@@ -50,7 +50,16 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
         
         kotlin.concurrent.thread {
             try {
-                val allData = dbHelper.getAllData()
+                val allData = if (visibleBounds != null) {
+                    dbHelper.getDataInBounds(
+                        visibleBounds.southwest.latitude,
+                        visibleBounds.northeast.latitude,
+                        visibleBounds.southwest.longitude,
+                        visibleBounds.northeast.longitude
+                    )
+                } else {
+                    dbHelper.getAllData()
+                }
                 if (allData.isEmpty()) {
                     activity.runOnUiThread {
                         activeMarkers.values.forEach { it.remove() }
@@ -216,6 +225,105 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
         }
         canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
         return BitmapDescriptorFactory.fromBitmap(bmp)
+    }
+
+    /**
+     * Actualiza o elimina de forma puntual e incremental el marcador de un predio (idObject) 
+     * consultando solo sus registros asociados, evitando recargas masivas en el mapa.
+     */
+    fun updateSingleObjectMarker(idObject: Int, lastSavedDataId: Int) {
+        val dbHelper = DatabaseHelper.getInstance(activity)
+        
+        kotlin.concurrent.thread {
+            try {
+                val items = dbHelper.getDataByObjectId(idObject)
+                activity.runOnUiThread {
+                    val coordsTag = if (items.isNotEmpty()) {
+                        "${SpatialNormalizer.format(items.first().latitud)},${SpatialNormalizer.format(items.first().longitud)}"
+                    } else {
+                        ""
+                    }
+                    
+                    val existingMarker = activeMarkers[idObject]
+                    
+                    if (items.isEmpty()) {
+                        // Caso A: Se eliminaron todos los registros asociados a este idObject
+                        existingMarker?.remove()
+                        activeMarkers.remove(idObject)
+                        activeEyeMarkers[idObject]?.remove()
+                        activeEyeMarkers.remove(idObject)
+                        activeColors.remove(idObject)
+                    } else {
+                        // Caso B: El predio tiene registros (creado o modificado)
+                        val expectedColor = calculateGroupColor(items)
+                        val isLastSaved = items.any { it.id == lastSavedDataId }
+                        
+                        if (existingMarker == null) {
+                            // Crear marcador nuevo
+                            val firstItem = items.first()
+                            val marker = mMap.addMarker(
+                                MarkerOptions()
+                                    .position(LatLng(firstItem.latitud, firstItem.longitud))
+                                    .title("Unidad: ${items.size} registros")
+                                    .snippet("ID base: ${firstItem.id}")
+                                    .icon(BitmapDescriptorFactory.defaultMarker(expectedColor))
+                                    .zIndex(4000f)
+                            )
+                            marker?.let {
+                                it.tag = coordsTag
+                                activeMarkers[idObject] = it
+                                activeColors[idObject] = expectedColor
+                            }
+                            
+                            if (isLastSaved) {
+                                val eyeMarker = mMap.addMarker(
+                                    MarkerOptions()
+                                        .position(LatLng(firstItem.latitud, firstItem.longitud))
+                                        .icon(createBlackEyeIcon())
+                                        .anchor(0.5f, 5.0f)
+                                        .zIndex(4001f)
+                                )
+                                eyeMarker?.let {
+                                    it.tag = coordsTag
+                                    activeEyeMarkers[idObject] = it
+                                }
+                            }
+                        } else {
+                            // Actualizar marcador existente
+                            val currentColor = activeColors[idObject]
+                            if (currentColor == null || currentColor != expectedColor) {
+                                existingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(expectedColor))
+                                activeColors[idObject] = expectedColor
+                            }
+                            
+                            existingMarker.title = "Unidad: ${items.size} registros"
+                            existingMarker.snippet = "ID base: ${items.first().id}"
+                            
+                            // Ajustar el ojo decorativo en caliente
+                            val hasEye = activeEyeMarkers.containsKey(idObject)
+                            if (isLastSaved && !hasEye) {
+                                val eyeMarker = mMap.addMarker(
+                                    MarkerOptions()
+                                        .position(existingMarker.position)
+                                        .icon(createBlackEyeIcon())
+                                        .anchor(0.5f, 5.0f)
+                                        .zIndex(existingMarker.zIndex + 1f)
+                                )
+                                eyeMarker?.let {
+                                    it.tag = coordsTag
+                                    activeEyeMarkers[idObject] = it
+                                }
+                            } else if (!isLastSaved && hasEye) {
+                                activeEyeMarkers[idObject]?.remove()
+                                activeEyeMarkers.remove(idObject)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MapHelper", "Error actualizando marcador único: ${e.message}")
+            }
+        }
     }
 
     private fun calculateDistance(p1: LatLng, p2: LatLng): Double {

@@ -4,6 +4,17 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-07-14] - Optimización Quirúrgica y Carga de Marcadores por Viewport y Bounding Box
+
+### 📍 Refresco de Mapa y Rendimiento (`MainActivity.kt`, `MapHelper.kt`, `AndroidBridge.kt`, `DatabaseHelper.kt`)
+- **Evitar Carga Completa de SQLite al Retornar**: Se reemplazó la carga ineficiente de toda la tabla `DATOS` (`getAllData()`) al regresar de una encuesta en `onResume()`. Ahora el mapa actualiza de forma aislada el marcador del predio modificado o eliminado.
+- **Registro en SharedPreferences**: El puente nativo (`AndroidBridge.kt`) persiste las claves `"last_saved_id_object"` (al guardar) o `"last_deleted_id_object"` (al eliminar) para conocer el contexto exacto del predio afectado.
+- **Actualización Puntual**: Se implementó `updateSingleObjectMarker` en `MapHelper.kt` para consultar únicamente los registros de la propiedad afectada (`WHERE IDOBJECT = ?`), modificando o eliminando su pin gráfico en pantalla en caliente sin tocar el resto del mapa.
+- **Bypass en Cancelaciones**: Si el usuario sale del formulario sin realizar cambios, se omite por completo cualquier recarga de mapa o llamada a la base de datos (complejidad $O(0)$).
+- **Carga por Viewport y Bounding Box (Panning/Zoom)**: Se implementó el escuchador `setOnCameraIdleListener` en `MainActivity.kt` para detectar el reposo de la cámara al hacer zoom o desplazarse. Se creó el método `getDataInBounds` en `DatabaseHelper.kt` para traer únicamente las encuestas visibles mediante consultas SQL indexadas por rango de latitud/longitud, logrando un paneo fluido libre de ANR y manteniendo estable el uso de RAM y GPU. y parpadeos.
+
+---
+
 ## [2026-07-11] - Foto Opcional, Geolocalización EXIF y Exportación en Predio No Encuestado
 
 ### 🚫 Predio No Encuestado (`FormNoEncuestado.js`, `NoEncuestado.cs`)

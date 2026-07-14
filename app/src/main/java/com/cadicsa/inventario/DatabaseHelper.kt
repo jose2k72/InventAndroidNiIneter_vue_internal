@@ -170,6 +170,12 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    fun getObjectIdByDataId(id: Int): Int {
+        readableDatabase.rawQuery("SELECT IDOBJECT FROM DATOS WHERE ID = ?", arrayOf(id.toString())).use { cursor ->
+            return if (cursor.moveToFirst()) cursor.getInt(0) else -1
+        }
+    }
+
     fun deleteRow(id: Int): Boolean {
         return try {
             writableDatabase.delete("DATOS", "id=$id", null) > 0
@@ -202,6 +208,38 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         readableDatabase.rawQuery("SELECT COUNT(*) FROM DATOS", null).use { cursor ->
             return if (cursor.moveToFirst()) cursor.getInt(0) else 0
         }
+    }
+
+    /**
+     * Recupera únicamente los registros que caen dentro del bounding box (viewport) actual del mapa,
+     * reduciendo a un mínimo los datos leídos de disco a memoria.
+     */
+    fun getDataInBounds(minLat: Double, maxLat: Double, minLng: Double, maxLng: Double): List<DataItem> {
+        val items = mutableListOf<DataItem>()
+        val query = "SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER FROM DATOS WHERE LATITUD BETWEEN ? AND ? AND LONGITUD BETWEEN ? AND ?"
+        readableDatabase.rawQuery(query, arrayOf(
+            SpatialNormalizer.format(minLat),
+            SpatialNormalizer.format(maxLat),
+            SpatialNormalizer.format(minLng),
+            SpatialNormalizer.format(maxLng)
+        )).use { cursor ->
+            while (cursor.moveToNext()) {
+                items.add(DataItem(
+                    cursor.getInt(0), 
+                    cursor.getString(1) ?: "{}", 
+                    cursor.getString(2) ?: "", 
+                    cursor.getDouble(3), 
+                    cursor.getDouble(4), 
+                    cursor.getDouble(5), 
+                    cursor.getDouble(6), 
+                    cursor.getInt(7), 
+                    cursor.getInt(8), 
+                    cursor.getInt(9), 
+                    cursor.getString(10) ?: "Aceras"
+                ))
+            }
+        }
+        return items
     }
 
     fun getAllData(): List<DataItem> {
