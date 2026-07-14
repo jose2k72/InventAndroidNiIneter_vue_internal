@@ -224,8 +224,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Error al procesar marcador: ${e.message}")
                 }
+                true
+            } else {
+                false
             }
-            true
         }
 
         mapHelper?.loadCapturedPoints(lastSavedDataId)
