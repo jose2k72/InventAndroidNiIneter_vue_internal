@@ -2,17 +2,17 @@
   {
     "id": "1",
     "nombre": "Habitacional",
-    "descripcion": "cuando existe en la parcela  viviendas/casas con la finalidad de  ser habitación. En este caso no es necesario que sea habitada por el protagonista dueño de la propiedad o  que este deshabitada su uso siempre será habitacional y se describe quien la habita cuando no la habita el dueño de la parcela "
+    "descripcion": "cuando existe en la parcela viviendas/casas con la finalidad de ser habitación. En este caso no es necesario que sea habitada por el protagonista dueño de la propiedad o que este deshabitada su uso siempre será habitacional y se describe quien la habita cuando no la habita el dueño de la parcela"
   },
   {
     "id": "2",
     "nombre": "Comercial",
-    "descripcion": "(Bodega, beneficio de café, acopio de granos) depósitos,  fábricas alimenticias, hoteles, restaurantes,  estaciones de servicio."
+    "descripcion": "(Bodega, beneficio de café, acopio de granos) depósitos, fábricas alimenticias, hoteles, restaurantes, estaciones de servicio."
   },
   {
     "id": "3",
     "nombre": "Agricola",
-    "descripcion": "Describir los tipos de siembro o cultivos permanentes o temporales  como, bosque, tacotales, viveros de plantas   y otros."
+    "descripcion": "Describir los tipos de siembro o cultivos permanentes o temporales como, bosque, tacotales, viveros de plantas y otros."
   },
   {
     "id": "4",
@@ -22,7 +22,7 @@
   {
     "id": "5",
     "nombre": "Mixto",
-    "descripcion": "Puede ser habitacional/agrícola/pecuario/comercial. Nota: para ser  uso mixto basta la existencia de dos tipos de uso- "
+    "descripcion": "Puede ser habitacional/agrícola/pecuario/comercial. Nota: para ser uso mixto basta la existencia de dos tipos de uso-"
   },
   {
     "id": "6",

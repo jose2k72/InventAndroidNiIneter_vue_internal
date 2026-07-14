@@ -436,15 +436,6 @@
 
         <!-- Vista Edición Formulario -->
         <div v-else-if="operation === 'Edit' || operation === 'Create'" class="container">
-            <!-- Formulario Acera -->
-            <form-acera v-if="formType === 'Acera'" :data="formData" :localizacion="localizacion" :lat-lng="latLng"
-                :local-proj="localProj" :fotos="fotos" @save="sendData" @cancel="volver"
-                @camera="openCamera" @import-photos="importPhotos"></form-acera>
-
-            <!-- Formulario Costo -->
-            <form-costo v-if="formType === 'Costo'" :data="formData" :localizacion="localizacion" :lat-lng="latLng"
-                :local-proj="localProj" :fotos="fotos" @save="sendData" @cancel="volver"
-                @camera="openCamera" @import-photos="importPhotos"></form-costo>
 
             <!-- Formularios INETER -->
             <form-ficha v-if="formType === 'Ficha'" :data="formData" :localizacion="localizacion" :fotos="fotos"
@@ -501,8 +492,7 @@
     <script src="js/components/CatalogoSelector.js"></script>
     <script src="js/components/CatalogoSelectorGrande.js"></script>
     <script src="js/components/CatalogoSelectorTwoLevels.js"></script>
-    <script src="js/components/FormAcera.js"></script>
-    <script src="js/components/FormCosto.js"></script>
+
     <script src="js/components/FormFicha.js"></script>
     <script src="js/components/FormSujetoNatural.js"></script>
     <script src="js/components/FormSujetoJuridico.js"></script>

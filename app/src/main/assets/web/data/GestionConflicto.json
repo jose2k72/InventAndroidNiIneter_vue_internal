@@ -16,12 +16,12 @@
   },
   {
     "id": "4",
-    "nombre": "Dispuesto a Mediaci?n",
+    "nombre": "Dispuesto a Mediación",
     "codigo": "A_MEDIC"
   },
   {
     "id": "5",
-    "nombre": "No Acepta Mediaci?n",
+    "nombre": "No Acepta Mediación",
     "codigo": "NO_MEDIC"
   },
   {
