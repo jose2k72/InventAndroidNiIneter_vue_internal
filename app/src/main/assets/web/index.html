@@ -449,7 +449,7 @@
                 @camera="openCamera" @ocr-scan="scanField" @import-photos="importPhotos"></form-entrevistado>
             <form-familiares v-if="formType === 'Familiares'" :data="formData" @save="sendData"
                 @cancel="volver" @ocr-scan="scanField"></form-familiares>
-            <form-no-encuestado v-if="formType === 'NoEncuestado'" :data="formData" @save="sendData"
+            <form-no-encuestado v-if="formType === 'NoEncuestado'" :data="formData" :fotos="fotos" @save="sendData"
                 @cancel="volver" @camera="openCamera" @import-photos="importPhotos" @export-photo="startExportPhoto"></form-no-encuestado>
             <form-union-con-predio v-if="formType === 'UnionConPredio'" :data="formData" @save="sendData"
                 @cancel="volver"></form-union-con-predio>

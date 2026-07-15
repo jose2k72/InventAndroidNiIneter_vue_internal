@@ -4,7 +4,7 @@
  */
 
 const FormNoEncuestado = {
-    props: ['data'],
+    props: ['data', 'fotos'],
     template: `
         <div class="form-container">
             <h2>🚫 Predio No Encuestado</h2>
@@ -68,29 +68,38 @@ const FormNoEncuestado = {
                 </div>
             </div>
 
-            <!-- 3. FOTOGRAFÍA OPCIONAL (Último elemento) -->
+            <!-- 3. FOTOGRAFÍAS OPCIONALES (Último elemento) -->
             <div class="section glass-card">
-                <h3>📷 Fotografía (Opcional)</h3>
-                <div class="form-group" style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                    <div v-if="fotoBase64" class="photo-preview-container" style="position: relative; width: 100%; max-width: 320px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid #ddd;">
-                        <img :src="fotoBase64" @click="verFoto" style="width: 100%; display: block; object-fit: cover; aspect-ratio: 4/3; cursor: pointer;">
-                        <button type="button" @click="confirmEliminarFoto" class="btn btn-danger" style="position: absolute; top: 10px; right: 10px; border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer;">
-                            🗑️
-                        </button>
+                <h3>📷 Fotografías (Opcional)</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button type="button" class="btn btn-primary" @click="$emit('camera')" style="flex: 1; min-height: 50px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+                        <span>📷</span>
+                        <span>Tomar Foto</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" @click="$emit('import-photos')" style="flex: 1; min-height: 50px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; background-color: #607d8b; color: white; border: none; border-radius: 4px;">
+                        <span>📁</span>
+                        <span>Importar Fotos</span>
+                    </button>
+                </div>
+                
+                <div v-if="fotosList.length > 0" class="photos-grid">
+                    <div v-for="(foto, index) in fotosList" :key="index" class="photo-item">
+                        <img :src="foto.data" class="photo-thumbnail" @click="verFoto(foto)" style="cursor: pointer;">
+                        <div class="photo-info" style="display: flex; flex-direction: column; gap: 6px; padding: 8px;">
+                            <span class="photo-name" style="font-size: 0.8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; display: block;" :title="foto.name">{{ foto.name }}</span>
+                            <div style="display: flex; gap: 5px; width: 100%;">
+                                <button type="button" class="btn btn-danger" @click="confirmEliminarFoto(foto.name)" style="flex: 1; padding: 6px; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: none; cursor: pointer; background-color: #dc3545; color: white;">
+                                    🗑️ Borrar
+                                </button>
+                                <button type="button" class="btn btn-primary" @click="exportarFoto(foto.name)" style="flex: 1; padding: 6px; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: none; cursor: pointer; background-color: #1976D2; color: white;">
+                                    📥 Exportar
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div v-if="fotoBase64" style="display: flex; width: 100%; justify-content: center;">
-                        <button type="button" class="btn btn-primary" @click="exportarFoto" style="width: 100%; max-width: 320px; display: flex; align-items: center; justify-content: center; gap: 5px; background-color: #1976D2; color: white; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; min-height: 44px;">
-                            📥 Exportar foto
-                        </button>
-                    </div>
-
-                    <div v-else style="display: flex; width: 100%; max-width: 320px; margin: 10px 0; justify-content: center;">
-                        <button type="button" class="btn btn-primary" @click="$emit('camera')" style="width: 100%; min-height: 54px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
-                            <span>📷</span>
-                            <span>Tomar Foto</span>
-                        </button>
-                    </div>
+                </div>
+                <div v-else style="text-align: center; color: #757575; font-style: italic; padding: 10px 0;">
+                    No se han capturado fotos para este registro.
                 </div>
             </div>
 
@@ -107,7 +116,7 @@ const FormNoEncuestado = {
     setup(props, { emit }) {
         const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
-        const fotoBase64 = Vue.ref('');
+        const fotosList = Vue.computed(() => props.fotos || []);
 
         // Estilos para los chips de motivos rápidos
         const chipStyle = {
@@ -130,31 +139,13 @@ const FormNoEncuestado = {
             minHeight: '72px'
         };
 
-        // Cargar foto Base64 desde el almacenamiento privado de Android
-        const cargarFoto = () => {
-            if (formData.Imagenes && typeof Android !== 'undefined' && typeof Android.loadPhotoAsBase64 === 'function') {
-                const filename = formData.Imagenes.split(',')[0].trim();
-                const b64 = Android.loadPhotoAsBase64(filename);
-                if (b64) {
-                    fotoBase64.value = 'data:image/jpeg;base64,' + b64;
-                } else {
-                    fotoBase64.value = '';
-                }
-            } else {
-                fotoBase64.value = '';
+        const verFoto = (foto) => {
+            if (typeof Android !== 'undefined' && typeof Android.showPhoto === 'function') {
+                Android.showPhoto(foto.name);
             }
         };
 
-        Vue.watch(() => formData.Imagenes, cargarFoto, { immediate: true });
-
-        const verFoto = () => {
-            if (formData.Imagenes && typeof Android !== 'undefined' && typeof Android.showPhoto === 'function') {
-                Android.showPhoto(formData.Imagenes.split(',')[0].trim());
-            }
-        };
-
-        const confirmEliminarFoto = () => {
-            const filename = formData.Imagenes.split(',')[0].trim();
+        const confirmEliminarFoto = (filename) => {
             if (typeof window.showConfirmModal === 'function') {
                 window.showConfirmModal({
                     icon: '📷',
@@ -165,8 +156,6 @@ const FormNoEncuestado = {
                     onConfirm: () => {
                         if (window.deletePhoto) {
                             window.deletePhoto(filename);
-                        } else {
-                            formData.Imagenes = '';
                         }
                     }
                 });
@@ -174,15 +163,12 @@ const FormNoEncuestado = {
                 if (confirm('¿Desea eliminar la foto?')) {
                     if (window.deletePhoto) {
                         window.deletePhoto(filename);
-                    } else {
-                        formData.Imagenes = '';
                     }
                 }
             }
         };
 
-        const exportarFoto = () => {
-            const filename = formData.Imagenes.split(',')[0].trim();
+        const exportarFoto = (filename) => {
             emit('export-photo', filename);
         };
 
@@ -226,7 +212,7 @@ const FormNoEncuestado = {
         return {
             formData,
             errors,
-            fotoBase64,
+            fotosList,
             chipStyle,
             selectReason,
             verFoto,
