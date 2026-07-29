@@ -90,23 +90,21 @@ Este documento detalla los problemas de rendimiento (bloqueos del hilo de interf
 
 ---
 
-## 7. Futura Transición a Subgrupos de Levantamiento dentro del Mismo Predio
+## 7. Transición a Subgrupos de Levantamiento dentro del Mismo Predio (Implementado)
 
-En el futuro, el sistema catastral podría transicionar de un conteo/marcado plano por predio único (`idObject`) a admitir **múltiples subgrupos o unidades independientes dentro del mismo predio físico**. Esto tiene implicaciones directas en la carga del mapa y en el cómputo estadístico.
+> Esta sección describía originalmente un plan prospectivo. Se implementó mediante la columna `GRUPO_ID` en `DATOS` — ver el detalle completo del mecanismo en `docs/DATABASE_MAP_DB.md` sección 5. Esta sección queda como registro de las decisiones de rendimiento tomadas al implementarlo.
 
-### Implicaciones del Cambio
-1.  **En los Marcadores (`MapHelper`)**: Ya no se pintará un único pin por predio. Se requerirá un agrupamiento jerárquico de doble nivel:
-    *   **Nivel 1**: Agrupar todos los registros pertenecientes al mismo predio (`idObject`).
-    *   **Nivel 2**: Dentro de cada predio, subagrupar espacialmente por distancia (ej: puntos separados por más de 3 o 5 metros) para pintar múltiples pins independientes representando subunidades catastrales dentro del mismo polígono.
-2.  **En las Estadísticas (`DatabaseHelper`)**: El indicador de rendimiento en la barra de herramientas y los reportes diarios ya no podrán usar un simple `COUNT(DISTINCT IDOBJECT)`. Deberán contabilizar el total de subgrupos o unidades independientes trabajadas por día.
+El sistema catastral transicionó de un conteo/marcado plano por predio único (`idObject`) a admitir **múltiples subgrupos o unidades independientes dentro del mismo predio físico**. Esto tuvo implicaciones directas en la carga del mapa y en el cómputo estadístico.
 
-### Estrategias de Optimización Diseñadas para este Escenario
-Realizar un agrupamiento de doble nivel con análisis de distancias espaciales puede degradar severamente el rendimiento si no se optimiza de antemano. Se proponen las siguientes medidas de control:
+### Cómo se resolvió, evitando el costo O(n²) que motivó esta nota original
+El riesgo anticipado era que un agrupamiento de doble nivel con análisis de distancias espaciales en memoria (por predio, y dentro de él por proximidad) degradara el rendimiento igual que el algoritmo geodésico O(n²) que ya se había eliminado (ver sección 2). Se evitó por completo ese costo:
 
-*   **Indexación por Subunidad en DB**: Introducir a nivel de base de datos una columna indexada de subunidad catastral (ej. `SUB_PREDIO_ID`). Esto permitiría que SQLite haga la agrupación jerárquica a nivel de consulta agregada, manteniendo la complejidad en el dispositivo en $O(N)$ y evitando cálculos geodésicos en memoria.
-*   **Viewport Culling Jerárquico**: Correr el algoritmo de subagrupación por distancia geodésica **únicamente** para aquellos predios (`idObject`) que intersectan la región visible de la cámara del mapa (`visibleRegion`), reduciendo a un puñado el volumen de datos que requiere cálculo geométrico.
-*   **Uso de Estructuras de Partición Espacial en Memoria**: Si el cálculo debe realizarse en Kotlin en caliente, utilizar un **Quadtree** o **R-Tree** liviano en memoria para agrupar los puntos de un predio, reduciendo la complejidad del clustering espacial de $O(N^2)$ a $O(N \log N)$.
-*   **Caché de Agrupamiento por Predio**: Implementar una tabla o estructura de caché de subgrupos. Si un predio no ha recibido nuevos registros ni modificaciones de posición, se reutiliza su distribución de marcadores calculada previamente, evitando reprocesamientos redundantes en `onResume()`.
+*   **`GRUPO_ID` se resuelve una sola vez, al capturar el punto — no en cada carga del mapa.** `DatabaseHelper.resolveGrupoForNewPoint(idObject, lat, lng)` corre en el hilo de fondo de `MainActivity.handleMapPosition()`, junto con el resto de metadatos espaciales (municipio/sector/manzana/lote), antes de abrir el formulario. El clustering por distancia (3 metros, `Location.distanceBetween`) solo se ejecuta sobre los pocos grupos ya existentes de **ese** predio (`getGruposForObject`), nunca sobre el dataset completo.
+*   **El pintado de marcadores (`MapHelper`) ya no hace cálculo geodésico en absoluto.** Como `GRUPO_ID` ya viene resuelto y persistido en la BD, el agrupamiento jerárquico de dos niveles es una operación $O(n)$ de `groupBy` en memoria (por `idObject`, luego por `GRUPO_ID`) — exactamente igual de barato que el agrupamiento plano por `idObject` que ya existía, sin necesidad de Quadtree/R-Tree ni caché adicional.
+*   **Las estadísticas siguen siendo una consulta SQL agregada instantánea**: `COUNT(DISTINCT IDOBJECT || '-' || GRUPO_ID)` en vez de `COUNT(DISTINCT IDOBJECT)` — mismo costo, mismo patrón, sin cálculo en memoria.
+*   **Import/Export y Master/Esclavo** también evitan recomputar clusters: `ImportManager`/`ExportManager` simplemente copian la columna `GRUPO_ID` ya resuelta, y `WorkflowService.getMasterCandidates()` reemplazó su clustering manual en JS por un conteo `TotalGrupos` calculado en SQL y entregado ya resuelto desde `SpatialHelper.getDataInAdjacentPolygons()`.
+
+En resumen: la estrategia de optimización elegida no fue ninguna de las cuatro propuestas originalmente (indexación de subunidad, viewport culling jerárquico, Quadtree/R-Tree, caché de agrupamiento) — fue evitar el problema de raíz resolviendo el grupo **una vez, al momento de captura**, en vez de tener que re-derivarlo en cada lectura.
 
 ---
 

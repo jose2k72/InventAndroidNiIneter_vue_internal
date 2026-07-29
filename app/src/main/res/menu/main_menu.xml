@@ -64,6 +64,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_export_stats_by_user"
+        android:title="Exportar Estadísticas por Grupo"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_search_predio"
         android:title="Buscar Predio (Polígono)"
         app:showAsAction="never" />

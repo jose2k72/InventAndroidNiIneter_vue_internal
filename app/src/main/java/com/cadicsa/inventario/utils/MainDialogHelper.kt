@@ -308,4 +308,28 @@ class MainDialogHelper(private val activity: AppCompatActivity) {
             Toast.makeText(activity, "Error cargando estadísticas: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
+
+    /**
+     * Exporta las estadísticas agrupadas por usuario (encuestador) a un archivo de texto plano
+     * dentro del subdirectorio "Reports" del almacenamiento de la app.
+     */
+    fun exportStatisticsByUserReport() {
+        try {
+            val dbHelper = DatabaseHelper.getInstance(activity)
+            val stats = dbHelper.getStatisticsByUserReport()
+
+            if (!com.cadicsa.inventario.AppConfig.ensureReportsDirectoryExists()) {
+                Toast.makeText(activity, "No se pudo crear el directorio de reportes", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(java.util.Date())
+            val reportFile = java.io.File(com.cadicsa.inventario.AppConfig.getReportsDirectory(), "${timestamp}_report.txt")
+            reportFile.writeText("Estadísticas por Usuario (Encuestador)\n\n$stats\n")
+
+            Toast.makeText(activity, "Reporte guardado en Reports/${reportFile.name}", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(activity, "Error exportando estadísticas: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
 }

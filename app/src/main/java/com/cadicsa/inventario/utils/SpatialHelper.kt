@@ -119,9 +119,9 @@ object SpatialHelper {
     fun getManzanaForPredio(db: SQLiteDatabase, geomPredio: org.locationtech.jts.geom.Geometry): String? {
         val envelope = geomPredio.envelopeInternal
         val query = """
-            SELECT LOCALIZACION, wkb 
-            FROM objects 
-            WHERE layer = 'Sectores' COLLATE NOCASE
+            SELECT LOCALIZACION, wkb
+            FROM objects
+            WHERE layer = 'Manzanas' COLLATE NOCASE
             AND minX <= ${SpatialNormalizer.format(envelope.maxX)} AND maxX >= ${SpatialNormalizer.format(envelope.minX)}
             AND minY <= ${SpatialNormalizer.format(envelope.maxY)} AND maxY >= ${SpatialNormalizer.format(envelope.minY)}
         """.trimIndent()
@@ -141,6 +141,42 @@ object SpatialHelper {
             }
         } catch (e: Exception) {
             android.util.Log.e("SpatialHelper", "Error en getManzanaForPredio: ${e.message}")
+        } finally {
+            cursor.close()
+        }
+        return null
+    }
+
+    /**
+     * Obtiene el sector de campaña que intersecta la geometría del predio dado.
+     * Independiente de getManzanaForPredio(): consulta la capa 'Sectores', no 'Manzanas',
+     * aunque ambas capas puedan compartir hoy la misma geometría en la base de datos.
+     */
+    fun getSectorForPredio(db: SQLiteDatabase, geomPredio: org.locationtech.jts.geom.Geometry): String? {
+        val envelope = geomPredio.envelopeInternal
+        val query = """
+            SELECT LOCALIZACION, wkb
+            FROM objects
+            WHERE layer = 'Sectores' COLLATE NOCASE
+            AND minX <= ${SpatialNormalizer.format(envelope.maxX)} AND maxX >= ${SpatialNormalizer.format(envelope.minX)}
+            AND minY <= ${SpatialNormalizer.format(envelope.maxY)} AND maxY >= ${SpatialNormalizer.format(envelope.minY)}
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, null)
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val wkbBytes = cursor.getBlob(1) ?: continue
+                    val geomSector = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
+                    if (geomSector.intersects(geomPredio)) {
+                        val result = cursor.getString(0)
+                        android.util.Log.d("SpatialHelper", "Sector encontrado por intersección de predio: $result")
+                        return result
+                    }
+                } while (cursor.moveToNext())
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SpatialHelper", "Error en getSectorForPredio: ${e.message}")
         } finally {
             cursor.close()
         }
@@ -290,12 +326,12 @@ object SpatialHelper {
         val envelope = geomPredio.envelopeInternal
         
         val query = """
-            SELECT ID, DATOS, FECHA, LATITUD, LONGITUD 
-            FROM DATOS 
-            WHERE LATITUD BETWEEN ${SpatialNormalizer.format(envelope.minY)} AND ${SpatialNormalizer.format(envelope.maxY)} 
+            SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, GRUPO_ID
+            FROM DATOS
+            WHERE LATITUD BETWEEN ${SpatialNormalizer.format(envelope.minY)} AND ${SpatialNormalizer.format(envelope.maxY)}
             AND LONGITUD BETWEEN ${SpatialNormalizer.format(envelope.minX)} AND ${SpatialNormalizer.format(envelope.maxX)}
         """.trimIndent()
-        
+
         val cursor = db.rawQuery(query, null)
         val result = StringBuilder("[")
         try {
@@ -306,6 +342,7 @@ object SpatialHelper {
                     result.append("{\"Id\":${cursor.getString(0)},")
                     result.append("\"Data\": ${cursor.getString(1)},")
                     result.append("\"IdObject\":$predioId,")
+                    result.append("\"GrupoId\":${cursor.getInt(5)},")
                     result.append("\"Fecha\": \"${cursor.getString(2)}\"},")
                 }
             }
@@ -454,10 +491,66 @@ object SpatialHelper {
         }
         
         listaDatos.sortBy { it.distance }
-        
+
+        // Conteo real de grupos (agrupaciones) distintos por predio vecino, para que
+        // WorkflowService.getMasterCandidates() pueda decidir elegibilidad Master sin
+        // tener que re-derivar clusters por distancia en JS.
+        val totalGruposPorObjeto = mutableMapOf<Int, Int>()
+        for (idObj in listaDatos.map { it.idObject }.distinct()) {
+            db.rawQuery("SELECT COUNT(DISTINCT GRUPO_ID) FROM DATOS WHERE IDOBJECT = $idObj", null).use { cursor ->
+                totalGruposPorObjeto[idObj] = if (cursor.moveToFirst()) cursor.getInt(0) else 1
+            }
+        }
+
         val builder = StringBuilder("[")
         for (dato in listaDatos) {
-            builder.append("{\"Id\":${dato.id},\"Data\": ${dato.jsonData},\"IdObject\":${dato.idObject},\"Fecha\": \"${dato.fecha}\",\"LocalizacionPredio\": \"${dato.localizacionPredio}\",\"DireccionRelativa\": \"${dato.direccionRelativa}\", \"Latitud\": ${dato.latitud}, \"Longitud\": ${dato.longitud}},")
+            val totalGrupos = totalGruposPorObjeto[dato.idObject] ?: 1
+            builder.append("{\"Id\":${dato.id},\"Data\": ${dato.jsonData},\"IdObject\":${dato.idObject},\"Fecha\": \"${dato.fecha}\",\"LocalizacionPredio\": \"${dato.localizacionPredio}\",\"DireccionRelativa\": \"${dato.direccionRelativa}\", \"Latitud\": ${dato.latitud}, \"Longitud\": ${dato.longitud}, \"TotalGrupos\": $totalGrupos},")
+        }
+        val resultStr = builder.toString()
+        return if (resultStr.length > 1) resultStr.dropLast(1) + "]" else "[]"
+    }
+
+    /**
+     * Grupos hermanos (otras agrupaciones) dentro del MISMO predio, con su dirección relativa
+     * respecto al punto/grupo actualmente en edición. Función separada de
+     * getDataInAdjacentPolygons() a propósito: esa otra función también alimenta la elegibilidad
+     * de Master en WorkflowService.getMasterCandidates(), y mezclar aquí registros del propio
+     * predio contaminaría esa lógica (el predio se vería a sí mismo como "vecino candidato").
+     */
+    fun getSiblingGroupsInSamePredio(db: SQLiteDatabase, predioId: Int, currentGrupoId: Int, currentLat: Double, currentLng: Double): String {
+        val query = """
+            SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, GRUPO_ID
+            FROM DATOS
+            WHERE IDOBJECT = $predioId AND GRUPO_ID != $currentGrupoId
+        """.trimIndent()
+
+        data class RegistroHermano(val id: Int, val jsonData: String, val fecha: String, val grupoId: Int, val lat: Double, val lng: Double)
+        val porGrupo = mutableMapOf<Int, MutableList<RegistroHermano>>()
+        db.rawQuery(query, null).use { cursor ->
+            while (cursor.moveToNext()) {
+                val grupoId = cursor.getInt(5)
+                porGrupo.getOrPut(grupoId) { mutableListOf() }.add(
+                    RegistroHermano(cursor.getInt(0), cursor.getString(1) ?: "{}", cursor.getString(2) ?: "", grupoId, cursor.getDouble(3), cursor.getDouble(4))
+                )
+            }
+        }
+
+        val currentPoint = GeometryUtil.createPoint(currentLat, currentLng)
+        val builder = StringBuilder("[")
+        for ((grupoId, registros) in porGrupo) {
+            // Representante del grupo hermano: preferir Ficha (trae datos de dirección de residencia)
+            val representante = registros.firstOrNull {
+                val json = try { org.json.JSONObject(it.jsonData) } catch (e: Exception) { null }
+                json?.optString("Type") == "Ficha"
+            } ?: continue
+
+            val siblingPoint = GeometryUtil.createPoint(representante.lat, representante.lng)
+            val direccion = GeometryUtil.getRelativeDirectionFromJts(currentPoint, siblingPoint)
+
+            builder.append("{\"Id\":${representante.id},\"Data\": ${representante.jsonData},\"IdObject\":$predioId,")
+            builder.append("\"Fecha\": \"${representante.fecha}\",\"LocalizacionPredio\": \"Mismo predio (Grupo $grupoId)\",")
+            builder.append("\"DireccionRelativa\": \"$direccion\", \"Latitud\": ${representante.lat}, \"Longitud\": ${representante.lng}, \"EsMismoPredio\": true},")
         }
         val resultStr = builder.toString()
         return if (resultStr.length > 1) resultStr.dropLast(1) + "]" else "[]"

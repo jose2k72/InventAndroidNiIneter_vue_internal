@@ -217,9 +217,9 @@ class ExportManager(
 
                 // 3. Buscar los registros en la base de datos local asociados a esta localización
                 val query = """
-                    SELECT d.IDOBJECT, d.IDLAYER, d.IDPREDIO, d.LAYER, d.DATOS, d.FECHA, 
+                    SELECT d.IDOBJECT, d.IDLAYER, d.IDPREDIO, d.LAYER, d.DATOS, d.FECHA,
                            d.IMEI, d.ANDROID_ID, d.LATITUD, d.LONGITUD, d.LATITUDGPS, d.LONGITUDGPS,
-                           d.CREADO_POR, d.FECHA_UPDATE, d.ACTUALIZADO_POR, d.SINCRONIZADO
+                           d.CREADO_POR, d.FECHA_UPDATE, d.ACTUALIZADO_POR, d.SINCRONIZADO, d.GRUPO_ID
                     FROM DATOS d
                     JOIN objects o ON d.IDOBJECT = o.id
                     WHERE o.LOCALIZACION = ?
@@ -249,6 +249,7 @@ class ExportManager(
                             put("FECHA_UPDATE",    cursor.getString(13))
                             put("ACTUALIZADO_POR", cursor.getString(14) ?: "")
                             put("SINCRONIZADO",    cursor.getInt(15))
+                            put("GRUPO_ID",        cursor.getInt(16))
                         }
 
                         val newRowId = targetDb.insert("DATOS", null, cv)

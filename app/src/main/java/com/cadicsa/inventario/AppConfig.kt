@@ -97,4 +97,26 @@ object AppConfig {
             true
         }
     }
+
+    /**
+     * Nombre del subdirectorio para reportes exportados (dentro del directorio de almacenamiento)
+     */
+    const val REPORTS_DIR_NAME = "Reports"
+
+    /**
+     * Obtiene el directorio de reportes exportados
+     * Ejemplo: /storage/emulated/0/CADIC.INETER/Reports
+     */
+    fun getReportsDirectory(): File {
+        return File(getStorageDirectory(), REPORTS_DIR_NAME)
+    }
+
+    /**
+     * Crea el directorio de reportes si no existe
+     * @return true si el directorio existe o fue creado exitosamente
+     */
+    fun ensureReportsDirectoryExists(): Boolean {
+        val dir = getReportsDirectory()
+        return if (!dir.exists()) dir.mkdirs() else true
+    }
 }

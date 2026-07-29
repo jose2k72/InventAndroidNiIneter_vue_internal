@@ -7,25 +7,34 @@ window.WorkflowService = {
     /**
      * Valida si se permite la creación de un nuevo registro basado en el estado actual
      * @param {String} type - Tipo de registro a crear
-     * @param {Array} listData - Lista de registros existentes en el predio
+     * @param {Array} listData - Registros existentes en el GRUPO actual (agrupación dentro del predio)
      * @param {Number} idObject - El ID geográfico del predio actual (opcional)
+     * @param {Array} listDataPredio - Registros de TODO el predio (todos los grupos), usado solo
+     *                                 para las reglas de exclusividad de No Encuestado/Unión, que
+     *                                 bloquean el predio completo, no solo el grupo actual.
      * @returns {Object} { allowed: boolean, title: string, message: string, icon: string }
      */
-    validateCreation: function (type, listData, idObject) {
+    validateCreation: function (type, listData, idObject, listDataPredio) {
         if (!listData) return { allowed: true };
 
-        // 1. Mapeo de existencia
+        // Si no se provee el listado de todo el predio, se usa el del grupo como fallback
+        // (compatibilidad hacia atrás; en la práctica app.js siempre lo provee).
+        const listPredio = listDataPredio || listData;
+
+        // 1. Mapeo de existencia (a nivel de GRUPO)
         const hasNatural = listData.some(item => item.Data?.Type === 'SujetoNatural');
         const hasJuridico = listData.some(item => item.Data?.Type === 'SujetoJuridico');
         const hasEntrevistado = listData.some(item => item.Data?.Type === 'Entrevistado');
         const hasFicha = listData.some(item => item.Data?.Type === 'Ficha');
         const hasFamiliares = listData.some(item => item.Data?.Type === 'Familiares');
-        const hasNoEncuestado = listData.some(item => item.Data?.Type === 'NoEncuestado');
-        const hasUnionPredio = listData.some(item => item.Data?.Type === 'UnionConPredio');
 
-        // --- REGLAS DE EXCLUSIVIDAD TOTAL ---
-        
-        // 1. Si ya existe una excepción, no se permite agregar nada más
+        // Mapeo de existencia (a nivel de TODO EL PREDIO, para exclusividad No Encuestado/Unión)
+        const hasNoEncuestado = listPredio.some(item => item.Data?.Type === 'NoEncuestado');
+        const hasUnionPredio = listPredio.some(item => item.Data?.Type === 'UnionConPredio');
+
+        // --- REGLAS DE EXCLUSIVIDAD TOTAL (a nivel de todo el predio) ---
+
+        // 1. Si ya existe una excepción en CUALQUIER grupo del predio, no se permite agregar nada más
         if (hasNoEncuestado || hasUnionPredio) {
             return {
                 allowed: false,
@@ -35,8 +44,8 @@ window.WorkflowService = {
             };
         }
 
-        // 2. Si se intenta agregar una excepción pero ya hay datos normales, bloquear
-        if ((type === 'NoEncuestado' || type === 'UnionConPredio') && listData.length > 0) {
+        // 2. Si se intenta agregar una excepción pero el predio ya tiene datos normales (en cualquier grupo), bloquear
+        if ((type === 'NoEncuestado' || type === 'UnionConPredio') && listPredio.length > 0) {
             return {
                 allowed: false,
                 icon: '🚫',
@@ -226,45 +235,33 @@ window.WorkflowService = {
 
             const candidatosFinales = [];
 
-            // 2. Analizar cada predio vecino para ver si tiene un ÚNICO cluster
+            // 2. Analizar cada predio vecino para ver si tiene una ÚNICA agrupación (GRUPO_ID)
+            //    El conteo real de grupos (TotalGrupos) ya viene resuelto desde la BD
+            //    (columna GRUPO_ID), sin necesidad de re-derivar clusters por distancia en JS.
+            //    Esto también cubre automáticamente el caso de predios que son a su vez
+            //    esclavos de otro Master: al tener únicamente un registro de Unión, su
+            //    TotalGrupos es siempre 1.
             Object.keys(gruposPorPredio).forEach(loc => {
                 const registros = gruposPorPredio[loc];
                 if (registros.length === 0) return;
 
-                // El predio colindante debe tener una Ficha o una Unión registrada (marca de catastrado)
+                // El predio colindante debe tener una Ficha o una Unión registrada (no estar "no catastrado")
                 const tieneFichaOUnion = registros.some(r => r.Data?.Type === 'Ficha' || r.Data?.Type === 'UnionConPredio');
                 if (!tieneFichaOUnion) {
                     console.log(`🚫 Predio ${loc} descartado por no tener una Ficha o Unión registrada.`);
                     return;
                 }
 
-                // Agrupar registros por proximidad (3 metros)
-                const clustersInNeighbor = [];
-                registros.forEach(reg => {
-                    const lat = reg.Latitud;
-                    const lng = reg.Longitud;
-                    
-                    let foundCluster = clustersInNeighbor.find(c => {
-                        // Cálculo de distancia simple (aproximado para 3m es suficiente)
-                        const d = Math.sqrt(Math.pow(lat - c.lat, 2) + Math.pow(lng - c.lng, 2));
-                        return d < 0.00003; // Aprox 3 metros en grados
-                    });
+                const totalGrupos = registros[0].TotalGrupos ?? 1;
 
-                    if (!foundCluster) {
-                        clustersInNeighbor.push({ lat, lng, count: 1 });
-                    } else {
-                        foundCluster.count++;
-                    }
-                });
-
-                // REGLA DE ORO: Debe tener información y esta debe pertenecer a UN SOLO cluster
-                if (clustersInNeighbor.length === 1) {
+                // REGLA DE ORO: Debe tener información y esta debe pertenecer a UNA SOLA agrupación
+                if (totalGrupos === 1) {
                     candidatosFinales.push({
                         localizacion: loc,
                         direccionRelativa: registros[0].DireccionRelativa || '?'
                     });
                 } else {
-                    console.log(`🚫 Predio ${loc} descartado por tener ${clustersInNeighbor.length} clusters.`);
+                    console.log(`🚫 Predio ${loc} descartado por tener ${totalGrupos} agrupaciones.`);
                 }
             });
 

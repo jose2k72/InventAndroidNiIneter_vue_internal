@@ -53,7 +53,7 @@ Para asegurar la compatibilidad con el backend (.NET C#), los campos de catálog
 ## 🗺 Visualización en el Mapa y Barra de Título
 
 ### 4. Marcadores y Reglas de Agrupamiento
-- **Agrupamiento por Proximidad (Snapping)**: Los registros individuales no se muestran si están a menos de **3 metros** de otro. Se agrupan bajo un único marcador que representa la "Unidad de Propiedad de Hecho".
+- **Agrupamiento por Predio y Subgrupo (`GRUPO_ID`)**: El pintado de marcadores es jerárquico de dos niveles: primero por predio (`IDOBJECT`), y dentro de cada predio, por agrupación (`GRUPO_ID`) — ver `DATABASE_MAP_DB.md` sección 5. Un mismo predio puede mostrar **más de un pin** si tiene más de una agrupación real (parcelas segregadas no reflejadas en la poligonal). El **snapping por proximidad de 3 metros** determina si un punto nuevo se une a un grupo existente (comparte su marcador) o forma uno nuevo — ya no es un simple "ocultar si está cerca", sino la asignación real de `GRUPO_ID` al capturar el punto. Los predios marcados como **No Encuestado** o **Unión con Predio** son la única excepción: siempre colapsan a un único marcador para todo el predio.
 - **Semáforo de Estado (Pines 3D)**:
   - **Rojo (Hue 0°)**: Predio marcado como **No Encuestado** (Indica una incidencia técnica o social que impidió la encuesta).
   - **Cian (Hue 180°)**: Predio con **Unión con Master** (Indica que este objeto es dependiente y hereda la información de un polígono colindante).
@@ -66,7 +66,7 @@ Para asegurar la compatibilidad con el backend (.NET C#), los campos de catálog
   - **Sector**: Contorno azul grueso (8dp, #1565C0).
 
 ### 5. Barra de Título Dinámica (Action Bar)
-- **Indicador de Avance**: La barra superior de la aplicación muestra el título de la aplicación y un subtítulo que indica el avance de encuestas del día en tiempo real (`Hoy: X`), obtenidas tras aplicar el filtro espacial de 3 metros.
+- **Indicador de Avance**: La barra superior de la aplicación muestra el título de la aplicación y un subtítulo que indica el avance de encuestas del día en tiempo real (`Hoy: X`), contando agrupaciones únicas (`IDOBJECT` + `GRUPO_ID`) trabajadas ese día mediante una consulta SQL agregada (`getDailyStatisticsMap`), no un filtro espacial en memoria.
 
 ### 6. Interacciones de Usuario
 1. **Clic en Parcela**: Inicia el flujo de captura si no hay datos previos (Inyecta Municipio y Sector automáticamente).

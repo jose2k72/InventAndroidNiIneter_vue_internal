@@ -10,17 +10,19 @@ La "Ficha" o Encuesta Catastral es el eje central de la recolección. Para garan
 Todas las reglas de flujo son validadas centralizadamente por el `WorkflowService.js` antes de iniciar cualquier operación en `app.js`.
 
 ### 1.2 Requisitos de Iniciación
-- **Entrevistado (Obligatorio/Único)**: Es indispensable tener registrado al menos un Entrevistado/Informante antes de realizar la "ENCUESTA". Solo se permite **un uno (1)** por predio.
+> ℹ️ Desde la introducción de subgrupos catastrales (`GRUPO_ID`, ver `DATABASE_MAP_DB.md` sección 5), un predio puede contener **más de una agrupación independiente**. Las reglas de unicidad de esta sección se evalúan **por grupo**, no por todo el predio — cada agrupación puede tener su propia Ficha, Entrevistado y Propietarios.
+
+- **Entrevistado (Obligatorio/Único)**: Es indispensable tener registrado al menos un Entrevistado/Informante antes de realizar la "ENCUESTA". Solo se permite **uno (1) por grupo**.
 - **Propietario (Opcional)**: No es obligatorio para iniciar la encuesta.
-- **Ficha (Única)**: Solo se permite una encuesta por objeto espacial.
-- **Familiares (Dependencia)**: Solo se permite agregar integrantes si existe al menos un Propietario Natural previo.
+- **Ficha (Única)**: Solo se permite una encuesta **por grupo** (no por objeto espacial completo).
+- **Familiares (Dependencia)**: Solo se permite agregar integrantes si existe al menos un Propietario Natural previo en el mismo grupo.
 - **Auto-relleno**: Al iniciar desde el mapa, se hereda área y municipio automáticamente vía `ModelsFactory`.
 
 ### 1.3 Jerarquía de Datos
 - **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único **"Sujeto Natural"**, el sistema ejecuta un borrado en cascada automático de su composición familiar vinculada. *(Corregido para excluir explícitamente mediante el ID el propietario en proceso de eliminación y evitar falsos positivos de tenencia al evaluar con comparaciones de tipo flexible `!=`)*.
-- **Validación de Borrado**: No se permite eliminar al **Entrevistado** si ya existe una **Ficha** (Encuesta) vinculada, protegiendo la integridad referencial.
+- **Validación de Borrado**: No se permite eliminar al **Entrevistado** si ya existe una **Ficha** (Encuesta) vinculada, protegiendo la integridad referencial (evaluado dentro del mismo grupo).
 - **Relación Entrevistado-Propietario**: Si el entrevistado es el mismo propietario, el sistema permite una creación silenciosa para evitar doble entrada de datos mediante el `ConversionService`.
-- **Candidatos Master (Unificación)**: Un predio solo puede ser Master si ya tiene información registrada y esta pertenece a un **único cluster** espacial (una sola acumulación de puntos a menos de 3 metros).
+- **Candidatos Master (Unificación)**: Un predio solo puede ser Master si tiene información registrada y esta pertenece a una **única agrupación** (`TotalGrupos === 1`, calculado en SQL a partir de `GRUPO_ID`; ver `DATABASE_MAP_DB.md` sección 5). Esto incluye a los predios que a su vez son esclavos de otro Master (un registro de Unión implica siempre una sola agrupación).
 
 ### 1.4 Reglas de Exclusividad de Estado (Bidireccional)
 Para garantizar la integridad del inventario, los registros se dividen en dos categorías mutuamente excluyentes:
@@ -28,12 +30,10 @@ Para garantizar la integridad del inventario, los registros se dividen en dos ca
 1.  **Estado Operativo (Normal)**: Predios con Ficha, Entrevistado, Propietarios, etc.
 2.  **Estado de Excepción (Terminal)**: Predios marcados como **No Encuestado** o **Unión con Predio**.
 
-**Restricciones Estrictas:**
-- **Bloqueo por Información Existing**: Si un predio ya tiene *cualquier* registro operativo, el sistema **impide** que sea marcado como excepción (No Encuestado/Unión).
-- **Bloqueo por Excepción**: Si un predio ya cuenta con un registro de No Encuestado o Unión, el sistema **bloquea** la inserción de cualquier otro tipo de dato normal.
+**Restricciones Estrictas** (estas dos marcas aplican a **todo el predio**, no a un grupo individual — un predio con Unión/No Encuestado no admite ningún otro dato en ninguna agrupación):
+- **Bloqueo por Información Existente**: Si un predio ya tiene *cualquier* registro operativo (en cualquier grupo), el sistema **impide** que sea marcado como excepción (No Encuestado/Unión).
+- **Bloqueo por Excepción**: Si un predio ya cuenta con un registro de No Encuestado o Unión, el sistema **bloquea** la inserción de cualquier otro tipo de dato normal, en cualquier grupo.
 - **Exclusividad de Excepción**: Un predio no puede ser simultáneamente "No Encuestado" y "Unión con Predio". Solo se admite una de estas marcas por polígono.
-
----
 
 ---
 
@@ -50,10 +50,10 @@ El ciclo de vida de las fotografías está controlado exclusivamente por las acc
 
 ### 3.1 Formulario: Ficha (Encuesta Catastral)
 - **Área Estimada**: Se valida que sea un número positivo. Si viene del mapa, el campo se bloquea para evitar discrepancias con la topografía digital.
-- **Identificadores**: Se utiliza `IdPropiedad` (UUID) para la vinculación única del registro y `IdSector` para la generación del número de encuesta.
+- **Identificadores**: Se utiliza `IdPropiedad` (UUID) para la vinculación única del registro y `IdSector` para la generación del número de encuesta. `IdSector` es el "sector de campaña" (ver `MODELO_Y_PROCESO.md`), **no** el número de manzana catastral — ambos se resuelven de forma independiente (`SpatialHelper.getSectorForPredio()` vs `getManzanaForPredio()`, corregido para consultar cada uno su propia capa geográfica, `Sectores` y `Manzanas` respectivamente). Hoy ambas capas comparten la misma geometría en `Map.db` por decisión operativa del proyecto, pero el código no depende de que sigan coincidiendo.
 - **Contenido Físico**: Se centra en datos de uso, cultivos, instalaciones y documentación del predio. No contiene datos de tenencia.
 
-### 2.2 Formulario: Sujeto Natural (Persona)
+### 3.2 Formulario: Sujeto Natural (Persona)
 - **Derecho Parcelario e Identificación**:
     - **Número de personas con derecho similar**: Debe ser estrictamente **mayor que 1** (o igual si es único). Validado para evitar nulos.
     - **Edad**: Debe ser **>= 0**.
@@ -65,23 +65,24 @@ El ciclo de vida de las fotografías está controlado exclusivamente por las acc
 
 ---
 
-## 3. Lógica Espacial y Localización
+## 4. Lógica Espacial y Localización
 
-### 3.1 Localización de Predios
+### 4.1 Localización de Predios
 - **Motor Espacial en Memoria**: Se utiliza la librería **JTS (Java Topology Suite)** para realizar de manera síncrona en memoria todas las validaciones y consultas espaciales (como verificar que las coordenadas caigan dentro de un polígono).
 - **Formato WKB**: Para optimizar el rendimiento y la memoria, las geometrías de predios se almacenan como blobs binarios (`WKB`) en la base de datos `Map.db`, reemplazando el uso anterior de texto `WKT`.
-- **Posicionamiento y Consolidación**: 
-  - Al presionar el mapa sobre un predio vacío, la encuesta se inicializa en el **Polo de Inaccesibilidad (PIA)** de JTS (el punto interior más lejano a los bordes) para asegurar una ubicación coherente del marcador.
-  - Si el predio ya contiene datos de encuestas previas, el nuevo registro hereda de manera obligatoria la coordenada exacta del primer registro (consolidación espacial por predio), agrupando todos los marcadores del polígono en un solo punto en el mapa.
+- **Posicionamiento y Consolidación por Grupo** (`GRUPO_ID`, ver `DATABASE_MAP_DB.md` sección 5):
+  - Al presionar el mapa sobre un predio vacío, el primer grupo se posiciona **exactamente donde el usuario tocó** (se probó posicionar en el Polo de Inaccesibilidad de JTS y se descartó por no aportar valor para este caso de uso).
+  - Si el toque cae a **≤ 3 metros** de un grupo ya existente en ese predio, el nuevo registro hereda la coordenada exacta de ese grupo (*snapping*), consolidando ambos en el mismo punto del mapa.
+  - Si el toque no coincide con ningún grupo existente, se crea una **nueva agrupación independiente** (nuevo `GRUPO_ID`) en la posición exacta del toque — un mismo predio puede así tener múltiples pines en el mapa, uno por grupo (ver excepción de No Encuestado/Unión en la sección 1.4, que siempre colapsan a un único marcador).
 
-### 3.2 Capas Operativas
+### 4.2 Capas Operativas
 - **Predios**: Capa base para la consulta y vinculación.
 - **Municipios**: Capa de soporte para la integridad de catálogos geográficos.
 - **Rutas (Viales)**: Capa de referencia que incluye rutas locales y nacionales. **Nota Importante**: Actualmente estas capas están deshabilitadas en la interfaz de usuario (menú de capas) y en la lógica de renderizado para simplificar la operación catastral, pero se mantienen tanto en la base de datos como en el código fuente para referencia futura y para no perder la implementación técnica ya desarrollada.
 
 ---
 
-## 4. Gestión de Archivos y Fotos
+## 5. Gestión de Archivos y Fotos
 
 - **Captura Transaccional**: Las fotografías tomadas durante la edición solo se confirman en el almacenamiento final si el usuario guarda el formulario. Si cancela, los archivos temporales son purgados automáticamente.
 - **Nomenclatura**: `{NoEncuesta}_{yyyyMMdd_HHmmss_SSS}.jpg` para garantizar unicidad y facilitar la auditoría externa fuera de la base de datos.

@@ -63,10 +63,11 @@ Permite autocompletar la dirección en los formularios (`FormFicha`, `FormSujeto
  - **Consistencia Visual**: Las tablas se muestran siempre para dar estructura al formulario. Si no hay datos disponibles, se indica claramente con el mensaje "No hay datos...".
  - **Tracking de Fotos**: El sistema mantiene un control estricto de qué fotos son nuevas, cuáles venían de la base de datos y cuáles han sido marcadas para borrar, procesando los cambios físicos solo al dar clic en "GUARDAR".
  
-### 3.2 Posicionamiento Inteligente en Mapa
-El sistema ha mejorado la lógica de captura al presionar sobre un polígono del mapa:
-- **Centrado en el Polo de Inaccesibilidad (PIA)**: Si el predio seleccionado no posee encuestas creadas, se calcula el punto interior más lejano a los bordes del polígono (`GeometryUtil.getPoleOfInaccessibility`) para situar de forma óptima el pin en el mapa.
-- **Consolidación Catastral Forzada**: Si el predio ya cuenta con registros previos, cualquier nueva encuesta para ese mismo polígono hereda obligatoriamente la coordenada de latitud y longitud del primer registro, evitando la superposición desordenada de múltiples pins dentro de un mismo predio.
+### 3.2 Posicionamiento Inteligente en Mapa y Subgrupos Catastrales (`GRUPO_ID`)
+El sistema resuelve la posición y el grupo (agrupación) del punto al presionar sobre un polígono del mapa, en el hilo de fondo de `handleMapPosition()`, antes de abrir el formulario (ver detalle completo en `docs/DATABASE_MAP_DB.md` sección 5):
+- **Predio sin datos**: El primer grupo se posiciona **exactamente donde el usuario tocó** el mapa. (Anteriormente se usaba el Polo de Inaccesibilidad — el punto interior más lejano a los bordes del polígono — pero se descartó por no aportar valor práctico para este caso de uso).
+- **Snapping por Proximidad (≤3 metros)**: Si el toque cae cerca de un grupo ya existente en ese predio, la nueva encuesta hereda su coordenada exacta y su `GRUPO_ID`, consolidando ambos registros en el mismo pin.
+- **Múltiples Agrupaciones**: Si el toque no coincide con ningún grupo existente, se crea una **nueva agrupación independiente** (`GRUPO_ID` nuevo) en la posición exacta del toque — un mismo predio puede así tener varios pines, uno por grupo. Los predios marcados como No Encuestado o Unión con Predio son la excepción: siempre colapsan a un único marcador.
 
 ### 3.3 Localización Alfanumérica de Predios (Bypass de Restricciones Geométricas)
 Para resolver casos críticos en polígonos extremadamente delgados (como callejones o remanentes) donde el texto de identificación catastral (Lote o `PredNumber`) queda gráficamente por fuera del límite espacial (Bounding Box) del polígono, se diseñó la herramienta **Localizar Predio y Abrir Ficha**:

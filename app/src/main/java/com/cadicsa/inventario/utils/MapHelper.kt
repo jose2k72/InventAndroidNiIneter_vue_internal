@@ -27,13 +27,45 @@ import org.json.JSONObject
  */
 class MapHelper(private val activity: AppCompatActivity, private val mMap: GoogleMap) {
 
-    private class DataGroup(val idObject: Int, val centerLat: Double, val centerLng: Double) {
+    /**
+     * Un grupo (agrupación) visual dentro de un predio. La clave [key] combina idObject y
+     * grupoId porque GRUPO_ID está escalado por predio (dos predios distintos pueden compartir
+     * el mismo GRUPO_ID) — sin el idObject en la clave, marcadores de predios distintos chocarían.
+     */
+    private class DataGroup(val idObject: Int, val grupoId: Int, val centerLat: Double, val centerLng: Double) {
         val items = mutableListOf<com.cadicsa.inventario.DataItem>()
+        val key: String get() = "$idObject:$grupoId"
     }
 
-    private val activeMarkers = HashMap<Int, Marker>()
-    private val activeEyeMarkers = HashMap<Int, Marker>()
-    private val activeColors = HashMap<Int, Float>()
+    private val activeMarkers = HashMap<String, Marker>()
+    private val activeEyeMarkers = HashMap<String, Marker>()
+    private val activeColors = HashMap<String, Float>()
+
+    /**
+     * Subagrupa los registros de un predio en grupos visuales independientes:
+     * - Si el predio contiene un registro No Encuestado o Unión con Predio, se colapsa a un
+     *   único grupo/marcador para todo el predio (estas marcas bloquean cualquier otro dato
+     *   en el polígono, por lo que conceptualmente nunca coexisten con múltiples agrupaciones).
+     * - En cualquier otro caso, se subagrupa por GRUPO_ID: cada agrupación real dentro del
+     *   predio recibe su propio marcador independiente.
+     */
+    private fun buildSubGroups(idObj: Int, itemsInPredio: List<com.cadicsa.inventario.DataItem>): List<DataGroup> {
+        if (itemsInPredio.isEmpty()) return emptyList()
+
+        val isExceptionType = itemsInPredio.any {
+            it.data.contains("\"Type\":\"NoEncuestado\"") || it.data.contains("\"Type\":\"UnionConPredio\"")
+        }
+        val subGroups = if (isExceptionType) {
+            mapOf(1 to itemsInPredio)
+        } else {
+            itemsInPredio.groupBy { it.grupoId }
+        }
+
+        return subGroups.map { (grupoId, items) ->
+            val first = items.first()
+            DataGroup(idObj, grupoId, first.latitud, first.longitud).apply { this.items.addAll(items) }
+        }
+    }
 
     /**
      * Carga y dibuja los puntos capturados desde la BD de forma incremental y optimizada con Viewport Culling.
@@ -71,33 +103,30 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
                     return@thread
                 }
 
-                // 2. Agrupar puntos linealmente por IDOBJECT (consolidación catastral) y aplicar Viewport Culling
+                // 2. Subagrupar por predio y, dentro de cada predio, por GRUPO_ID (salvo excepción) + Viewport Culling
                 val groupedByObject = allData.groupBy { it.idObject }
                 val groupsToDraw = mutableListOf<DataGroup>()
-                
-                for ((idObj, items) in groupedByObject) {
-                    val firstItem = items.first()
-                    val pos = LatLng(firstItem.latitud, firstItem.longitud)
-                    
-                    // Viewport Culling: Si está fuera del viewport, se omite
-                    if (visibleBounds != null && !visibleBounds.contains(pos)) {
-                        continue
+
+                for ((idObj, itemsInPredio) in groupedByObject) {
+                    for (group in buildSubGroups(idObj, itemsInPredio)) {
+                        val pos = LatLng(group.centerLat, group.centerLng)
+                        // Viewport Culling: Si está fuera del viewport, se omite
+                        if (visibleBounds != null && !visibleBounds.contains(pos)) {
+                            continue
+                        }
+                        groupsToDraw.add(group)
                     }
-                    
-                    val group = DataGroup(idObj, firstItem.latitud, firstItem.longitud)
-                    group.items.addAll(items)
-                    groupsToDraw.add(group)
                 }
 
-                // 3. Pintar de forma incremental e incremental en el hilo principal
+                // 3. Pintar de forma incremental en el hilo principal
                 activity.runOnUiThread {
-                    val targetIds = groupsToDraw.map { it.idObject }.toSet()
-                    
-                    // A. Eliminación quirúrgica: Quitar marcadores de predios que salieron del viewport
+                    val targetKeys = groupsToDraw.map { it.key }.toSet()
+
+                    // A. Eliminación quirúrgica: Quitar marcadores de grupos que salieron del viewport
                     val markerIterator = activeMarkers.entries.iterator()
                     while (markerIterator.hasNext()) {
                         val entry = markerIterator.next()
-                        if (!targetIds.contains(entry.key)) {
+                        if (!targetKeys.contains(entry.key)) {
                             entry.value.remove()
                             activeEyeMarkers[entry.key]?.remove()
                             activeEyeMarkers.remove(entry.key)
@@ -107,74 +136,7 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
                     }
 
                     // B. Actualización incremental o inserción de marcadores
-                    groupsToDraw.forEach { group ->
-                        val expectedColor = calculateGroupColor(group.items)
-                        val isLastSaved = group.items.any { it.id == lastSavedDataId }
-                        
-                        val existingMarker = activeMarkers[group.idObject]
-                        val coordsTag = "${SpatialNormalizer.format(group.centerLat)},${SpatialNormalizer.format(group.centerLng)}"
-                        
-                        if (existingMarker == null) {
-                            // Crear marcador nuevo
-                            val marker = mMap.addMarker(
-                                MarkerOptions()
-                                    .position(LatLng(group.centerLat, group.centerLng))
-                                    .title("Unidad: ${group.items.size} registros")
-                                    .snippet("ID base: ${group.items.first().id}")
-                                    .icon(BitmapDescriptorFactory.defaultMarker(expectedColor))
-                                    .zIndex(4000f)
-                            )
-                            marker?.let {
-                                it.tag = coordsTag
-                                activeMarkers[group.idObject] = it
-                                activeColors[group.idObject] = expectedColor
-                            }
-                            
-                            if (isLastSaved) {
-                                val eyeMarker = mMap.addMarker(
-                                    MarkerOptions()
-                                        .position(LatLng(group.centerLat, group.centerLng))
-                                        .icon(createBlackEyeIcon())
-                                        .anchor(0.5f, 5.0f)
-                                        .zIndex(4001f)
-                                )
-                                eyeMarker?.let {
-                                    it.tag = coordsTag // Compartir el mismo tag para responder al primer toque
-                                    activeEyeMarkers[group.idObject] = it
-                                }
-                            }
-                        } else {
-                            // Ya existe en pantalla: verificar si cambió el color
-                            val currentColor = activeColors[group.idObject]
-                            if (currentColor == null || currentColor != expectedColor) {
-                                existingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(expectedColor))
-                                activeColors[group.idObject] = expectedColor
-                            }
-
-                            // Actualizar textos
-                            existingMarker.title = "Unidad: ${group.items.size} registros"
-                            existingMarker.snippet = "ID base: ${group.items.first().id}"
-
-                            // Comprobar y ajustar en caliente el ojo negro
-                            val hasEye = activeEyeMarkers.containsKey(group.idObject)
-                            if (isLastSaved && !hasEye) {
-                                val eyeMarker = mMap.addMarker(
-                                    MarkerOptions()
-                                        .position(LatLng(group.centerLat, group.centerLng))
-                                        .icon(createBlackEyeIcon())
-                                        .anchor(0.5f, 5.0f)
-                                        .zIndex(existingMarker.zIndex + 1f)
-                                )
-                                eyeMarker?.let {
-                                    it.tag = coordsTag // Compartir el mismo tag para responder al primer toque
-                                    activeEyeMarkers[group.idObject] = it
-                                }
-                            } else if (!isLastSaved && hasEye) {
-                                activeEyeMarkers[group.idObject]?.remove()
-                                activeEyeMarkers.remove(group.idObject)
-                            }
-                        }
-                    }
+                    groupsToDraw.forEach { group -> paintOrUpdateGroup(group, lastSavedDataId) }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("MapHelper", "Error cargando marcadores: ${e.message}")
@@ -213,6 +175,79 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
         return if (tieneFicha && tieneEntrevistado && tieneDuenio) 120f else 60f // GREEN : YELLOW
     }
 
+    /**
+     * Crea o actualiza en caliente el marcador (y su "ojo" decorativo si aplica) de un grupo.
+     * Compartida entre loadCapturedPoints() y updateSingleObjectMarker() para no duplicar la
+     * lógica de creación/actualización de marcadores.
+     */
+    private fun paintOrUpdateGroup(group: DataGroup, lastSavedDataId: Int) {
+        val expectedColor = calculateGroupColor(group.items)
+        val isLastSaved = group.items.any { it.id == lastSavedDataId }
+        val coordsTag = "${SpatialNormalizer.format(group.centerLat)},${SpatialNormalizer.format(group.centerLng)}"
+        val existingMarker = activeMarkers[group.key]
+
+        if (existingMarker == null) {
+            // Crear marcador nuevo
+            val marker = mMap.addMarker(
+                MarkerOptions()
+                    .position(LatLng(group.centerLat, group.centerLng))
+                    .title("Unidad: ${group.items.size} registros")
+                    .snippet("ID base: ${group.items.first().id}")
+                    .icon(BitmapDescriptorFactory.defaultMarker(expectedColor))
+                    .zIndex(4000f)
+            )
+            marker?.let {
+                it.tag = coordsTag
+                activeMarkers[group.key] = it
+                activeColors[group.key] = expectedColor
+            }
+
+            if (isLastSaved) {
+                val eyeMarker = mMap.addMarker(
+                    MarkerOptions()
+                        .position(LatLng(group.centerLat, group.centerLng))
+                        .icon(createBlackEyeIcon())
+                        .anchor(0.5f, 5.0f)
+                        .zIndex(4001f)
+                )
+                eyeMarker?.let {
+                    it.tag = coordsTag // Compartir el mismo tag para responder al primer toque
+                    activeEyeMarkers[group.key] = it
+                }
+            }
+        } else {
+            // Ya existe en pantalla: verificar si cambió el color
+            val currentColor = activeColors[group.key]
+            if (currentColor == null || currentColor != expectedColor) {
+                existingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(expectedColor))
+                activeColors[group.key] = expectedColor
+            }
+
+            // Actualizar textos
+            existingMarker.title = "Unidad: ${group.items.size} registros"
+            existingMarker.snippet = "ID base: ${group.items.first().id}"
+
+            // Comprobar y ajustar en caliente el ojo negro
+            val hasEye = activeEyeMarkers.containsKey(group.key)
+            if (isLastSaved && !hasEye) {
+                val eyeMarker = mMap.addMarker(
+                    MarkerOptions()
+                        .position(existingMarker.position)
+                        .icon(createBlackEyeIcon())
+                        .anchor(0.5f, 5.0f)
+                        .zIndex(existingMarker.zIndex + 1f)
+                )
+                eyeMarker?.let {
+                    it.tag = coordsTag // Compartir el mismo tag para responder al primer toque
+                    activeEyeMarkers[group.key] = it
+                }
+            } else if (!isLastSaved && hasEye) {
+                activeEyeMarkers[group.key]?.remove()
+                activeEyeMarkers.remove(group.key)
+            }
+        }
+    }
+
     private fun createBlackEyeIcon(): BitmapDescriptor {
         val den = activity.resources.displayMetrics.density
         val size = (6 * den).toInt() // Tamaño exacto de 6dp para el ojo del marcador
@@ -228,97 +263,38 @@ class MapHelper(private val activity: AppCompatActivity, private val mMap: Googl
     }
 
     /**
-     * Actualiza o elimina de forma puntual e incremental el marcador de un predio (idObject) 
-     * consultando solo sus registros asociados, evitando recargas masivas en el mapa.
+     * Actualiza o elimina de forma puntual e incremental los marcadores de un predio (idObject),
+     * consultando solo sus registros asociados y reconciliando todos sus subgrupos (un predio
+     * puede tener más de un grupo/marcador), evitando recargas masivas en el mapa.
      */
     fun updateSingleObjectMarker(idObject: Int, lastSavedDataId: Int) {
         val dbHelper = DatabaseHelper.getInstance(activity)
-        
+
         kotlin.concurrent.thread {
             try {
                 val items = dbHelper.getDataByObjectId(idObject)
+                val newGroups = buildSubGroups(idObject, items)
+
                 activity.runOnUiThread {
-                    val coordsTag = if (items.isNotEmpty()) {
-                        "${SpatialNormalizer.format(items.first().latitud)},${SpatialNormalizer.format(items.first().longitud)}"
-                    } else {
-                        ""
-                    }
-                    
-                    val existingMarker = activeMarkers[idObject]
-                    
-                    if (items.isEmpty()) {
-                        // Caso A: Se eliminaron todos los registros asociados a este idObject
-                        existingMarker?.remove()
-                        activeMarkers.remove(idObject)
-                        activeEyeMarkers[idObject]?.remove()
-                        activeEyeMarkers.remove(idObject)
-                        activeColors.remove(idObject)
-                    } else {
-                        // Caso B: El predio tiene registros (creado o modificado)
-                        val expectedColor = calculateGroupColor(items)
-                        val isLastSaved = items.any { it.id == lastSavedDataId }
-                        
-                        if (existingMarker == null) {
-                            // Crear marcador nuevo
-                            val firstItem = items.first()
-                            val marker = mMap.addMarker(
-                                MarkerOptions()
-                                    .position(LatLng(firstItem.latitud, firstItem.longitud))
-                                    .title("Unidad: ${items.size} registros")
-                                    .snippet("ID base: ${firstItem.id}")
-                                    .icon(BitmapDescriptorFactory.defaultMarker(expectedColor))
-                                    .zIndex(4000f)
-                            )
-                            marker?.let {
-                                it.tag = coordsTag
-                                activeMarkers[idObject] = it
-                                activeColors[idObject] = expectedColor
-                            }
-                            
-                            if (isLastSaved) {
-                                val eyeMarker = mMap.addMarker(
-                                    MarkerOptions()
-                                        .position(LatLng(firstItem.latitud, firstItem.longitud))
-                                        .icon(createBlackEyeIcon())
-                                        .anchor(0.5f, 5.0f)
-                                        .zIndex(4001f)
-                                )
-                                eyeMarker?.let {
-                                    it.tag = coordsTag
-                                    activeEyeMarkers[idObject] = it
-                                }
-                            }
-                        } else {
-                            // Actualizar marcador existente
-                            val currentColor = activeColors[idObject]
-                            if (currentColor == null || currentColor != expectedColor) {
-                                existingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(expectedColor))
-                                activeColors[idObject] = expectedColor
-                            }
-                            
-                            existingMarker.title = "Unidad: ${items.size} registros"
-                            existingMarker.snippet = "ID base: ${items.first().id}"
-                            
-                            // Ajustar el ojo decorativo en caliente
-                            val hasEye = activeEyeMarkers.containsKey(idObject)
-                            if (isLastSaved && !hasEye) {
-                                val eyeMarker = mMap.addMarker(
-                                    MarkerOptions()
-                                        .position(existingMarker.position)
-                                        .icon(createBlackEyeIcon())
-                                        .anchor(0.5f, 5.0f)
-                                        .zIndex(existingMarker.zIndex + 1f)
-                                )
-                                eyeMarker?.let {
-                                    it.tag = coordsTag
-                                    activeEyeMarkers[idObject] = it
-                                }
-                            } else if (!isLastSaved && hasEye) {
-                                activeEyeMarkers[idObject]?.remove()
-                                activeEyeMarkers.remove(idObject)
-                            }
+                    val prefix = "$idObject:"
+                    val newKeys = newGroups.map { it.key }.toSet()
+
+                    // Eliminar marcadores de subgrupos de este predio que ya no existen
+                    // (ej. se borró el único registro de un grupo, o se fusionó con otro por snapping)
+                    val markerIterator = activeMarkers.entries.iterator()
+                    while (markerIterator.hasNext()) {
+                        val entry = markerIterator.next()
+                        if (entry.key.startsWith(prefix) && entry.key !in newKeys) {
+                            entry.value.remove()
+                            activeEyeMarkers[entry.key]?.remove()
+                            activeEyeMarkers.remove(entry.key)
+                            activeColors.remove(entry.key)
+                            markerIterator.remove()
                         }
                     }
+
+                    // Crear/actualizar cada subgrupo vigente del predio
+                    newGroups.forEach { group -> paintOrUpdateGroup(group, lastSavedDataId) }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("MapHelper", "Error actualizando marcador único: ${e.message}")

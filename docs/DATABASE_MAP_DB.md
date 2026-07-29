@@ -112,7 +112,11 @@ CREATE TABLE IF NOT EXISTS DATOS (
     LONGITUDGPS DOUBLE,
     LAYER TEXT,
     IDLAYER INTEGER,
-    IDPREDIO INTEGER
+    IDPREDIO INTEGER,
+    CREADO_POR TEXT,
+    FECHA_UPDATE DATETIME,
+    ACTUALIZADO_POR TEXT,
+    GRUPO_ID INTEGER NOT NULL DEFAULT 1
 )
 ```
 
@@ -121,8 +125,8 @@ CREATE TABLE IF NOT EXISTS DATOS (
 | `ID` | INTEGER | Identificador único del registro (autoincremental) |
 | `IDOBJECT` | INTEGER | Referencia al objeto geométrico asociado (FK lógica a `objects.id`) |
 | `DATOS` | TEXT | **JSON completo del formulario** (ver sección siguiente) |
-| `FECHA` | DATETIME | Fecha y hora de captura (formato ISO 8601: `yyyy-MM-dd HH:mm:ss`) |
-| `SINCRONIZADO` | BOOLEAN | Flag de sincronización con servidor (0=pendiente, 1=sincronizado) |
+| `FECHA` | DATETIME | Fecha y hora de captura (formato ISO 8601: `dd/MM/yyyy HH:mm:ss`) |
+| `SINCRONIZADO` | BOOLEAN | Campo heredado de una estructura anterior; **no se usa actualmente** en el flujo de la app, se conserva por compatibilidad |
 | `IMEI` | TEXT | IMEI del dispositivo |
 | `ANDROID_ID` | TEXT | Android ID del dispositivo |
 | `LATITUD`, `LONGITUD` | DOUBLE | Coordenadas del punto seleccionado en el mapa |
@@ -130,6 +134,12 @@ CREATE TABLE IF NOT EXISTS DATOS (
 | `LAYER` | TEXT | Nombre de la capa de origen |
 | `IDLAYER` | INTEGER | ID de la capa |
 | `IDPREDIO` | INTEGER | ID del predio asociado |
+| `CREADO_POR` | TEXT | Iniciales del usuario de sesión (`SecurityManager.currentUser.initials`) que creó el registro |
+| `FECHA_UPDATE` | DATETIME | Fecha/hora de la última edición (solo se llena en updates, `id > 0`) |
+| `ACTUALIZADO_POR` | TEXT | Iniciales del usuario que hizo la última edición |
+| `GRUPO_ID` | INTEGER | Identificador de la **agrupación (grupo)** a la que pertenece el registro dentro del predio. Ver sección 5 para el detalle completo del mecanismo de subgrupos. |
+
+> ⚠️ **Migración**: `GRUPO_ID` se agregó después del despliegue inicial. `DatabaseHelper.onOpen()` verifica en cada apertura de la BD (vía `PRAGMA table_info`, no depende de `PRAGMA user_version`) si la columna existe; si falta, ejecuta `ALTER TABLE DATOS ADD COLUMN GRUPO_ID INTEGER NOT NULL DEFAULT 1`, que rellena automáticamente el valor `1` en todos los registros preexistentes. Esta verificación es necesaria porque `Map.db` se entrega pre-poblada por una herramienta externa, no siempre creada a través de este `SQLiteOpenHelper`.
 
 #### Estructura del Campo `DATOS` (JSON)
 
@@ -269,12 +279,9 @@ La base de datos `Map.db` se entrega **pre-poblada** con:
 
 La tabla `DATOS` inicia vacía y se llena con los formularios capturados.
 
-### Sincronización
+### Campo `SINCRONIZADO` (heredado, sin uso activo)
 
-El campo `SINCRONIZADO` en la tabla `DATOS` permite:
-1. Marcar registros como pendientes (`FALSE`).
-2. Después de subir al servidor, marcarlos como sincronizados (`TRUE`).
-3. Evitar duplicados en futuras sincronizaciones.
+El campo existe en el esquema pero **no se usa actualmente** en el flujo de la app — es herencia de una estructura anterior y se conserva por compatibilidad con una futura sincronización (ver `docs/propuesta_sincronizacion_web.md`, roadmap no implementado). Ningún método de `DatabaseHelper` lo lee ni lo actualiza fuera del valor `false` fijo que se escribe al insertar/importar/exportar un registro.
 
 ### Almacenamiento de Imágenes
 
@@ -283,3 +290,41 @@ Las imágenes **NO** se almacenan en la base de datos. Solo se guarda el nombre 
 ```
 /storage/emulated/0/CADIC.INETER/*.jpg
 ```
+
+---
+
+## 5. Subgrupos Catastrales (`GRUPO_ID`)
+
+### 5.1 Motivación
+
+Un predio (polígono en la capa `Predios`) puede estar segregado en la documentación catastral presentada en campo, pero esa segregación **no siempre está reflejada en la poligonal** cargada en `Map.db`. Antes de esta funcionalidad, el sistema asumía un único conjunto de datos por `IDOBJECT` (un pin, una Ficha, un Entrevistado, etc. por predio). Ahora un mismo polígono puede contener **múltiples agrupaciones independientes** ("grupos"), cada una con su propia Ficha, Entrevistado, Propietario y Familiares — como si fueran parcelas separadas, aunque compartan la misma geometría.
+
+### 5.2 Qué identifica un grupo
+
+- `GRUPO_ID` es un entero **escalado por predio**, no global: dos predios distintos pueden ambos tener grupos `1`, `2`, etc. La clave real de identidad es siempre el par `(IDOBJECT, GRUPO_ID)`. Cualquier conteo agregado debe usar ambos campos (ej. `COUNT(DISTINCT IDOBJECT || '-' || GRUPO_ID)`), nunca `GRUPO_ID` solo.
+- Un grupo "pertenece" a quien lo creó primero — no hay una columna separada para esto, se infiere del primer registro insertado en ese grupo (su `CREADO_POR`/`FECHA`).
+- Los huecos en la secuencia de `GRUPO_ID` (ej. 1, 3, 4 si el grupo 2 se eliminó) no son un problema: es un identificador interno, no visible al usuario (a diferencia del consecutivo del `NoEncuesta`, que si es visible y no implementa relleno de huecos).
+
+### 5.3 Algoritmo de resolución (al capturar un punto nuevo)
+
+Implementado en `DatabaseHelper.resolveGrupoForNewPoint(idObject, lat, lng)` y `getGruposForObject(idObject)`, invocado desde `MainActivity.handleMapPosition()` **en el hilo de fondo**, junto con el resto de metadatos espaciales (municipio/sector/manzana/lote), antes de abrir `FormActivity`:
+
+1. Si el predio no tiene ningún grupo todavía → `GRUPO_ID = 1`, posicionado **exactamente donde el usuario tocó** (no en el Polo de Inaccesibilidad; se probó y se descartó por inútil para este caso de uso).
+2. Si el punto cae a **≤ 3 metros** de un grupo ya existente (`Location.distanceBetween`) → hereda ese `GRUPO_ID` y su posición exacta (*snapping*): todo lo que comparte posición debe compartir grupo.
+3. Si no coincide con ningún grupo existente → nuevo grupo, `GRUPO_ID = máximo existente + 1`, en la posición exacta del toque.
+
+### 5.4 Excepción: No Encuestado / Unión con Predio
+
+Estas dos marcas son de **exclusividad total del predio**, no del grupo: si un predio tiene un registro `NoEncuestado` o `UnionConPredio`, no se permite agregar ningún otro dato (de ningún grupo) hasta que se quite esa marca — y viceversa, no se puede marcar como excepción un predio que ya tiene datos normales en cualquier grupo. Por eso, para efectos de pintado de marcadores, un predio en este estado siempre colapsa a un único marcador, independientemente de `GRUPO_ID`.
+
+### 5.5 Áreas afectadas por el mecanismo de grupos
+
+| Área | Cómo cambió |
+|---|---|
+| **Estadísticas** (`DatabaseHelper.getDailyStatisticsMap`, `getStatisticsByUserAndDateMap`) | Cuentan pares distintos `(IDOBJECT, GRUPO_ID)` en vez de solo `IDOBJECT`. |
+| **Pintado de marcadores** (`MapHelper.kt`) | Agrupamiento jerárquico: por `IDOBJECT` y luego por `GRUPO_ID` dentro de cada predio (salvo la excepción de 5.4). Claves de marcador tipo `"idObject:grupoId"`. |
+| **Listado del predio en las formas** (`Android.getData()`) | Filtra por `IDOBJECT` **y** `GRUPO_ID` juntos — solo muestra los datos del grupo que se está trabajando, no todo el predio. Para las reglas de exclusividad de No Encuestado/Unión existe `Android.getDataPredioCompleto()`, sin filtrar por grupo. |
+| **Reglas de negocio** (`workflowService.js`) | Unicidad de Ficha/Entrevistado/tipo de propietario evaluada por grupo (`listData`, ya acotado). Exclusividad No Encuestado/Unión evaluada sobre todo el predio (`listDataPredio`). |
+| **Direcciones por colindancia** | `AndroidBridge.getGruposHermanos()` (usa `SpatialHelper.getSiblingGroupsInSamePredio`) agrega, además de los predios adyacentes reales, los grupos hermanos del mismo predio como candidatos de dirección — función separada de `getDataInAdjacentPolygons()` para no contaminar la elegibilidad Master. |
+| **Master/Esclavo** | Un predio solo es candidato a Master si tiene **una sola agrupación** (`TotalGrupos === 1`, calculado en SQL e incluido en el JSON de `getDataInAdjacentPolygons`). Esto reemplazó el clustering manual por distancia que existía antes en `workflowService.getMasterCandidates()`. |
+| **Import/Export** (`ImportManager.kt`, `ExportManager.kt`) | Ambos incluyen `GRUPO_ID`. La importación detecta si la BD externa tiene la columna (`PRAGMA table_info`); si no la tiene, asume `GRUPO_ID = 1` para todos sus registros. |

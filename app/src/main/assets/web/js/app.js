@@ -45,8 +45,10 @@ const app = createApp({
         const manzanaInterceptada = ref('');
         const loteInterceptado = ref('');
 
-        // Lista de datos guardados
+        // Lista de datos guardados (acotada al grupo/agrupación actual dentro del predio)
         const listData = ref([]);
+        // Lista de TODO el predio, sin filtrar por grupo (solo para reglas de exclusividad No Encuestado/Unión)
+        const listDataPredio = ref([]);
 
 
         // Datos del formulario actual
@@ -134,9 +136,16 @@ const app = createApp({
                         localProj.y = Math.round(projected[1] * 100) / 100;
                     }
 
-                    // 3. CARGA DE DATOS EXISTENTES
+                    // 3. CARGA DE DATOS EXISTENTES (acotados al grupo actual)
                     const jsonData = Android.getData();
                     listData.value = JSON.parse(jsonData);
+
+                    // 3b. Datos de TODO el predio (para reglas de exclusividad No Encuestado/Unión)
+                    if (typeof Android.getDataPredioCompleto === 'function') {
+                        listDataPredio.value = JSON.parse(Android.getDataPredioCompleto());
+                    } else {
+                        listDataPredio.value = listData.value;
+                    }
 
                 } catch (error) {
                     console.error('❌ Error inicializando datos Android:', error);
@@ -557,6 +566,7 @@ const app = createApp({
                 fotoFrenteOriginal, // <- Snapshot del nombre de FotoFrente al abrir el registro
                 formData,
                 listData,
+                listDataPredio,
                 updateData,
                 openCatalog,      // <- Selector catálogo grande (Profesión, etc.)
                 openMunicipio,    // <- Selector municipio dos niveles
@@ -609,7 +619,7 @@ const app = createApp({
             console.log('🏁 Iniciando creación:', type);
 
             // 1. Validar reglas de negocio con WorkflowService
-            const check = WorkflowService.validateCreation(type, listData.value, idObject.value);
+            const check = WorkflowService.validateCreation(type, listData.value, idObject.value, listDataPredio.value);
             if (!check.allowed) {
 
                 showConfirmModal({

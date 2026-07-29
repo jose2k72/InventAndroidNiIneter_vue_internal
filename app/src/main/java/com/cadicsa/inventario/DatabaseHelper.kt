@@ -14,8 +14,15 @@ data class DataItem(
     val id: Int, val data: String, val fecha: String,
     val latitud: Double, val longitud: Double,
     val latitudGps: Double, val longitudGps: Double,
-    val idObject: Int, val idLayer: Int, val idPredio: Int, val layer: String
+    val idObject: Int, val idLayer: Int, val idPredio: Int, val layer: String,
+    val grupoId: Int = 1
 )
+
+/**
+ * Ancla de un grupo (agrupación) existente dentro de un mismo predio: su GRUPO_ID y la
+ * posición que comparten todos los registros de ese grupo (usada para snapping).
+ */
+data class GrupoAnchor(val grupoId: Int, val lat: Double, val lng: Double)
 
 data class AdjacentRoute(
     val id: Int, val localizacion: String, val layer: String,
@@ -67,12 +74,45 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE IF NOT EXISTS objects (id INTEGER PRIMARY KEY, minX FLOAT, minY FLOAT, maxX FLOAT, maxY FLOAT, XCentroid FLOAT, YCentroid FLOAT, LOCALIZACION TEXT, layer TEXT, idLayer INTEGER, idPredio INTEGER, wkt TEXT, wkb BLOB)")
-        db.execSQL("CREATE TABLE IF NOT EXISTS DATOS (ID INTEGER PRIMARY KEY AUTOINCREMENT, IDOBJECT INTEGER, DATOS TEXT, FECHA DATETIME, SINCRONIZADO BOOLEAN, IMEI TEXT, ANDROID_ID TEXT, LATITUD DOUBLE, LONGITUD DOUBLE, LATITUDGPS DOUBLE, LONGITUDGPS DOUBLE, LAYER TEXT, IDLAYER INTEGER, IDPREDIO INTEGER, CREADO_POR TEXT, FECHA_UPDATE DATETIME, ACTUALIZADO_POR TEXT)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS DATOS (ID INTEGER PRIMARY KEY AUTOINCREMENT, IDOBJECT INTEGER, DATOS TEXT, FECHA DATETIME, SINCRONIZADO BOOLEAN, IMEI TEXT, ANDROID_ID TEXT, LATITUD DOUBLE, LONGITUD DOUBLE, LATITUDGPS DOUBLE, LONGITUDGPS DOUBLE, LAYER TEXT, IDLAYER INTEGER, IDPREDIO INTEGER, CREADO_POR TEXT, FECHA_UPDATE DATETIME, ACTUALIZADO_POR TEXT, GRUPO_ID INTEGER NOT NULL DEFAULT 1)")
         db.execSQL("CREATE TABLE IF NOT EXISTS tiles (x INTEGER, y INTEGER, z INTEGER, s INTEGER, tile BLOB, PRIMARY KEY (x, y, z, s))")
         db.execSQL("CREATE TABLE IF NOT EXISTS config (ID INTEGER PRIMARY KEY AUTOINCREMENT, VARIABLE TEXT, VALOR TEXT)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+
+    /**
+     * Se invoca cada vez que se abre la BD, independientemente de PRAGMA user_version.
+     * Necesario porque Map.db se entrega pre-poblada por una herramienta externa, no siempre
+     * creada a través de este SQLiteOpenHelper, por lo que no se puede confiar únicamente en
+     * el mecanismo de versión de Android para disparar onUpgrade().
+     */
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        ensureGrupoIdColumn(db)
+    }
+
+    private fun ensureGrupoIdColumn(db: SQLiteDatabase) {
+        try {
+            val hasColumn = db.rawQuery("PRAGMA table_info(DATOS)", null).use { cursor ->
+                val nameIndex = cursor.getColumnIndexOrThrow("name")
+                var found = false
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(nameIndex).equals("GRUPO_ID", ignoreCase = true)) {
+                        found = true
+                        break
+                    }
+                }
+                found
+            }
+            if (!hasColumn) {
+                db.execSQL("ALTER TABLE DATOS ADD COLUMN GRUPO_ID INTEGER NOT NULL DEFAULT 1")
+                android.util.Log.i(TAG, "Migración aplicada: columna GRUPO_ID agregada a DATOS (valor por defecto 1 para registros existentes)")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error verificando/migrando columna GRUPO_ID: ${e.message}")
+        }
+    }
 
 
     // ========== CONFIGURACIÓN ==========
@@ -126,17 +166,64 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     fun getMunicipiosAt(lng: Double, lat: Double): String? = SpatialHelper.getMunicipiosAt(readableDatabase, lng, lat)
     fun getSectorAt(lng: Double, lat: Double): String? = SpatialHelper.getSectorAt(readableDatabase, lng, lat)
     fun getManzanaForPredio(geomPredio: org.locationtech.jts.geom.Geometry): String? = SpatialHelper.getManzanaForPredio(readableDatabase, geomPredio)
+    fun getSectorForPredio(geomPredio: org.locationtech.jts.geom.Geometry): String? = SpatialHelper.getSectorForPredio(readableDatabase, geomPredio)
     fun getLoteForPredio(geomPredio: org.locationtech.jts.geom.Geometry): String? = SpatialHelper.getLoteForPredio(readableDatabase, geomPredio)
     fun getDataByProximity(lat: Double, lng: Double, radiusInMeters: Double, limitToOne: Boolean): List<DataItem> = SpatialHelper.getDataByProximity(readableDatabase, lat, lng, radiusInMeters, limitToOne)
     fun getDataInPolygon(predioId: Int): String = SpatialHelper.getDataInPolygon(readableDatabase, predioId)
     fun getDataInAdjacentPolygons(predioId: Int): String = SpatialHelper.getDataInAdjacentPolygons(readableDatabase, predioId)
+    fun getSiblingGroupsInSamePredio(predioId: Int, currentGrupoId: Int, currentLat: Double, currentLng: Double): String =
+        SpatialHelper.getSiblingGroupsInSamePredio(readableDatabase, predioId, currentGrupoId, currentLat, currentLng)
     fun getPropietariosDelPredio(predioId: Int): String = SpatialHelper.getPropietariosDelPredio(readableDatabase, predioId)
     fun getSiguienteConsecutivo(lat: Double, lng: Double): Int = SpatialHelper.getSiguienteConsecutivo(readableDatabase, lat, lng)
     fun getAdjacentRoutes(polygonWkt: String, umbralLocal: Double = 15.0, umbralNacional: Double = 25.0): List<AdjacentRoute> = SpatialHelper.getAdjacentRoutes(readableDatabase, polygonWkt, umbralLocal, umbralNacional)
 
+    /**
+     * Obtiene los grupos (agrupaciones) existentes dentro de un predio, cada uno representado
+     * por su GRUPO_ID y la posición que comparten todos sus registros (para resolver snapping
+     * y asignación de grupo antes de abrir el formulario).
+     */
+    fun getGruposForObject(idObject: Int): List<GrupoAnchor> {
+        val grupos = mutableListOf<GrupoAnchor>()
+        try {
+            readableDatabase.rawQuery(
+                "SELECT GRUPO_ID, LATITUD, LONGITUD FROM DATOS WHERE IDOBJECT = ? GROUP BY GRUPO_ID",
+                arrayOf(idObject.toString())
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    grupos.add(GrupoAnchor(cursor.getInt(0), cursor.getDouble(1), cursor.getDouble(2)))
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error obteniendo grupos del predio $idObject: ${e.message}")
+        }
+        return grupos
+    }
+
+    /**
+     * Resuelve a qué grupo (GRUPO_ID) pertenece un punto nuevo dentro de un predio:
+     * - Si el predio no tiene grupos aún, retorna GRUPO_ID=1 en la posición dada (el llamador
+     *   puede sobrescribir la posición, ej. con el Polo de Inaccesibilidad).
+     * - Si el punto cae a <= 3 metros de un grupo existente, reutiliza ese GRUPO_ID y su posición
+     *   (snapping): todo lo que comparte posición debe compartir el mismo grupo.
+     * - Si no coincide con ningún grupo existente, crea uno nuevo (máximo existente + 1) en la
+     *   posición del punto. Los huecos en la secuencia de GRUPO_ID no son un problema: es un
+     *   identificador interno, no visible al usuario.
+     */
+    fun resolveGrupoForNewPoint(idObject: Int, lat: Double, lng: Double): GrupoAnchor {
+        val grupos = getGruposForObject(idObject)
+        if (grupos.isEmpty()) return GrupoAnchor(1, lat, lng)
+
+        val results = FloatArray(1)
+        for (grupo in grupos) {
+            android.location.Location.distanceBetween(lat, lng, grupo.lat, grupo.lng, results)
+            if (results[0] <= 3.0) return grupo
+        }
+        return GrupoAnchor(grupos.maxOf { it.grupoId } + 1, lat, lng)
+    }
+
     // ========== CRUD BÁSICO DE DATOS ==========
 
-    fun insertData(id: Int, data: String, imei: String, androidId: String, idObject: Int, latitud: Double, longitud: Double, latitudGPS: Double, longitudGPS: Double, layer: String, idLayer: Int, idPredio: Int): Int {
+    fun insertData(id: Int, data: String, imei: String, androidId: String, idObject: Int, latitud: Double, longitud: Double, latitudGPS: Double, longitudGPS: Double, layer: String, idLayer: Int, idPredio: Int, grupoId: Int = 1): Int {
         val db = writableDatabase
         return try {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US)
@@ -149,7 +236,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
                 put("IDLAYER", idLayer); put("IDPREDIO", idPredio)
             }
             if (id == -1) {
-                cv.put("FECHA", fechaActual); cv.put("CREADO_POR", userInitials)
+                cv.put("FECHA", fechaActual); cv.put("CREADO_POR", userInitials); cv.put("GRUPO_ID", grupoId)
                 db.insert("DATOS", null, cv).toInt()
             } else {
                 cv.put("FECHA_UPDATE", fechaActual); cv.put("ACTUALIZADO_POR", userInitials)
@@ -216,7 +303,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
      */
     fun getDataInBounds(minLat: Double, maxLat: Double, minLng: Double, maxLng: Double): List<DataItem> {
         val items = mutableListOf<DataItem>()
-        val query = "SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER FROM DATOS WHERE LATITUD BETWEEN ? AND ? AND LONGITUD BETWEEN ? AND ?"
+        val query = "SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER, GRUPO_ID FROM DATOS WHERE LATITUD BETWEEN ? AND ? AND LONGITUD BETWEEN ? AND ?"
         readableDatabase.rawQuery(query, arrayOf(
             SpatialNormalizer.format(minLat),
             SpatialNormalizer.format(maxLat),
@@ -225,17 +312,18 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         )).use { cursor ->
             while (cursor.moveToNext()) {
                 items.add(DataItem(
-                    cursor.getInt(0), 
-                    cursor.getString(1) ?: "{}", 
-                    cursor.getString(2) ?: "", 
-                    cursor.getDouble(3), 
-                    cursor.getDouble(4), 
-                    cursor.getDouble(5), 
-                    cursor.getDouble(6), 
-                    cursor.getInt(7), 
-                    cursor.getInt(8), 
-                    cursor.getInt(9), 
-                    cursor.getString(10) ?: "Aceras"
+                    cursor.getInt(0),
+                    cursor.getString(1) ?: "{}",
+                    cursor.getString(2) ?: "",
+                    cursor.getDouble(3),
+                    cursor.getDouble(4),
+                    cursor.getDouble(5),
+                    cursor.getDouble(6),
+                    cursor.getInt(7),
+                    cursor.getInt(8),
+                    cursor.getInt(9),
+                    cursor.getString(10) ?: "Aceras",
+                    cursor.getInt(11)
                 ))
             }
         }
@@ -244,9 +332,9 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     fun getAllData(): List<DataItem> {
         val items = mutableListOf<DataItem>()
-        readableDatabase.rawQuery("SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER FROM DATOS", null).use { cursor ->
+        readableDatabase.rawQuery("SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER, GRUPO_ID FROM DATOS", null).use { cursor ->
             while (cursor.moveToNext()) {
-                items.add(DataItem(cursor.getInt(0), cursor.getString(1) ?: "{}", cursor.getString(2) ?: "", cursor.getDouble(3), cursor.getDouble(4), cursor.getDouble(5), cursor.getDouble(6), cursor.getInt(7), cursor.getInt(8), cursor.getInt(9), cursor.getString(10) ?: "Aceras"))
+                items.add(DataItem(cursor.getInt(0), cursor.getString(1) ?: "{}", cursor.getString(2) ?: "", cursor.getDouble(3), cursor.getDouble(4), cursor.getDouble(5), cursor.getDouble(6), cursor.getInt(7), cursor.getInt(8), cursor.getInt(9), cursor.getString(10) ?: "Aceras", cursor.getInt(11)))
             }
         }
         return items
@@ -265,9 +353,24 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     fun getList(idObject: Int): String {
         val result = StringBuilder("[")
-        readableDatabase.rawQuery("SELECT ID, DATOS, FECHA FROM DATOS WHERE IDOBJECT=$idObject", null).use { cursor ->
+        readableDatabase.rawQuery("SELECT ID, DATOS, FECHA, GRUPO_ID FROM DATOS WHERE IDOBJECT=$idObject", null).use { cursor ->
             while (cursor.moveToNext()) {
-                result.append("{\"Id\":${cursor.getString(0)},\"Data\": ${cursor.getString(1)},\"IdObject\":$idObject,\"Fecha\": \"${cursor.getString(2)}\"},")
+                result.append("{\"Id\":${cursor.getString(0)},\"Data\": ${cursor.getString(1)},\"IdObject\":$idObject,\"GrupoId\":${cursor.getInt(3)},\"Fecha\": \"${cursor.getString(2)}\"},")
+            }
+        }
+        return if (result.length > 1) result.dropLast(1).toString() + "]" else "[]"
+    }
+
+    /**
+     * Igual que getList(), pero filtrado a un grupo (agrupación) específico dentro del predio.
+     */
+    fun getListByGrupo(idObject: Int, grupoId: Int): String {
+        val result = StringBuilder("[")
+        readableDatabase.rawQuery(
+            "SELECT ID, DATOS, FECHA, GRUPO_ID FROM DATOS WHERE IDOBJECT=$idObject AND GRUPO_ID=$grupoId", null
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                result.append("{\"Id\":${cursor.getString(0)},\"Data\": ${cursor.getString(1)},\"IdObject\":$idObject,\"GrupoId\":${cursor.getInt(3)},\"Fecha\": \"${cursor.getString(2)}\"},")
             }
         }
         return if (result.length > 1) result.dropLast(1).toString() + "]" else "[]"
@@ -275,20 +378,21 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     fun getDataByObjectId(idObject: Int): List<DataItem> {
         val items = mutableListOf<DataItem>()
-        readableDatabase.rawQuery("SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER FROM DATOS WHERE IDOBJECT=$idObject", null).use { cursor ->
+        readableDatabase.rawQuery("SELECT ID, DATOS, FECHA, LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS, IDOBJECT, IDLAYER, IDPREDIO, LAYER, GRUPO_ID FROM DATOS WHERE IDOBJECT=$idObject", null).use { cursor ->
             while (cursor.moveToNext()) {
                 items.add(DataItem(
-                    cursor.getInt(0), 
-                    cursor.getString(1) ?: "{}", 
-                    cursor.getString(2) ?: "", 
-                    cursor.getDouble(3), 
-                    cursor.getDouble(4), 
-                    cursor.getDouble(5), 
-                    cursor.getDouble(6), 
-                    cursor.getInt(7), 
-                    cursor.getInt(8), 
-                    cursor.getInt(9), 
-                    cursor.getString(10) ?: "Aceras"
+                    cursor.getInt(0),
+                    cursor.getString(1) ?: "{}",
+                    cursor.getString(2) ?: "",
+                    cursor.getDouble(3),
+                    cursor.getDouble(4),
+                    cursor.getDouble(5),
+                    cursor.getDouble(6),
+                    cursor.getInt(7),
+                    cursor.getInt(8),
+                    cursor.getInt(9),
+                    cursor.getString(10) ?: "Aceras",
+                    cursor.getInt(11)
                 ))
             }
         }
@@ -305,12 +409,14 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     }
 
     /**
-     * Obtiene el mapa de estadísticas agrupadas por día con filtrado espacial de 3 metros
+     * Obtiene el mapa de estadísticas agrupadas por día, contando agrupaciones (grupos) únicas
+     * trabajadas, no predios. GRUPO_ID está escalado por predio (dos predios distintos pueden
+     * compartir el mismo GRUPO_ID), por lo que se cuenta el par distinto (IDOBJECT, GRUPO_ID).
      */
     fun getDailyStatisticsMap(): Map<String, Int> {
         val query = """
-            SELECT substr(FECHA, 1, 10) as Dia, COUNT(DISTINCT IDOBJECT) 
-            FROM DATOS 
+            SELECT substr(FECHA, 1, 10) as Dia, COUNT(DISTINCT IDOBJECT || '-' || GRUPO_ID)
+            FROM DATOS
             GROUP BY Dia
         """.trimIndent()
         
@@ -360,6 +466,66 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     fun getTodayStatisticsCount(): Int {
         val todayStr = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.US).format(java.util.Date())
         return getDailyStatisticsMap()[todayStr] ?: 0
+    }
+
+    /**
+     * Obtiene el mapa anidado de estadísticas agrupadas por usuario (CREADO_POR) y, dentro de
+     * cada usuario, por día (mismo criterio de conteo que getDailyStatisticsMap(): par distinto
+     * (IDOBJECT, GRUPO_ID), no predios).
+     */
+    fun getStatisticsByUserAndDateMap(): Map<String, Map<String, Int>> {
+        val query = """
+            SELECT COALESCE(NULLIF(CREADO_POR, ''), 'Desconocido') as Usuario,
+                   substr(FECHA, 1, 10) as Dia,
+                   COUNT(DISTINCT IDOBJECT || '-' || GRUPO_ID)
+            FROM DATOS
+            GROUP BY Usuario, Dia
+        """.trimIndent()
+
+        val db = readableDatabase
+        val statsByUser = mutableMapOf<String, MutableMap<String, Int>>()
+        try {
+            db.rawQuery(query, null).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val usuario = cursor.getString(0) ?: "Desconocido"
+                    val dia = cursor.getString(1) ?: "Desconocido"
+                    val count = cursor.getInt(2)
+                    statsByUser.getOrPut(usuario) { mutableMapOf() }[dia] = count
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseHelper", "Error calculando estadísticas por usuario y fecha: ${e.message}")
+        }
+
+        return statsByUser
+    }
+
+    /**
+     * Obtener estadísticas de datos capturados agrupadas por usuario y, dentro de cada usuario,
+     * desglosadas por día (orden alfabético de usuario, fechas en orden descendente).
+     */
+    fun getStatisticsByUserReport(): String {
+        val statsByUser = getStatisticsByUserAndDateMap()
+        if (statsByUser.isEmpty()) return "No hay datos registrados aún."
+
+        val resultString = StringBuilder()
+        for (usuario in statsByUser.keys.sorted()) {
+            val countsByDay = statsByUser[usuario] ?: emptyMap()
+            val sortedDays = countsByDay.keys.sortedByDescending { dia ->
+                if (dia.length >= 10) {
+                    "${dia.substring(6, 10)}${dia.substring(3, 5)}${dia.substring(0, 2)}"
+                } else {
+                    dia
+                }
+            }
+            resultString.append("👤 $usuario\n")
+            for (dia in sortedDays) {
+                resultString.append("   📅 $dia: ${countsByDay[dia]} entradas\n")
+            }
+            resultString.append("\n")
+        }
+
+        return resultString.toString().trim()
     }
 
     /**

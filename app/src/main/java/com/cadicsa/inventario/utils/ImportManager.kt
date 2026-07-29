@@ -170,6 +170,15 @@ class ImportManager(
         val externalDb = SQLiteDatabase.openDatabase(
             externalDbPath, null, SQLiteDatabase.OPEN_READONLY
         )
+        // La BD externa puede provenir de una versión anterior sin la columna GRUPO_ID.
+        val externalHasGrupoId = externalDb.rawQuery("PRAGMA table_info(DATOS)", null).use { cursor ->
+            val nameIndex = cursor.getColumnIndexOrThrow("name")
+            var found = false
+            while (cursor.moveToNext()) {
+                if (cursor.getString(nameIndex).equals("GRUPO_ID", ignoreCase = true)) { found = true; break }
+            }
+            found
+        }
 
         var importedNew     = 0
         var newPredios      = 0
@@ -198,10 +207,11 @@ class ImportManager(
                     if (isConflict) collectLocalPhotos(entry.localRowIds) else emptyList()
 
                 val placeholders = entry.externalRowIds.joinToString(",")
+                val grupoIdColumn = if (externalHasGrupoId) ", GRUPO_ID" else ""
                 val externalCursor = externalDb.rawQuery(
                     """SELECT DATOS, FECHA, IMEI, ANDROID_ID,
                               LATITUD, LONGITUD, LATITUDGPS, LONGITUDGPS,
-                              CREADO_POR, FECHA_UPDATE, ACTUALIZADO_POR
+                              CREADO_POR, FECHA_UPDATE, ACTUALIZADO_POR$grupoIdColumn
                        FROM DATOS WHERE ID IN ($placeholders)""", null
                 )
 
@@ -241,6 +251,8 @@ class ImportManager(
                             put("FECHA_UPDATE",    externalCursor.getString(9))
                             put("ACTUALIZADO_POR", externalCursor.getString(10) ?: "")
                             put("SINCRONIZADO",    false)
+                            // BD externa antigua sin GRUPO_ID: se asume grupo único (valor por defecto 1).
+                            put("GRUPO_ID",        if (externalHasGrupoId) externalCursor.getInt(11) else 1)
                         }
 
                         val rowId = writableDb.insert("DATOS", null, cv)

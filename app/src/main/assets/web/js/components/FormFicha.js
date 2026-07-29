@@ -1040,9 +1040,20 @@ const FormFicha = {
                 try {
                     const rawJson = Android.getDataInAdjacentPolygons(formData.IdObject);
                     const adyacentes = JSON.parse(rawJson || "[]");
-                    
-                    // Filtrar y mapear las fichas vecinales reteniendo su localización y dirección relativa
-                    const fichasVecinas = adyacentes
+
+                    // Grupos hermanos: otras agrupaciones dentro del MISMO predio (parcelas
+                    // segregadas físicamente no reflejadas en la poligonal, ver GRUPO_ID).
+                    let hermanos = [];
+                    if (typeof Android.getGruposHermanos === 'function') {
+                        try {
+                            hermanos = JSON.parse(Android.getGruposHermanos() || "[]");
+                        } catch (e) {
+                            console.error('Error parseando grupos hermanos:', e);
+                        }
+                    }
+
+                    // Filtrar y mapear las fichas vecinales (+ hermanas) reteniendo su localización y dirección relativa
+                    const fichasVecinas = adyacentes.concat(hermanos)
                         .filter(item => {
                             const d = item.Data;
                             return d && d.Type === 'Ficha' && (d.Direccion?.trim() || d.Caserio?.trim() || d.BarrioComarca?.trim());

@@ -1,5 +1,7 @@
 # Especificación: Búsqueda de Rutas Adyacentes al Predio
 
+> ⚠️ **Estado actual (ver [REGLAS_NEGOCIO.md](REGLAS_NEGOCIO.md#42-capas-operativas) y [ARQUITECTURA_TECNICA.md](ARQUITECTURA_TECNICA.md#113-capas-viales-rutas))**: el algoritmo descrito en este documento está **completamente implementado en el código y la base de datos**, pero la capa de Rutas (locales y nacionales) se encuentra **deshabilitada en la interfaz de usuario** de esta variante del proyecto para simplificar el flujo del encuestador catastral. La lógica y la visualización en mapa permanecen intactas en el código para referencia y futuras activaciones, pero no están visibles ni activas en la operación actual.
+
 ## 1. Objetivo
 
 Cuando el usuario hace clic en el mapa y selecciona un predio, además de obtener la **Localización del Predio** (dato principal), el sistema debe buscar las **rutas viales adyacentes** al predio y retornar sus Localizaciones como dato secundario.

@@ -224,7 +224,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         enableMyLocation()
 
         mMap.setOnMapClickListener { latLng ->
-            handleMapPosition(latLng, singleGroupPoint = true)
+            handleMapPosition(latLng)
         }
 
         mMap.setOnMarkerClickListener { marker ->
@@ -235,7 +235,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val lat = parts[0].toDouble()
                     val lng = parts[1].toDouble()
                     // Ruta unificada: misma lógica que el click en cartografía
-                    handleMapPosition(com.google.android.gms.maps.model.LatLng(lat, lng), singleGroupPoint = true)
+                    handleMapPosition(com.google.android.gms.maps.model.LatLng(lat, lng))
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Error al procesar marcador: ${e.message}")
                 }
@@ -450,12 +450,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
      * Punto de entrada unificado: cualquier posición (click en carto o click en marcador)
      * pasa por aquí. Resuelve toda la información espacial del predio y lanza FormActivity.
      */
-    private fun handleMapPosition(latLng: com.google.android.gms.maps.model.LatLng, singleGroupPoint: Boolean = true) {
+    private fun handleMapPosition(latLng: com.google.android.gms.maps.model.LatLng) {
         searchPolygonOverlay?.remove()
         searchPolygonOverlay = null
-        
+
         val dbHelper = DatabaseHelper.getInstance(this)
-        
+
         kotlin.concurrent.thread {
             // 1. Interceptar la geometría del predio en base a las coordenadas de click/marcador (Operación pesada / BD)
             val geom = dbHelper.getGeometry(latLng.longitude, latLng.latitude)
@@ -466,37 +466,27 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 return@thread
             }
 
-            // 2. Determinar los puntos capturados existentes para la coordenada destino (Operación pesada / BD)
-            val existingPoints = if (singleGroupPoint) {
-                dbHelper.getDataByObjectId(geom.id)
-            } else {
-                dbHelper.getDataByObjectId(geom.id, latLng.latitude, latLng.longitude, 3.0)
-            }
-
+            // 2. Resolver a qué grupo (agrupación) pertenece este punto dentro del predio:
+            //    snapping a un grupo existente si cae a <=3m, o creación de un grupo nuevo.
+            val gruposExistentes = dbHelper.getGruposForObject(geom.id)
             val targetLat: Double
             val targetLng: Double
-            if (existingPoints.isNotEmpty()) {
-                // 3a. Snapping: Si ya existe un punto en el conjunto evaluado, se reutiliza su coordenada
-                targetLat = existingPoints[0].latitud
-                targetLng = existingPoints[0].longitud
+            val grupoResuelto: GrupoAnchor
+            if (gruposExistentes.isEmpty()) {
+                // Predio sin datos aún: primer grupo se sitúa exactamente donde el usuario tocó
+                targetLat = latLng.latitude
+                targetLng = latLng.longitude
+                grupoResuelto = GrupoAnchor(1, targetLat, targetLng)
             } else {
-                // 3b. Creación de punto nuevo:
-                if (singleGroupPoint) {
-                    // En agrupación única, el primer punto del predio se sitúa en su polo de inaccesibilidad (Operación pesada JTS)
-                    val pole = GeometryUtil.getPoleOfInaccessibility(geom.jtsGeom!!)
-                    targetLat = pole.latitude
-                    targetLng = pole.longitude
-                } else {
-                    // En agrupación por cercanía, los puntos nuevos se posicionan exactamente donde el usuario hizo click
-                    targetLat = latLng.latitude
-                    targetLng = latLng.longitude
-                }
+                grupoResuelto = dbHelper.resolveGrupoForNewPoint(geom.id, latLng.latitude, latLng.longitude)
+                targetLat = grupoResuelto.lat
+                targetLng = grupoResuelto.lng
             }
 
             // Recolección de datos espaciales (Operación pesada JTS / BD)
             val mun  = dbHelper.getMunicipiosAt(latLng.longitude, latLng.latitude)
             val mza  = dbHelper.getManzanaForPredio(geom.jtsGeom!!)
-            val sec  = mza // Sector = Manzana (misma entidad catastral)
+            val sec  = dbHelper.getSectorForPredio(geom.jtsGeom!!)
             val lote = dbHelper.getLoteForPredio(geom.jtsGeom!!)
             val area = GeometryUtil.calculateArea32616(geom.jtsGeom!!)
 
@@ -538,6 +528,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
                     putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
                     putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
+                    putExtra(FormActivity.EXTRA_GRUPO_ID, grupoResuelto.grupoId)
                 }
                 startActivity(intent)
             }
@@ -577,6 +568,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val importDbItem = menu?.findItem(R.id.menu_import_db)
         val exportDbItem = menu?.findItem(R.id.menu_export_db)
         val searchPredioItem = menu?.findItem(R.id.menu_search_predio)
+        val exportStatsByUserItem = menu?.findItem(R.id.menu_export_stats_by_user)
 
         val user = SecurityManager.currentUser
         infoItem?.title = "👤 " + (user?.fullName ?: "Desconocido")
@@ -587,6 +579,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         clearDataItem?.isVisible = isAdmin
         importDbItem?.isVisible = isAdmin
         exportDbItem?.isVisible = isAdmin
+        exportStatsByUserItem?.isVisible = isAdmin
         changePassItem?.isVisible = user?.userName != "MASTER"
         return true
     }
@@ -600,6 +593,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             R.id.menu_import_db -> { importExternalDb(); true }
             R.id.menu_export_db -> { exportExternalDb(); true }
             R.id.menu_statistics -> { dialogHelper.showStatisticsDialog(); true }
+            R.id.menu_export_stats_by_user -> { dialogHelper.exportStatisticsByUserReport(); true }
             R.id.menu_search_predio -> { showSearchPredioDialog(); true }
             R.id.menu_locate_and_open -> { showLocateAndOpenDialog(); true }
             R.id.menu_about -> { dialogHelper.showAboutDialog(30); true }
@@ -1509,11 +1503,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             
             // 2. Calcular polo de inaccesibilidad (Operación pesada JTS)
             val pole = GeometryUtil.getPoleOfInaccessibility(jtsGeom)
-            
+
+            // 2b. Resolver a qué grupo pertenece este punto (snapping a grupo existente si cae a <=3m del polo)
+            val gruposExistentes = dbHelper.getGruposForObject(geom.id)
+            val grupoResuelto = if (gruposExistentes.isEmpty()) {
+                GrupoAnchor(1, pole.latitude, pole.longitude)
+            } else {
+                dbHelper.resolveGrupoForNewPoint(geom.id, pole.latitude, pole.longitude)
+            }
+
             // 3. Obtener metadatos espaciales en segundo plano (BD / JTS)
             val mun = dbHelper.getMunicipiosAt(pole.longitude, pole.latitude)
             val mza = dbHelper.getManzanaForPredio(jtsGeom)
-            val sec = mza
+            val sec = dbHelper.getSectorForPredio(jtsGeom)
             val lote = com.cadicsa.inventario.utils.SpatialHelper.getLoteClosestToPoint(dbHelper.readableDatabase, pole.longitude, pole.latitude)
             val area = GeometryUtil.calculateArea32616(jtsGeom)
             
@@ -1535,8 +1537,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
                 
                 val intent = Intent(this@MainActivity, FormActivity::class.java).apply {
-                    putExtra(FormActivity.EXTRA_LATITUDE, pole.latitude)
-                    putExtra(FormActivity.EXTRA_LONGITUDE, pole.longitude)
+                    putExtra(FormActivity.EXTRA_LATITUDE, grupoResuelto.lat)
+                    putExtra(FormActivity.EXTRA_LONGITUDE, grupoResuelto.lng)
                     putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
                     putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
                     putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
@@ -1549,6 +1551,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
                     putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
                     putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
+                    putExtra(FormActivity.EXTRA_GRUPO_ID, grupoResuelto.grupoId)
                 }
                 startActivity(intent)
             }

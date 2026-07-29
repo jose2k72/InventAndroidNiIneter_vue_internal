@@ -80,14 +80,37 @@ class AndroidBridge(activity: FormActivity) {
         return if (id > 0) id else (System.currentTimeMillis() / 1000).toInt()
     }
 
+    /**
+     * Datos dentro del predio, acotados al grupo (agrupación) actual — no todo el polígono.
+     * Un predio puede tener múltiples grupos independientes (parcelas segregadas físicamente
+     * no reflejadas en la poligonal); mezclar datos de otro grupo aquí sería conceptualmente
+     * incorrecto (Ficha/Entrevistado/Propietario son únicos por grupo, no por predio completo).
+     */
     @JavascriptInterface
     fun getData(): String {
         val act = activity ?: return "[]"
         return try {
             val dbHelper = DatabaseHelper.getInstance(act)
-            dbHelper.getList(act.idObject)
+            dbHelper.getListByGrupo(act.idObject, act.grupoId)
         } catch (e: Exception) {
             android.util.Log.e("AndroidBridge", "Error en getData: ${e.message}")
+            "[]"
+        }
+    }
+
+    /**
+     * Datos de TODO el predio, sin filtrar por grupo. Necesario para las reglas de exclusividad
+     * de No Encuestado/Unión con Predio, que bloquean el predio completo (todos sus grupos),
+     * no solo el grupo actual.
+     */
+    @JavascriptInterface
+    fun getDataPredioCompleto(): String {
+        val act = activity ?: return "[]"
+        return try {
+            val dbHelper = DatabaseHelper.getInstance(act)
+            dbHelper.getList(act.idObject)
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidBridge", "Error en getDataPredioCompleto: ${e.message}")
             "[]"
         }
     }
@@ -109,7 +132,8 @@ class AndroidBridge(activity: FormActivity) {
                 longitudGPS = act.gpsLongitude,
                 layer = act.layerName,
                 idLayer = act.idLayer,
-                idPredio = act.idPredio
+                idPredio = act.idPredio,
+                grupoId = act.grupoId
             )
             
             act.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
@@ -363,6 +387,22 @@ class AndroidBridge(activity: FormActivity) {
             DatabaseHelper.getInstance(act).getDataInAdjacentPolygons(idObject)
         } catch (e: Exception) {
             android.util.Log.e("AndroidBridge", "Error en getDataInAdjacentPolygons: ${e.message}")
+            "[]"
+        }
+    }
+
+    /**
+     * Grupos hermanos (otras agrupaciones) dentro del predio actual, con su dirección relativa
+     * al grupo que se está trabajando. Complementa getDataInAdjacentPolygons() para la
+     * autodetección de dirección, sin mezclarse con la lógica de elegibilidad Master.
+     */
+    @JavascriptInterface
+    fun getGruposHermanos(): String {
+        val act = activity ?: return "[]"
+        return try {
+            DatabaseHelper.getInstance(act).getSiblingGroupsInSamePredio(act.idObject, act.grupoId, act.latitude, act.longitude)
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidBridge", "Error en getGruposHermanos: ${e.message}")
             "[]"
         }
     }

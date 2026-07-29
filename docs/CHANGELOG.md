@@ -4,6 +4,28 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-07-28] - Subgrupos Catastrales (GRUPO_ID), Estadísticas por Usuario y Desacople Sector/Manzana
+
+### 🧩 Subgrupos Catastrales dentro de un Mismo Predio (`DatabaseHelper.kt`, `MainActivity.kt`, `MapHelper.kt`, `workflowService.js`, `SpatialHelper.kt`)
+- **Motivación**: Un predio (polígono) puede estar segregado en la documentación catastral presentada en campo sin que esa segregación esté reflejada en la poligonal cargada en `Map.db`. Se introdujo el concepto de **grupo (agrupación)** para admitir múltiples conjuntos de datos independientes (Ficha + Entrevistado + Propietarios propios) dentro del mismo `IDOBJECT`.
+- **Nueva columna `GRUPO_ID`**: Escalada por predio (la clave real es el par `(IDOBJECT, GRUPO_ID)`, nunca `GRUPO_ID` solo). Migración inteligente al abrir la BD (`DatabaseHelper.onOpen`, vía `PRAGMA table_info`, no depende de `PRAGMA user_version` porque `Map.db` se entrega pre-poblada por herramienta externa): si falta la columna, se agrega con `ALTER TABLE ... DEFAULT 1`, backfill automático a todos los registros existentes.
+- **Resolución de grupo precalculada**: `resolveGrupoForNewPoint()` corre en el hilo de fondo de `handleMapPosition()`, junto al resto de metadatos espaciales. Snapping a un grupo existente si el toque cae a ≤3m (hereda su posición); si no, nuevo grupo (`máximo existente + 1`) en la posición exacta del toque. Predio vacío → primer grupo se posiciona **donde el usuario tocó** (se descartó el Polo de Inaccesibilidad por inútil para este caso).
+- **Pintado de marcadores por grupo (`MapHelper.kt`)**: Agrupamiento jerárquico de dos niveles (predio → grupo). Un mismo predio puede mostrar más de un pin. Excepción: predios con **No Encuestado** o **Unión con Predio** siempre colapsan a un único marcador (exclusividad de todo el predio, no de un grupo).
+- **Listado del predio en las formas**: `Android.getData()` filtra ahora por `IDOBJECT` **y** `GRUPO_ID` juntos (antes mezclaba todo el predio). Nuevo `Android.getDataPredioCompleto()` sin filtrar por grupo, usado exclusivamente por las reglas de exclusividad No Encuestado/Unión.
+- **Reglas de negocio (`workflowService.js`)**: Unicidad de Ficha/Entrevistado evaluada por grupo; exclusividad No Encuestado/Unión evaluada sobre todo el predio (`listDataPredio`).
+- **Direcciones por colindancia**: Nuevo `Android.getGruposHermanos()` (`SpatialHelper.getSiblingGroupsInSamePredio`) agrega grupos hermanos del mismo predio como candidatos de dirección junto a los predios adyacentes reales — función separada de `getDataInAdjacentPolygons()` para no contaminar la elegibilidad Master.
+- **Master/Esclavo**: Un predio solo es candidato a Master si tiene una única agrupación (`TotalGrupos === 1`, calculado en SQL). Reemplazó el clustering manual por distancia (3m aproximados en JS) que existía antes en `workflowService.getMasterCandidates()`.
+- **Import/Export**: `ImportManager`/`ExportManager` incluyen `GRUPO_ID`; la importación detecta si la BD externa carece de la columna y asume `GRUPO_ID = 1` en ese caso.
+- **Estadísticas**: `getDailyStatisticsMap()`/`getStatisticsByUserAndDateMap()` cuentan pares distintos `(IDOBJECT, GRUPO_ID)` en vez de solo `IDOBJECT`.
+
+### 📊 Exportación de Estadísticas por Usuario (`DatabaseHelper.kt`, `MainDialogHelper.kt`, `main_menu.xml`)
+- Nueva opción de menú "Exportar Estadísticas por Grupo" (solo Admin), agrupa por `CREADO_POR` y, dentro de cada usuario, por día. Exporta a `.txt` en el subdirectorio `Reports/` del almacenamiento de la app, con nombre `yyyyMMdd_HHmm_report.txt`.
+
+### 🧭 Desacople Sector/Manzana (`SpatialHelper.kt`, `MainActivity.kt`)
+- `getManzanaForPredio()` consultaba por error la capa `'Sectores'` en vez de `'Manzanas'`, y `MainActivity.kt` hacía `sec = mza` (comentario literal "Sector = Manzana, misma entidad catastral"). Se separaron ambas resoluciones: nueva función `getSectorForPredio()` independiente, consultando la capa `'Sectores'` real. Hoy ambas capas comparten geometría en `Map.db` por decisión operativa, pero el código ya no asume que deban coincidir.
+
+---
+
 ## [2026-07-14] - Optimización Quirúrgica y Carga de Marcadores por Viewport y Bounding Box
 
 ### 📍 Refresco de Mapa y Rendimiento (`MainActivity.kt`, `MapHelper.kt`, `AndroidBridge.kt`, `DatabaseHelper.kt`)
@@ -318,4 +340,4 @@ Consulte aquí el historial detallado del proyecto:
 - [Febrero 2026](changelog/CHANGELOG_2026_02.md) - Composición familiar, selectores globales y lógica espacial.
 
 ---
-*Última actualización: 2026-06-03*
+*Última actualización: 2026-07-28*

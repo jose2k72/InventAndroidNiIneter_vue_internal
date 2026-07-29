@@ -175,11 +175,11 @@ El objeto global `Android` inyectado en el WebView expone los siguientes método
 
 ---
 
-## 9. Arquitectura de Servicios Frontend (Vue.js)
+## 6. Arquitectura de Servicios Frontend (Vue.js)
 
 Para reducir la complejidad del controlador principal (`app.js`) y mejorar la mantenibilidad, se ha implementado una capa de servicios en JavaScript que abstrae las operaciones críticas:
 
-### 9.1 Servicios del Sistema
+### 6.1 Servicios del Sistema
 *   **`workflowService.js` (Cerebro de Negocio)**:
     - Centraliza las validaciones de "quién puede crear a quién".
     - Gestiona los límites de registros (ej. un solo Entrevistado, una sola Ficha).
@@ -204,7 +204,7 @@ Para reducir la complejidad del controlador principal (`app.js`) y mejorar la ma
 *   **`clonadorService.js` (Utilidades de Clonación)**:
     - Provee el motor de copia profunda de campos basado en diccionarios de mapeo.
 
-### 9.2 Fábrica Contextual (`modelsFactory.js`)
+### 6.2 Fábrica Contextual (`modelsFactory.js`)
 Los modelos ya no se crean de forma aislada. La fábrica ahora utiliza un **Objeto de Contexto (`ctx`)** que contiene la ubicación y auditoría actual del mapa. Esto garantiza que todos los formularios nazcan con su contexto geográfico completo:
 ```javascript
 const ctx = { lat, lng, x, y, loc, fecha, enc, idObject };
@@ -213,7 +213,7 @@ const nuevoModel = ModelsFactory.createFicha(ctx);
 
 ---
 
-## 10. Notas de Mantenimiento Final
+## 7. Notas de Mantenimiento Final
 
 *   **Java Version (CRÍTICO - NO CAMBIAR)**: El proyecto **REQUIERE ESTRICTAMENTE JDK 17** para compilar correctamente (configurado en `gradle.properties`, `app/build.gradle.kts` y `.vscode/settings.json`).
     **PROHIBIDO CAMBIAR A JDK 21 O SUPERIORES**. 
@@ -241,45 +241,6 @@ Debido a la ausencia de extensiones SpatiaLite nativas en algunos entornos y par
 - **Borrado en Cascada**: Si se elimina el registro de "Familiares", no afecta a la encuesta, pero si se elimina el único **"Sujeto Natural"**, el sistema ejecuta un borrado en cascada automático de su composición familiar vinculada.
 - **Validación de Borrado**: No se permite eliminar al **Entrevistado** si ya existe una **Ficha** (Encuesta) vinculada, protegiendo la integridad referencial.
 - **Relación Entrevistado-Propietario**: Si el entrevistado es el mismo propietario, el sistema permite una creación silenciosa para evitar doble entrada de datos mediante el `ConversionService`.
-
----
-
-## 2. Gestión Transaccional de Archivos
-
-El ciclo de vida de las fotografías está estrictamente controlado por las acciones del usuario. El sistema distingue entre dos tipos de fotos con lógicas de tracking independientes:
-
-### 2.1 Fotos Generales (`formData.Imagenes`)
-
-Se rastrean mediante tres arreglos reactivos en `app.js`:
-
-| Arreglo | Contenido |
-|---|---|
-| `fotosOriginales` | Snapshot inmutable de las fotos de la BD al abrir el registro |
-| `fotosNuevas` | Fotos capturadas/importadas en la sesión actual (ya en disco) |
-| `fotosMarcadasBorrar` | Fotos originales que el usuario eliminó (aún en disco, pendientes) |
-
-- **Rollback (Cancelar)**: Las `fotosNuevas` se borran físicamente del disco. Las `fotosMarcadasBorrar` se descartan sin borrar — los archivos originales quedan intactos. Al reabrir el registro, la DB recarga el estado original.
-- **Commit (Guardar)**: Las `fotosMarcadasBorrar` se eliminan físicamente del disco y todos los arreglos de tracking se limpian.
-
-### 2.2 Foto del Frente del Predio (`formData.FotoFrente`)
-
-Campo obligatorio único con tracking propio independiente de `Imagenes`:
-
-- **`fotoFrenteOriginal`** (`ref` en `app.js`): Captura el nombre del archivo de FotoFrente en el momento de abrir el registro. Se inicializa en `updateData()` y se limpia a `''` en `resetForm()` (registro nuevo).
-- **Rollback (Cancelar)**: Si se capturó/importó una nueva FotoFrente, el archivo nuevo se borra del disco (estaba en `fotosNuevas`). `volver()` limpia `formData`, por lo que al reabrir el registro la FotoFrente original de la BD se muestra correctamente.
-- **Commit (Guardar) con reemplazo**: Si `formData.FotoFrente !== fotoFrenteOriginal`, `commit()` borra el archivo viejo del disco, evitando archivos huérfanos.
-- **Eliminar FotoFrente original**: `handleAndroidDelete` detecta si el archivo eliminado es la FotoFrente original (comparando con `fotoFrenteOriginal`) y la marca en `fotosMarcadasBorrar` para borrado diferido, manteniendo el archivo seguro hasta confirmar con "Guardar".
-
-### 2.3 Control de Cierre del FileBrowser (Anti Race Condition)
-
-El `FileBrowser` se cierra en momentos distintos según el tipo de importación:
-
-- **Fotos Adicionales**: `onFilesImported` llama a `cancelFileBrowser()` síncronamente tras despachar el trabajo a Kotlin. El `FileBrowser` se cierra de inmediato.
-- **Foto del Frente**: `onFilesImported` NO cierra el `FileBrowser`. El cierre ocurre en `PhotoService.handleAndroidPhoto`, **después** de que Kotlin haya copiado el archivo, notificado vía `window.addPhoto`, y el campo `formData.FotoFrente` se haya actualizado. Esto garantiza que el watcher de `FormFicha` (`Vue.watch(() => formData.FotoFrente, cargarFotoFrente)`) se dispare con el valor correcto al montarse el componente.
-
----
-
-## 3. Validaciones Específicas de Formularios
 2.  **Validación de Derecho Similar**: El campo "No Personas Similar Derecho" debe ser estrictamente **mayor que 0** para permitir el guardado de la encuesta.
 3.  **Identificadores Técnicos**:
     - `IdPropiedad` (UUID): Generado automáticamente para cada nueva encuesta.
@@ -293,14 +254,49 @@ Permite duplicar información existente para acelerar la captura:
 3.  **Filtrado**: Se copian todos los campos del formulario, pero se **omiten las fotografías** y se generan nuevos metadatos (ID, Fecha, NumBoleta).
 4.  **Flujo**: El sistema re-valida las rutas en la nueva ubicación, permitiendo al usuario re-catalogar el camino si es necesario.
 
-### 8.3 Tablas Dinámicas
+### 8.4 Tablas Dinámicas
 La interfaz muestra dos listas diferenciadas:
 *   **Datos dentro del predio**: Puntos de inventario vinculados geográficamente al objeto seleccionado.
 *   **Datos en predios adyacentes**: Registros de vecinos útiles para referencia o clonación.
 
 ---
 
-## 9. Stack Tecnológico
+## 9. Gestión Transaccional de Archivos
+
+El ciclo de vida de las fotografías está estrictamente controlado por las acciones del usuario. El sistema distingue entre dos tipos de fotos con lógicas de tracking independientes:
+
+### 9.1 Fotos Generales (`formData.Imagenes`)
+
+Se rastrean mediante tres arreglos reactivos en `app.js`:
+
+| Arreglo | Contenido |
+|---|---|
+| `fotosOriginales` | Snapshot inmutable de las fotos de la BD al abrir el registro |
+| `fotosNuevas` | Fotos capturadas/importadas en la sesión actual (ya en disco) |
+| `fotosMarcadasBorrar` | Fotos originales que el usuario eliminó (aún en disco, pendientes) |
+
+- **Rollback (Cancelar)**: Las `fotosNuevas` se borran físicamente del disco. Las `fotosMarcadasBorrar` se descartan sin borrar — los archivos originales quedan intactos. Al reabrir el registro, la DB recarga el estado original.
+- **Commit (Guardar)**: Las `fotosMarcadasBorrar` se eliminan físicamente del disco y todos los arreglos de tracking se limpian.
+
+### 9.2 Foto del Frente del Predio (`formData.FotoFrente`)
+
+Campo obligatorio único con tracking propio independiente de `Imagenes`:
+
+- **`fotoFrenteOriginal`** (`ref` en `app.js`): Captura el nombre del archivo de FotoFrente en el momento de abrir el registro. Se inicializa en `updateData()` y se limpia a `''` en `resetForm()` (registro nuevo).
+- **Rollback (Cancelar)**: Si se capturó/importó una nueva FotoFrente, el archivo nuevo se borra del disco (estaba en `fotosNuevas`). `volver()` limpia `formData`, por lo que al reabrir el registro la FotoFrente original de la BD se muestra correctamente.
+- **Commit (Guardar) con reemplazo**: Si `formData.FotoFrente !== fotoFrenteOriginal`, `commit()` borra el archivo viejo del disco, evitando archivos huérfanos.
+- **Eliminar FotoFrente original**: `handleAndroidDelete` detecta si el archivo eliminado es la FotoFrente original (comparando con `fotoFrenteOriginal`) y la marca en `fotosMarcadasBorrar` para borrado diferido, manteniendo el archivo seguro hasta confirmar con "Guardar".
+
+### 9.3 Control de Cierre del FileBrowser (Anti Race Condition)
+
+El `FileBrowser` se cierra en momentos distintos según el tipo de importación:
+
+- **Fotos Adicionales**: `onFilesImported` llama a `cancelFileBrowser()` síncronamente tras despachar el trabajo a Kotlin. El `FileBrowser` se cierra de inmediato.
+- **Foto del Frente**: `onFilesImported` NO cierra el `FileBrowser`. El cierre ocurre en `PhotoService.handleAndroidPhoto`, **después** de que Kotlin haya copiado el archivo, notificado vía `window.addPhoto`, y el campo `formData.FotoFrente` se haya actualizado. Esto garantiza que el watcher de `FormFicha` (`Vue.watch(() => formData.FotoFrente, cargarFotoFrente)`) se dispare con el valor correcto al montarse el componente.
+
+---
+
+## 10. Stack Tecnológico
 
 ### Android (Kotlin)
 - **Gradle**: 8.4
@@ -316,16 +312,16 @@ La interfaz muestra dos listas diferenciadas:
 - WebKit para WebView moderno
 - Proj4J (Para proyecciones en backend)
 
-### 9.2 Frontend (Web/Vue.js)
+### 10.2 Frontend (Web/Vue.js)
 - **Vue 3**: Composition API (Sin build step)
 - **Proj4.js**: Soporte para EPSG:32616 (UTM 16N) para Nicaragua
 - **CSS3**: Diseño basado en Glassmorphism y Flexbox
 
 ---
 
-## 10. Gestión de Capas y Visualización
+## 11. Gestión de Capas y Visualización
 
-### 10.1 Separación de Visualización (Tiles) y Lógica (WKT)
+### 11.1 Separación de Visualización (Tiles) y Lógica (WKT)
 
 El sistema opera bajo una separación estricta entre lo que el usuario ve y cómo el sistema calcula:
 
@@ -333,8 +329,12 @@ El sistema opera bajo una separación estricta entre lo que el usuario ve y cóm
 *   **Lógica y Consultas (WKB/WKT como Fuente de Verdad)**: Independientemente de lo que se muestre en los tiles, **todas las consultas espaciales** (selección de predio al hacer clic, recuperación de registros dentro del polígono, ubicación de municipales) se realizan exclusivamente contra la geometría almacenada en la tabla `objects`. La aplicación puede usar tanto `WKT` (Well-Known Text) como `WKB` (Well-Known Binary), prefiriendo `WKB` en consultas directas (ej. en `SpatialHelper.kt`) por su mayor rapidez y eficiencia en la deserialización.
 *   **Independencia Técnica**: Esta arquitectura garantiza que la aplicación sea robusta: los tiles sirven para la orientación visual del usuario, mientras que los datos vectoriales garantizan la precisión matemática y la integridad de la información capturada. Esto también facilita la adición de nuevos predios en el futuro, ya que la lógica de consulta (JTS) funcionará inmediatamente al insertar el WKT, sin depender de la actualización de la cartografía raster.
 
-2.  **Capa de Municipios**: Capa de soporte "invisible" utilizada por el motor JTS para la asignación automática de catálogos basados en la ubicación.
-2.  **Capa de Municipios**: Capa de soporte "invisible" utilizada por el motor JTS para la asignación automática de catálogos basados en la ubicación.
-3.  **Capas Viales (Rutas)**: Los módulos de rutas locales y nacionales están completamente implementados en el código y presentes en la base de datos (tablas `objects` y `tiles`). Sin embargo, se encuentran **deshabilitadas por diseño** en la interfaz de usuario de esta variante del proyecto.
-4.  **Preservación de Código**: Esta desactivación es puramente a nivel de UI/Configuración para simplificar el flujo del encuestador, manteniendo toda la lógica técnica (procedimientos de cálculo, renderizado de líneas y filtros de base de datos) intacta para futuras activaciones o referencias técnicas.
+### 11.2 Capa de Municipios
+Capa de soporte "invisible" utilizada por el motor JTS para la asignación automática de catálogos basados en la ubicación.
+
+### 11.3 Capas Viales (Rutas)
+Los módulos de rutas locales y nacionales están completamente implementados en el código y presentes en la base de datos (tablas `objects` y `tiles`). Sin embargo, se encuentran **deshabilitadas por diseño** en la interfaz de usuario de esta variante del proyecto.
+
+### 11.4 Preservación de Código
+Esta desactivación es puramente a nivel de UI/Configuración para simplificar el flujo del encuestador, manteniendo toda la lógica técnica (procedimientos de cálculo, renderizado de líneas y filtros de base de datos) intacta para futuras activaciones o referencias técnicas.
 

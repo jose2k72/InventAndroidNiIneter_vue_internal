@@ -58,6 +58,7 @@ class FormActivity : AppCompatActivity() {
         const val EXTRA_LAYER_NAME = "layer_name"
         const val EXTRA_MANZANA_CATALOG = "manzana_catalog"
         const val EXTRA_LOTE_CATALOG = "lote_catalog"
+        const val EXTRA_GRUPO_ID = "grupo_id"
     }
 
     internal var idObject: Int = 0
@@ -67,6 +68,7 @@ class FormActivity : AppCompatActivity() {
     internal var municipioCatalog: String = ""
     internal var sectorCatalog: String = ""
     internal var layerName: String = ""
+    internal var grupoId: Int = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,6 +112,7 @@ class FormActivity : AppCompatActivity() {
         municipioCatalog = intent.getStringExtra(EXTRA_MUNICIPIO_CATALOG) ?: ""
         sectorCatalog = intent.getStringExtra(EXTRA_SECTOR_CATALOG) ?: ""
         manzanaCatalog = intent.getStringExtra(EXTRA_MANZANA_CATALOG) ?: ""
+        grupoId = intent.getIntExtra(EXTRA_GRUPO_ID, 1)
         loteCatalog = intent.getStringExtra(EXTRA_LOTE_CATALOG) ?: ""
         layerName = intent.getStringExtra(EXTRA_LAYER_NAME) ?: "Aceras"
         
