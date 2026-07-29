@@ -680,6 +680,15 @@ const FormFicha = {
             return clean;
         };
 
+        // Valida que día/mes/año formen una fecha calendario real (rechaza 00/00/0000,
+        // 31/02/2026, etc.) — antes solo se verificaba la forma (3 partes, año de 4 dígitos).
+        const esFechaValida = (dia, mes, anio) => {
+            if (!Number.isInteger(dia) || !Number.isInteger(mes) || !Number.isInteger(anio)) return false;
+            if (mes < 1 || mes > 12 || dia < 1 || anio < 1) return false;
+            const fecha = new Date(anio, mes - 1, dia);
+            return fecha.getFullYear() === anio && fecha.getMonth() === mes - 1 && fecha.getDate() === dia;
+        };
+
         // Rellenar fecha actual
         const setFechaAdquisicionToday = () => {
             const today = new Date();
@@ -711,7 +720,7 @@ const FormFicha = {
                 const d = parts[0].padStart(2, '0');
                 const m = parts[1].padStart(2, '0');
                 const y = parts[2];
-                if (y.length === 4) {
+                if (y.length === 4 && esFechaValida(parseInt(d, 10), parseInt(m, 10), parseInt(y, 10))) {
                     doc.FechaDocumento = `${y}-${m}-${d}`;
                     return;
                 }
@@ -740,7 +749,7 @@ const FormFicha = {
                 const d = parts[0].padStart(2, '0');
                 const m = parts[1].padStart(2, '0');
                 const y = parts[2];
-                if (y.length === 4) {
+                if (y.length === 4 && esFechaValida(parseInt(d, 10), parseInt(m, 10), parseInt(y, 10))) {
                     formData.FechaAdquisicion = `${y}-${m}-${d}`;
                     return;
                 }
@@ -759,7 +768,7 @@ const FormFicha = {
                 const d = parts[0].padStart(2, '0');
                 const m = parts[1].padStart(2, '0');
                 const y = parts[2];
-                if (y.length === 4) {
+                if (y.length === 4 && esFechaValida(parseInt(d, 10), parseInt(m, 10), parseInt(y, 10))) {
                     formData.FechaRegistro = `${y}-${m}-${d}`;
                     return;
                 }
