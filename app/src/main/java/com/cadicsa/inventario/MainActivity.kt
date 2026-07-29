@@ -419,7 +419,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         
         // Intentar obtener geometría para el área calculada si es posible
         val geom = dbHelper.getGeometry(lng, lat)
-        val area = if (geom != null) GeometryUtil.calculateArea32616(geom.jtsGeom!!) else 0.0
+        val area = if (geom != null) GeometryUtil.calculateAreaLocalProj(geom.jtsGeom!!) else 0.0
         
         // Validación mínima también aquí para mayor seguridad
         if (mun.isNullOrEmpty() || sec.isNullOrEmpty() || (geom != null && geom.localizacion.isNullOrEmpty())) {
@@ -488,7 +488,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             val mza  = dbHelper.getManzanaForPredio(geom.jtsGeom!!)
             val sec  = dbHelper.getSectorForPredio(geom.jtsGeom!!)
             val lote = dbHelper.getLoteForPredio(geom.jtsGeom!!)
-            val area = GeometryUtil.calculateArea32616(geom.jtsGeom!!)
+            val area = GeometryUtil.calculateAreaLocalProj(geom.jtsGeom!!)
 
             // Validación de datos esenciales y lanzamiento (en Hilo Principal)
             runOnUiThread {
@@ -1517,7 +1517,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             val mza = dbHelper.getManzanaForPredio(jtsGeom)
             val sec = dbHelper.getSectorForPredio(jtsGeom)
             val lote = com.cadicsa.inventario.utils.SpatialHelper.getLoteClosestToPoint(dbHelper.readableDatabase, pole.longitude, pole.latitude)
-            val area = GeometryUtil.calculateArea32616(jtsGeom)
+            val area = GeometryUtil.calculateAreaLocalProj(jtsGeom)
             
             // 4. Operación visual e inicio de actividad en el Hilo Principal
             runOnUiThread {

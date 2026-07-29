@@ -360,6 +360,16 @@ class AndroidBridge(activity: FormActivity) {
     }
 
     @JavascriptInterface
+    fun getLocalProjEpsg(): String {
+        val act = activity ?: return "32616"
+        return try {
+            DatabaseHelper.getInstance(act).getLocalProjEpsg()
+        } catch (e: Exception) {
+            "32616"
+        }
+    }
+
+    @JavascriptInterface
     fun loadCatalogJson(filename: String): String {
         val act = activity ?: return ""
         return try {

@@ -51,7 +51,7 @@ object GeometryUtil {
     fun projectToCRTM05(lat: Double, lng: Double) = ProjectionHelper.projectToCRTM05(lat, lng)
     fun projectToWGS84(east: Double, north: Double) = ProjectionHelper.projectToWGS84(east, north)
     fun projectGeometryToCRTM05(geom: JtsGeometry) = ProjectionHelper.projectGeometryToCRTM05(geom)
-    fun projectGeometryTo32616(geom: JtsGeometry) = ProjectionHelper.projectGeometryTo32616(geom)
+    fun projectGeometryToLocalProj(geom: JtsGeometry) = ProjectionHelper.projectGeometryToLocalProj(geom)
 
     // --- Operaciones Geométricas Básicas ---
 
@@ -150,13 +150,13 @@ object GeometryUtil {
         }
     }
 
-    fun calculateArea32616(geom: JtsGeometry): Double {
-        return projectGeometryTo32616(geom)?.area ?: 0.0
+    fun calculateAreaLocalProj(geom: JtsGeometry): Double {
+        return projectGeometryToLocalProj(geom)?.area ?: 0.0
     }
 
-    fun calculateArea32616(wkt: String): Double {
+    fun calculateAreaLocalProj(wkt: String): Double {
         val geom = wktToGeometry(wkt) ?: return 0.0
-        return calculateArea32616(geom)
+        return calculateAreaLocalProj(geom)
     }
     
     // --- Delegación a RoutingHelper ---

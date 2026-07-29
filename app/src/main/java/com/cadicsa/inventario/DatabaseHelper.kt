@@ -49,9 +49,10 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
         fun getInstance(context: Context): DatabaseHelper {
             return instance ?: synchronized(this) {
                 instance ?: try {
-                    DatabaseHelper(context.applicationContext).also { 
-                        instance = it 
+                    DatabaseHelper(context.applicationContext).also {
+                        instance = it
                         it.loadAppDomainConfig()
+                        com.cadicsa.inventario.utils.ProjectionHelper.configure(context.applicationContext, it.getLocalProjEpsg())
                     }
                 } catch (e: Exception) {
                     throw IllegalStateException("No se puede acceder a la base de datos: ${e.message}")
@@ -90,6 +91,24 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
     override fun onOpen(db: SQLiteDatabase) {
         super.onOpen(db)
         ensureGrupoIdColumn(db)
+        ensureLocalProjConfig(db)
+    }
+
+    /**
+     * Garantiza que config.LocalProjEpsg exista (única fuente de verdad, junto con
+     * ProyeccionesLocales.json, de qué proyección local usan tanto Kotlin como app.js para
+     * reproyectar). Si falta, se inserta con 32616 (UTM 16N) por defecto.
+     */
+    private fun ensureLocalProjConfig(db: SQLiteDatabase) {
+        try {
+            val existe = db.rawQuery("SELECT 1 FROM config WHERE VARIABLE = ?", arrayOf("LocalProjEpsg")).use { it.moveToFirst() }
+            if (!existe) {
+                db.execSQL("INSERT INTO config (VARIABLE, VALOR) VALUES ('LocalProjEpsg', '32616')")
+                android.util.Log.i(TAG, "Migración aplicada: config.LocalProjEpsg insertado con valor por defecto 32616")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error verificando/migrando config.LocalProjEpsg: ${e.message}")
+        }
     }
 
     private fun ensureGrupoIdColumn(db: SQLiteDatabase) {
@@ -139,6 +158,11 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
 
     fun getEncuestador(): String {
         return getConfigValue("ENCUESTADOR")
+    }
+
+    /** EPSG activo de la proyección local (config.LocalProjEpsg); "32616" si por alguna razón viene vacío. */
+    fun getLocalProjEpsg(): String {
+        return getConfigValue("LocalProjEpsg").ifBlank { "32616" }
     }
 
     fun updateNombreEncuestador(nombre: String): Boolean {

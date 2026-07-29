@@ -3,15 +3,37 @@
  * Aplicación principal con Composition API
  */
 
-// Definir la proyección UTM Zona 16 Norte (EPSG:32616)
-if (typeof proj4 !== 'undefined' && proj4.defs) {
-    if (!proj4.defs['EPSG:32616']) {
-        proj4.defs("EPSG:32616", "+proj=utm +zone=16 +datum=WGS84 +units=m +no_defs");
-        console.log('✅ Proyección UTM 16N definida');
+// Proyección local activa: única fuente de verdad compartida con Kotlin (ProjectionHelper.kt).
+// Se resuelve leyendo config.LocalProjEpsg (vía Android.getLocalProjEpsg) y buscando ese EPSG en
+// el catálogo assets/web/data/ProyeccionesLocales.json (el mismo archivo que usa el lado nativo).
+// Si config/catálogo no están disponibles o el EPSG no aparece ahí, se cae a UTM 16N (32616).
+let LOCAL_PROJ_EPSG = '32616';
+(function inicializarProyeccionLocal() {
+    const DEFAULT_PROJ4 = '+proj=utm +zone=16 +datum=WGS84 +units=m +no_defs';
+    if (typeof proj4 === 'undefined' || !proj4.defs) {
+        console.error('❌ proj4 no disponible o no tiene método defs');
+        return;
     }
-} else {
-    console.error('❌ proj4 no disponible o no tiene método defs');
-}
+    try {
+        const epsg = (window.Android && window.Android.getLocalProjEpsg) ? window.Android.getLocalProjEpsg() : '32616';
+        const catalogStr = (window.Android && window.Android.loadCatalogJson) ? window.Android.loadCatalogJson('sistema/ProyeccionesLocales.json') : '';
+        const catalogo = catalogStr ? JSON.parse(catalogStr) : [];
+        const entrada = catalogo.find(p => String(p.epsg) === String(epsg));
+        if (entrada) {
+            proj4.defs(`EPSG:${entrada.epsg}`, entrada.proj4);
+            LOCAL_PROJ_EPSG = String(entrada.epsg);
+            console.log(`✅ Proyección local configurada: EPSG:${LOCAL_PROJ_EPSG} (${entrada.nombre})`);
+        } else {
+            proj4.defs('EPSG:32616', DEFAULT_PROJ4);
+            LOCAL_PROJ_EPSG = '32616';
+            console.warn(`⚠️ EPSG:${epsg} no está en ProyeccionesLocales.json — usando UTM 16N (32616) por defecto`);
+        }
+    } catch (e) {
+        proj4.defs('EPSG:32616', DEFAULT_PROJ4);
+        LOCAL_PROJ_EPSG = '32616';
+        console.error('❌ Error inicializando proyección local, usando UTM 16N (32616) por defecto:', e);
+    }
+})();
 
 const { createApp, ref, reactive, computed, onMounted } = Vue;
 
@@ -128,10 +150,10 @@ const app = createApp({
                         lote: loteInterceptado.value
                     });
 
-                    // 2. REPROYECCIÓN A UTM 16N (Para visualización y formularios legacy)
+                    // 2. REPROYECCIÓN A LA PROYECCIÓN LOCAL ACTIVA (Para visualización y formularios legacy)
                     if (typeof proj4 !== 'undefined') {
-                        // WGS84 a UTM 16N (EPSG:4326)
-                        const projected = proj4("EPSG:4326", "EPSG:32616", [latLng.lng, latLng.lat]);
+                        // WGS84 (EPSG:4326) a la proyección local configurada (LOCAL_PROJ_EPSG)
+                        const projected = proj4("EPSG:4326", `EPSG:${LOCAL_PROJ_EPSG}`, [latLng.lng, latLng.lat]);
                         localProj.x = Math.round(projected[0] * 100) / 100;
                         localProj.y = Math.round(projected[1] * 100) / 100;
                     }

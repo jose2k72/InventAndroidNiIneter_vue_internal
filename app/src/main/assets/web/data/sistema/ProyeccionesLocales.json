@@ -1,0 +1,15 @@
+[
+  { "epsg": 32611, "nombre": "UTM 11N (WGS84)", "cobertura": "Mexico (Baja California / Pacifico norte)", "proj4": "+proj=utm +zone=11 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32612, "nombre": "UTM 12N (WGS84)", "cobertura": "Mexico (noroeste)", "proj4": "+proj=utm +zone=12 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32613, "nombre": "UTM 13N (WGS84)", "cobertura": "Mexico (centro-noroeste)", "proj4": "+proj=utm +zone=13 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32614, "nombre": "UTM 14N (WGS84)", "cobertura": "Mexico (centro)", "proj4": "+proj=utm +zone=14 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32615, "nombre": "UTM 15N (WGS84)", "cobertura": "Mexico (sureste), Guatemala, extremo oeste de Nicaragua", "proj4": "+proj=utm +zone=15 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32616, "nombre": "UTM 16N (WGS84)", "cobertura": "Nicaragua (la mayoria), Honduras, El Salvador, Costa Rica, Panama", "proj4": "+proj=utm +zone=16 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32617, "nombre": "UTM 17N (WGS84)", "cobertura": "Panama (este), Colombia (norte), Ecuador (norte del ecuador)", "proj4": "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32618, "nombre": "UTM 18N (WGS84)", "cobertura": "Colombia (centro), Venezuela (oeste)", "proj4": "+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32619, "nombre": "UTM 19N (WGS84)", "cobertura": "Venezuela (centro-este)", "proj4": "+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32620, "nombre": "UTM 20N (WGS84)", "cobertura": "Venezuela (extremo este)", "proj4": "+proj=utm +zone=20 +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32717, "nombre": "UTM 17S (WGS84)", "cobertura": "Ecuador (la mayoria del pais)", "proj4": "+proj=utm +zone=17 +south +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 32718, "nombre": "UTM 18S (WGS84)", "cobertura": "Ecuador (este), extremo sur de Colombia (Amazonas)", "proj4": "+proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs" },
+  { "epsg": 5367, "nombre": "CRTM05", "cobertura": "Costa Rica Transverse Mercator 2005", "proj4": "+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" }
+]
