@@ -1,7 +1,5 @@
 package com.cadicsa.inventario.utils
 
-import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Geometry as JtsGeometry
 import org.locationtech.proj4j.CRSFactory
 import org.locationtech.proj4j.CoordinateTransform
@@ -18,7 +16,6 @@ object ProjectionHelper {
     private const val DEFAULT_LOCAL_PROJ_EPSG = "32616"
     private const val CATALOGO_ASSET_PATH = "web/data/sistema/ProyeccionesLocales.json"
 
-    private val geometryFactory = GeometryFactory()
     private val crsFactory = CRSFactory()
     private val ctFactory = CoordinateTransformFactory()
 
@@ -112,44 +109,28 @@ object ProjectionHelper {
     }
 
     /**
-     * Implementación genérica de proyección de geometría
+     * Implementación genérica de proyección de geometría. Usa CoordinateSequenceFilter en vez de
+     * aplanar geom.coordinates: JTS recorre él solo cada anillo/parte de la geometría (incluyendo
+     * anillos interiores/huecos de un Polygon) y transforma cada coordenada in-place, preservando
+     * la estructura original — equivalente en espíritu a OGRGeometry::Transform() de GDAL.
      */
     private fun projectGeometryGeneric(geom: JtsGeometry, transform: CoordinateTransform): JtsGeometry? {
         return try {
-            val coords = geom.coordinates.map { coord ->
-                val source = ProjCoordinate(coord.x, coord.y)
-                val target = ProjCoordinate()
-                transform.transform(source, target)
-                Coordinate(target.x, target.y)
-            }.toTypedArray()
-            
-            when (geom.geometryType) {
-                "Point" -> geometryFactory.createPoint(coords[0])
-                "LineString" -> geometryFactory.createLineString(coords)
-                "Polygon" -> {
-                    val ring = geometryFactory.createLinearRing(coords)
-                    geometryFactory.createPolygon(ring)
+            val copia = geom.copy()
+            copia.apply(object : org.locationtech.jts.geom.CoordinateSequenceFilter {
+                override fun filter(seq: org.locationtech.jts.geom.CoordinateSequence, i: Int) {
+                    val source = ProjCoordinate(seq.getX(i), seq.getY(i))
+                    val target = ProjCoordinate()
+                    transform.transform(source, target)
+                    seq.setOrdinate(i, 0, target.x)
+                    seq.setOrdinate(i, 1, target.y)
                 }
-                "MultiLineString" -> {
-                    val multiLine = geom as org.locationtech.jts.geom.MultiLineString
-                    val lines = (0 until multiLine.numGeometries).map { i ->
-                        val lineCoords = multiLine.getGeometryN(i).coordinates.map { coord ->
-                            val src = ProjCoordinate(coord.x, coord.y)
-                            val tgt = ProjCoordinate()
-                            transform.transform(src, tgt)
-                            Coordinate(tgt.x, tgt.y)
-                        }.toTypedArray()
-                        geometryFactory.createLineString(lineCoords)
-                    }.toTypedArray()
-                    geometryFactory.createMultiLineString(lines)
-                }
-                else -> {
-                    android.util.Log.w("ProjectionHelper", "Tipo no soportado: ${geom.geometryType}")
-                    null
-                }
-            }
+                override fun isDone(): Boolean = false
+                override fun isGeometryChanged(): Boolean = true
+            })
+            copia
         } catch (e: Exception) {
-            android.util.Log.e("ProjectionHelper", "Error proyectando: ${e.message}")
+            android.util.Log.e(TAG, "Error proyectando: ${e.message}")
             null
         }
     }
