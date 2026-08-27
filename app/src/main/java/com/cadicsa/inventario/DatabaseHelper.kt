@@ -437,105 +437,163 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
      * trabajadas, no predios. GRUPO_ID está escalado por predio (dos predios distintos pueden
      * compartir el mismo GRUPO_ID), por lo que se cuenta el par distinto (IDOBJECT, GRUPO_ID).
      */
-    fun getDailyStatisticsMap(): Map<String, Int> {
-        val query = """
-            SELECT substr(FECHA, 1, 10) as Dia, COUNT(DISTINCT IDOBJECT || '-' || GRUPO_ID)
-            FROM DATOS
-            GROUP BY Dia
-        """.trimIndent()
-        
-        val db = readableDatabase
-        val countsByDay = mutableMapOf<String, Int>()
-        try {
-            db.rawQuery(query, null).use { cursor ->
-                while (cursor.moveToNext()) {
-                    val dia = cursor.getString(0) ?: "Desconocido"
-                    val count = cursor.getInt(1)
-                    countsByDay[dia] = count
-                }
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("DatabaseHelper", "Error calculando estadísticas: ${e.message}")
-        }
-        
-        return countsByDay
-    }
-
     /**
-     * Obtener estadísticas de datos capturados agrupados por día con filtrado espacial de 3 metros
+     * Fila cruda de DATOS para calculo de estadisticas: quien/cuando toco cada agrupacion, y lo
+     * necesario para resolver su color (Type, y Localizacion/LocalizacionMaster para los azules).
      */
-    fun getDailyStatistics(): String {
-        val countsByDay = getDailyStatisticsMap()
-        
-        val sortedDays = countsByDay.keys.sortedByDescending { dia ->
-            if (dia.length >= 10) {
-                "${dia.substring(6, 10)}${dia.substring(3, 5)}${dia.substring(0, 2)}"
-            } else {
-                dia
+    private data class EstadisticaFila(
+        val usuario: String, val dia: String, val idObject: Int, val grupoId: Int,
+        val tipo: String?, val localizacion: String?, val localizacionMaster: String?
+    )
+
+    private fun leerEstadisticaFilas(): List<EstadisticaFila> {
+        val filas = mutableListOf<EstadisticaFila>()
+        readableDatabase.rawQuery(
+            """
+            SELECT COALESCE(NULLIF(CREADO_POR, ''), 'Desconocido') as Usuario,
+                   substr(FECHA, 1, 10) as Dia, IDOBJECT, GRUPO_ID, DATOS
+            FROM DATOS
+            """.trimIndent(), null
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val json = try { org.json.JSONObject(cursor.getString(4) ?: "{}") } catch (e: Exception) { null }
+                filas.add(
+                    EstadisticaFila(
+                        cursor.getString(0) ?: "Desconocido", cursor.getString(1) ?: "Desconocido",
+                        cursor.getInt(2), cursor.getInt(3),
+                        json?.optString("Type")?.ifBlank { null },
+                        json?.optString("Localizacion")?.ifBlank { null },
+                        json?.optString("LocalizacionMaster")?.ifBlank { null }
+                    )
+                )
             }
         }
-        
-        val resultString = StringBuilder()
-        for (dia in sortedDays) {
-            resultString.append("📅 $dia: ${countsByDay[dia]} entradas\n")
-        }
-        
-        val finalResult = resultString.toString()
-        return if (finalResult.isEmpty()) "No hay datos registrados aún." else finalResult.trim()
+        return filas
     }
 
     /**
-     * Obtiene la cantidad de puntos válidos para el día actual
+     * Construye la funcion de color por agrupación (IDOBJECT, GRUPO_ID) -- mismo criterio que
+     * MapHelper.calculateGroupColor (verde/amarillo/rojo), resolviendo además los azules (Unión
+     * con Predio) por transitividad hasta el color real de su predio master, igual que en el
+     * reporte de fusiones. Compartida por todas las estadísticas (diarias, de hoy, por grupo).
+     */
+    private fun construirResolverColor(filas: List<EstadisticaFila>): (Pair<Int, Int>) -> String {
+        val tiposPorGrupo = mutableMapOf<Pair<Int, Int>, MutableSet<String>>()
+        val localizacionPorGrupo = mutableMapOf<Pair<Int, Int>, String>()
+        for (f in filas) {
+            val key = Pair(f.idObject, f.grupoId)
+            val tipos = tiposPorGrupo.getOrPut(key) { mutableSetOf() }
+            if (f.tipo != null) tipos.add(f.tipo)
+            if (f.localizacion != null) localizacionPorGrupo[key] = f.localizacion
+        }
+
+        fun colorBaseDeGrupo(key: Pair<Int, Int>): String {
+            val tipos = tiposPorGrupo[key] ?: emptySet()
+            if ("NoEncuestado" in tipos) return "rojo"
+            if ("UnionConPredio" in tipos) return "cian"
+            val completo = "Ficha" in tipos && "Entrevistado" in tipos &&
+                    ("SujetoNatural" in tipos || "SujetoJuridico" in tipos)
+            return if (completo) "verde" else "amarillo"
+        }
+
+        val colorPorLocalizacion = mutableMapOf<String, String>()
+        for ((key, loc) in localizacionPorGrupo) {
+            val color = colorBaseDeGrupo(key)
+            if (color == "verde" || color == "amarillo") colorPorLocalizacion[loc] = color
+        }
+
+        val unionEdges = mutableMapOf<String, String>()
+        for (f in filas) {
+            if (f.tipo == "UnionConPredio" && f.localizacion != null && f.localizacionMaster != null) {
+                unionEdges[f.localizacion] = f.localizacionMaster
+            }
+        }
+        fun resolverMasterFinal(loc: String, visitados: MutableSet<String> = mutableSetOf()): String {
+            if (loc in visitados) return loc
+            visitados.add(loc)
+            val siguiente = unionEdges[loc] ?: return loc
+            return resolverMasterFinal(siguiente, visitados)
+        }
+
+        return { key ->
+            val base = colorBaseDeGrupo(key)
+            if (base != "cian") {
+                base
+            } else {
+                val loc = localizacionPorGrupo[key]
+                val masterFinal = loc?.let { resolverMasterFinal(it) }
+                colorPorLocalizacion[masterFinal] ?: base
+            }
+        }
+    }
+
+    private fun formatearDesglose(grupos: Collection<Pair<Int, Int>>, colorDeGrupo: (Pair<Int, Int>) -> String): String {
+        var verdes = 0
+        var amarillos = 0
+        var rojos = 0
+        for (g in grupos) {
+            when (colorDeGrupo(g)) {
+                "verde" -> verdes++
+                "amarillo" -> amarillos++
+                "rojo" -> rojos++
+            }
+        }
+        return "${grupos.size} entradas [$verdes, $amarillos, $rojos]"
+    }
+
+
+    /**
+     * Conteo simple (sin desglose de color) del día actual, para el subtítulo de la barra
+     * superior ("Hoy: N") -- pedido explícito del usuario: ese resumen debe quedarse simple,
+     * sin diferenciar usuarios ni tipos; para más profundidad están los otros reportes
+     * (Estadísticas Diarias, Estadísticas por Grupo).
      */
     fun getTodayStatisticsCount(): Int {
         val todayStr = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.US).format(java.util.Date())
-        return getDailyStatisticsMap()[todayStr] ?: 0
-    }
-
-    /**
-     * Obtiene el mapa anidado de estadísticas agrupadas por usuario (CREADO_POR) y, dentro de
-     * cada usuario, por día (mismo criterio de conteo que getDailyStatisticsMap(): par distinto
-     * (IDOBJECT, GRUPO_ID), no predios).
-     */
-    fun getStatisticsByUserAndDateMap(): Map<String, Map<String, Int>> {
         val query = """
-            SELECT COALESCE(NULLIF(CREADO_POR, ''), 'Desconocido') as Usuario,
-                   substr(FECHA, 1, 10) as Dia,
-                   COUNT(DISTINCT IDOBJECT || '-' || GRUPO_ID)
+            SELECT COUNT(DISTINCT IDOBJECT || '-' || GRUPO_ID)
             FROM DATOS
-            GROUP BY Usuario, Dia
+            WHERE substr(FECHA, 1, 10) = ?
         """.trimIndent()
 
-        val db = readableDatabase
-        val statsByUser = mutableMapOf<String, MutableMap<String, Int>>()
-        try {
-            db.rawQuery(query, null).use { cursor ->
-                while (cursor.moveToNext()) {
-                    val usuario = cursor.getString(0) ?: "Desconocido"
-                    val dia = cursor.getString(1) ?: "Desconocido"
-                    val count = cursor.getInt(2)
-                    statsByUser.getOrPut(usuario) { mutableMapOf() }[dia] = count
-                }
+        return try {
+            readableDatabase.rawQuery(query, arrayOf(todayStr)).use { cursor ->
+                if (cursor.moveToFirst()) cursor.getInt(0) else 0
             }
         } catch (e: Exception) {
-            android.util.Log.e("DatabaseHelper", "Error calculando estadísticas por usuario y fecha: ${e.message}")
+            android.util.Log.e("DatabaseHelper", "Error calculando estadísticas de hoy: ${e.message}")
+            0
         }
-
-        return statsByUser
     }
 
     /**
      * Obtener estadísticas de datos capturados agrupadas por usuario y, dentro de cada usuario,
-     * desglosadas por día (orden alfabético de usuario, fechas en orden descendente).
+     * desglosadas por día (orden alfabético de usuario, fechas en orden descendente). Junto al
+     * total de entradas de cada día, se desglosa cuántas de esas agrupaciones (IDOBJECT,
+     * GRUPO_ID) están hoy en estado completo/parcial/no encuestado -- mismo criterio de
+     * completitud que MapHelper.calculateGroupColor (verde/amarillo/rojo). Cada agrupación
+     * dentro de un predio desmembrado se cuenta de forma independiente. Las agrupaciones de
+     * Unión con Predio (azul) no tienen categoría propia: se resuelven por transitividad
+     * (Localizacion -> LocalizacionMaster, igual que en el reporte de fusiones) y se suman al
+     * color real de su predio master.
      */
     fun getStatisticsByUserReport(): String {
-        val statsByUser = getStatisticsByUserAndDateMap()
-        if (statsByUser.isEmpty()) return "No hay datos registrados aún."
+        val filas = leerEstadisticaFilas()
+        if (filas.isEmpty()) return "No hay datos registrados aún."
+        val colorDeGrupo = construirResolverColor(filas)
+
+        // (usuario, dia) -> agrupaciones distintas tocadas ese dia por ese usuario
+        val gruposPorUsuarioDia = mutableMapOf<String, MutableMap<String, MutableSet<Pair<Int, Int>>>>()
+        for (f in filas) {
+            gruposPorUsuarioDia.getOrPut(f.usuario) { mutableMapOf() }
+                .getOrPut(f.dia) { mutableSetOf() }
+                .add(Pair(f.idObject, f.grupoId))
+        }
 
         val resultString = StringBuilder()
-        for (usuario in statsByUser.keys.sorted()) {
-            val countsByDay = statsByUser[usuario] ?: emptyMap()
-            val sortedDays = countsByDay.keys.sortedByDescending { dia ->
+        for (usuario in gruposPorUsuarioDia.keys.sorted()) {
+            val porDia = gruposPorUsuarioDia[usuario] ?: emptyMap()
+            val sortedDays = porDia.keys.sortedByDescending { dia ->
                 if (dia.length >= 10) {
                     "${dia.substring(6, 10)}${dia.substring(3, 5)}${dia.substring(0, 2)}"
                 } else {
@@ -544,7 +602,7 @@ class DatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
             }
             resultString.append("👤 $usuario\n")
             for (dia in sortedDays) {
-                resultString.append("   📅 $dia: ${countsByDay[dia]} entradas\n")
+                resultString.append("   📅 $dia: ${formatearDesglose(porDia[dia] ?: emptySet(), colorDeGrupo)}\n")
             }
             resultString.append("\n")
         }

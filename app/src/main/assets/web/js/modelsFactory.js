@@ -12,6 +12,7 @@ window.ModelsFactory = {
      */
     createFicha: (ctx, mapData) => ({
         Type: 'Ficha',
+        ConDatos: true, // Desmarcado emula "Predio No Encuestado" dentro de la propia Ficha
         NoEncuesta: '',
         Consecutivo: 0,
         IdPropiedad: window.generateUUID ? window.generateUUID() : '',

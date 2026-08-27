@@ -49,28 +49,23 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/menu_import_db"
-        android:title="Importar BD Externa"
-        app:showAsAction="never" />
-
-    <item
         android:id="@+id/menu_export_db"
-        android:title="Exportar Base de Datos"
+        android:title="Exportar desde DB local"
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/menu_statistics"
-        android:title="Estadísticas Diarias"
+        android:id="@+id/menu_import_db"
+        android:title="Importar desde DB externa"
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/menu_export_stats_by_user"
-        android:title="Exportar Estadísticas por Grupo"
+        android:id="@+id/menu_statistics_by_group"
+        android:title="Estadísticas por Grupo"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/menu_search_predio"
-        android:title="Buscar Predio (Polígono)"
+        android:title="Buscar Predio y Marcar Polígono"
         app:showAsAction="never" />
 
     <item

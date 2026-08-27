@@ -348,10 +348,10 @@
                     <img src="images/family.svg" alt="Familia">
                     <span>COMPOSICIÓN FAMILIAR</span>
                 </button>
-                <button class="nav-btn" @click="startCreate('NoEncuestado')"
-                    style="border-left: 4px solid #dc3545; background: #fff5f5;">
-                    <img src="images/survey.svg" alt="No Encuestado" style="filter: hue-rotate(150deg) saturate(10);">
-                    <span style="color: #dc3545; font-weight: bold;">🚫 PREDIO NO ENCUESTADO</span>
+                <button class="nav-btn" disabled title="No disponible por el momento"
+                    style="border-left: 4px solid #adb5bd; background: #f1f1f1; opacity: 0.6; cursor: not-allowed;">
+                    <img src="images/survey.svg" alt="No Encuestado" style="filter: grayscale(1);">
+                    <span style="color: #6c757d; font-weight: bold;">🔒 PREDIO NO ENCUESTADO</span>
                 </button>
                 <button class="nav-btn" @click="startCreate('UnionConPredio')"
                     style="border-left: 4px solid #6200EE; background: #f3e5f5;">

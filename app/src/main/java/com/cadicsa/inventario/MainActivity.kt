@@ -568,7 +568,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val importDbItem = menu?.findItem(R.id.menu_import_db)
         val exportDbItem = menu?.findItem(R.id.menu_export_db)
         val searchPredioItem = menu?.findItem(R.id.menu_search_predio)
-        val exportStatsByUserItem = menu?.findItem(R.id.menu_export_stats_by_user)
+        val statsByGroupItem = menu?.findItem(R.id.menu_statistics_by_group)
 
         val user = SecurityManager.currentUser
         infoItem?.title = "👤 " + (user?.fullName ?: "Desconocido")
@@ -579,7 +579,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         clearDataItem?.isVisible = isAdmin
         importDbItem?.isVisible = isAdmin
         exportDbItem?.isVisible = isAdmin
-        exportStatsByUserItem?.isVisible = isAdmin
+        statsByGroupItem?.isVisible = isAdmin
         changePassItem?.isVisible = user?.userName != "MASTER"
         return true
     }
@@ -592,8 +592,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             R.id.menu_clear_data -> { clearAllData(); true }
             R.id.menu_import_db -> { importExternalDb(); true }
             R.id.menu_export_db -> { exportExternalDb(); true }
-            R.id.menu_statistics -> { dialogHelper.showStatisticsDialog(); true }
-            R.id.menu_export_stats_by_user -> { dialogHelper.exportStatisticsByUserReport(); true }
+            R.id.menu_statistics_by_group -> { dialogHelper.showStatisticsByGroupDialog(); true }
             R.id.menu_search_predio -> { showSearchPredioDialog(); true }
             R.id.menu_locate_and_open -> { showLocateAndOpenDialog(); true }
             R.id.menu_about -> { dialogHelper.showAboutDialog(30); true }
@@ -1109,8 +1108,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             
             val subtitleText = if (DatabaseHelper.isDatabaseAvailable()) {
                 val dbHelper = DatabaseHelper.getInstance(this)
-                val todayCount = dbHelper.getTodayStatisticsCount()
-                "Hoy: $todayCount"
+                "Hoy: ${dbHelper.getTodayStatisticsCount()}"
             } else {
                 "Hoy: --"
             }

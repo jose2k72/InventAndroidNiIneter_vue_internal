@@ -109,16 +109,6 @@ window.WorkflowService = {
                     message: 'Solo se puede registrar una (1) Encuesta Catastral por predio.'
                 };
             }
-
-            // Dependencia de Entrevistado
-            if (!hasEntrevistado) {
-                return {
-                    allowed: false,
-                    icon: '⚠️',
-                    title: 'Faltan datos',
-                    message: 'Debe registrar primero un Entrevistado antes de realizar la encuesta.'
-                };
-            }
         }
 
         // REGLA: Unión con Predio (Englobamiento) - Validación Espacial Estricta

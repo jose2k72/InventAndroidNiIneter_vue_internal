@@ -253,10 +253,41 @@ const app = createApp({
             }
         };
 
+        // Campos nuevos del modelo Ficha con su valor por defecto, para reparar registros
+        // guardados antes de que existieran (ver reparaFichaCamposNuevos).
+        const FICHA_CAMPOS_NUEVOS_DEFAULT = { ConDatos: true };
+
+        // Si una Ficha fue guardada antes de agregarse un campo nuevo al modelo, no lo trae en su
+        // JSON. Se completa aquí con su valor por defecto y se persiste de inmediato en la BD
+        // -- directo vía Android.sendData, SIN pasar por SyncService.saveData, porque ese método
+        // sobrescribe Fecha/Encuestador/LatLng/LocalProj con el contexto actual de la sesión, lo
+        // cual corrompería esos metadatos originales en un simple arreglo de compatibilidad.
+        const reparaFichaCamposNuevos = (item) => {
+            if (item.Data?.Type !== 'Ficha') return;
+            let necesitaReparar = false;
+            for (const [campo, valorDefault] of Object.entries(FICHA_CAMPOS_NUEVOS_DEFAULT)) {
+                if (item.Data[campo] === undefined) {
+                    item.Data[campo] = valorDefault;
+                    necesitaReparar = true;
+                }
+            }
+            if (necesitaReparar && typeof Android !== 'undefined' && Android.sendData) {
+                try {
+                    Android.sendData(item.Id, JSON.stringify(item.Data));
+                    console.log('🔧 Ficha reparada con campos nuevos por defecto (Id ' + item.Id + '):', Object.keys(FICHA_CAMPOS_NUEVOS_DEFAULT));
+                } catch (e) {
+                    console.error('❌ Error reparando Ficha con campos nuevos:', e);
+                }
+            }
+        };
+
         // Cargar datos existentes para edición
         const updateData = (index) => {
             currentIndex.value = index;
             const item = listData.value[index];
+
+            // Reparación silenciosa ANTES de mostrar nada del formulario.
+            reparaFichaCamposNuevos(item);
 
             currentId.value = item.Id;
             formType.value = item.Data.Type;

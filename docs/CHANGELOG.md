@@ -4,6 +4,39 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-08-27] - Limpieza de Menú y Fecha No Obligatoria para Documentos sin Fecha Real
+
+### 🧹 Limpieza de Menú (`main_menu.xml`, `MainActivity.kt`, `MainDialogHelper.kt`, `DatabaseHelper.kt`)
+- Swap de posición: "Exportar Base de Datos" ahora aparece ANTES que "Importar DB Externa"
+  (antes era al revés).
+- Renombrados: "Exportar Base de Datos" → **"Exportar desde DB local"**, "Importar DB Externa" →
+  **"Importar desde DB externa"**, "Buscar Predio (Polígono)" → **"Buscar Predio y Marcar
+  Polígono"**.
+- Eliminados por completo (no solo ocultos): **"Estadísticas Diarias"** y **"Exportar
+  Estadísticas por Grupo"** — ambos quedaron subsumidos por "Estadísticas por Grupo"
+  (productividad por usuario/día con desglose verde/amarillo/rojo, agregada en la sesión del
+  2026-07-28; la exportación equivalente se asume ahora desde el visor web). Cascada de limpieza
+  de código muerto verificada con `grep -rn` en cada paso antes de borrar: `MainActivity.kt`
+  (`onPrepareOptionsMenu`/`onOptionsItemSelected` ya no referencian los ítems eliminados) →
+  `MainDialogHelper.showStatisticsDialog()` y `exportStatisticsByUserReport()` eliminadas →
+  `DatabaseHelper.getDailyStatistics()` eliminada (única llamadora era `showStatisticsDialog()`).
+  `showStatisticsByGroupDialog()` se mantiene, con el docstring actualizado. Verificado con
+  `./gradlew compileDebugKotlin` (limpio) y `./gradlew installDebug` en el dispositivo de
+  pruebas.
+
+### 📅 Fecha de Documento no obligatoria para NC01/NP01/SD35 (`FormFicha.js`)
+- Investigación con datos reales (Map.db del visor + DB del dispositivo vía servidor de
+  depuración SQLite): NP01 y SD35 tienen 83-97% de registros con fecha inventada
+  (`0000-00-00`/placeholders), el resto de ~90 tipos de documento del catálogo no muestra este
+  patrón. `DOCUMENTOS_SIN_FECHA_OBLIGATORIA = [73, 74, 154]` (NC01/NP01/SD35): validación de
+  fecha obligatoria saltada, campo oculto y reemplazado por "No aplica para este tipo de
+  documento". Nunca se deja `null` — se rellena con la fecha de hoy vía `setDocFechaToday(doc)`
+  (función ya existente en Android, sin botón que la usara hasta ahora) al elegir uno de estos 3
+  documentos. Mismo cambio portado al visor web (documentado en su propio
+  `SRC.VISOR.EDITOR/DOCS/DECISIONES.md`).
+
+---
+
 ## [2026-07-28] - Subgrupos Catastrales (GRUPO_ID), Estadísticas por Usuario y Desacople Sector/Manzana
 
 ### 🧩 Subgrupos Catastrales dentro de un Mismo Predio (`DatabaseHelper.kt`, `MainActivity.kt`, `MapHelper.kt`, `workflowService.js`, `SpatialHelper.kt`)

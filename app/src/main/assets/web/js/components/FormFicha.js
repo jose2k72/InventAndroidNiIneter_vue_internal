@@ -3,6 +3,13 @@
  * Formulario para la Ficha (Encuesta Catastral) basado en Ficha.cs
  */
 
+// IDs del catalogo Documento.json que por naturaleza nunca tienen una fecha real que dar --
+// confirmado con datos reales de Map.db: NC01 (No Codificado, sin uso registrado todavia), NP01
+// (Existen documentos pero no fueron presentados, 95% de los registros ya capturados con fecha
+// inventada), SD35 (Sin Documento: Ninguno, 97% inventada). El resto de los ~90 tipos de
+// documento SI llevan fecha real la gran mayoria del tiempo -- no se tocaron.
+const DOCUMENTOS_SIN_FECHA_OBLIGATORIA = [73, 74, 154];
+
 const FormFicha = {
     props: ['data', 'fotos', 'localizacion'],
     template: `
@@ -99,59 +106,72 @@ const FormFicha = {
                 </div>
             </div>
 
+            <!-- CHECKBOX: CON DATOS (emula Predio No Encuestado dentro de la propia Ficha) -->
+            <div class="section">
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" v-model="formData.ConDatos">
+                        <span class="checkmark"></span>
+                        Con Datos
+                    </label>
+                </div>
+            </div>
+
             <!-- SECCIÓN 2: DATOS DEL INMUEBLE Y USO -->
             <div class="section">
                 <h3>📝 Datos del Inmueble y Uso</h3>
-                
-                <div class="form-group">
-                    <label :style="{color: errors.TipoEncuestaCatalog ? 'red' : 'inherit', fontWeight: errors.TipoEncuestaCatalog ? 'bold' : 'normal'}">Tipo de Encuesta *</label>
-                    <select id="TipoEncuestaCatalog" v-model.number="formData.TipoEncuestaCatalog">
-                        <option :value="null" disabled selected>Seleccione...</option>
-                        <option v-for="opt in catalogos.TipoEncuesta" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
-                    </select>
-                </div>
 
-                <div class="form-group">
-                    <label :style="{color: errors.TipoUsoCatalog ? 'red' : 'inherit', fontWeight: errors.TipoUsoCatalog ? 'bold' : 'normal'}">Uso del Predio *</label>
-                    <select id="TipoUsoCatalog" v-model.number="formData.TipoUsoCatalog">
-                        <option :value="null" disabled selected>Seleccione...</option>
-                        <option v-for="opt in catalogos.TipoUso" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label :style="{color: errors.DescripcionUsoCatalog ? 'red' : 'inherit', fontWeight: errors.DescripcionUsoCatalog ? 'bold' : 'normal'}">Descripción del Uso *</label>
-                    <div id="DescripcionUsoCatalog" class="selector-display" @click="pedirDescripcionUsoGlobal" :style="{borderColor: errors.DescripcionUsoCatalog ? '#d32f2f' : '#ccc'}">
-                        <span v-if="descripcionUsoName" style="color: #1565C0; font-weight: 600;">{{ descripcionUsoName }}</span>
-                        <span v-else style="color: #757575;">Seleccione descripción...</span>
-                        <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                <template v-if="formData.ConDatos">
+                    <div class="form-group">
+                        <label :style="{color: errors.TipoEncuestaCatalog ? 'red' : 'inherit', fontWeight: errors.TipoEncuestaCatalog ? 'bold' : 'normal'}">Tipo de Encuesta *</label>
+                        <select id="TipoEncuestaCatalog" v-model.number="formData.TipoEncuestaCatalog">
+                            <option :value="null" disabled selected>Seleccione...</option>
+                            <option v-for="opt in catalogos.TipoEncuesta" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+                        </select>
                     </div>
-                </div>
 
-                <div v-if="formData.DescripcionUsoCatalog === 5" class="form-group sub-section">
-                    <label :style="{color: errors.DescripcionUsoOtroText ? 'red' : 'inherit'}">Especifique Uso Mixto *</label>
-                    <textarea id="DescripcionUsoOtroText" v-model="formData.DescripcionUsoOtroText" rows="3" placeholder="Detalle los múltiples usos de la parcela..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra *</label>
-                    <div id="OrigenTierraCatalog" class="selector-display" @click="pedirOrigenTierraGlobal">
-                        <span v-if="origenTierraName" style="color: #1565C0; font-weight: 600;">{{ origenTierraName }}</span>
-                        <span v-else style="color: #757575;">Seleccione origen...</span>
-                        <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                    <div class="form-group">
+                        <label :style="{color: errors.TipoUsoCatalog ? 'red' : 'inherit', fontWeight: errors.TipoUsoCatalog ? 'bold' : 'normal'}">Uso del Predio *</label>
+                        <select id="TipoUsoCatalog" v-model.number="formData.TipoUsoCatalog">
+                            <option :value="null" disabled selected>Seleccione...</option>
+                            <option v-for="opt in catalogos.TipoUso" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+                        </select>
                     </div>
-                </div>
 
-                <!-- Especificar Origen si es "Otros" (ID 1) -->
-                <div v-if="formData.OrigenTierraCatalog === 1" class="form-group sub-section">
-                    <label :style="{color: errors.OrigenTierraOtroText ? 'red' : 'inherit', fontWeight: errors.OrigenTierraOtroText ? 'bold' : 'normal'}">Especifique Origen *</label>
-                    <input id="OrigenTierraOtroText" type="text" v-model="formData.OrigenTierraOtroText" placeholder="Detalle el origen de la tierra...">
-                </div>
+                    <div class="form-group">
+                        <label :style="{color: errors.DescripcionUsoCatalog ? 'red' : 'inherit', fontWeight: errors.DescripcionUsoCatalog ? 'bold' : 'normal'}">Descripción del Uso *</label>
+                        <div id="DescripcionUsoCatalog" class="selector-display" @click="pedirDescripcionUsoGlobal" :style="{borderColor: errors.DescripcionUsoCatalog ? '#d32f2f' : '#ccc'}">
+                            <span v-if="descripcionUsoName" style="color: #1565C0; font-weight: 600;">{{ descripcionUsoName }}</span>
+                            <span v-else style="color: #757575;">Seleccione descripción...</span>
+                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                        </div>
+                    </div>
 
-                <div class="form-group">
-                    <label :style="{color: errors.ResenaHistorica ? 'red' : 'inherit', fontWeight: errors.ResenaHistorica ? 'bold' : 'normal'}">Reseña Histórica *</label>
-                    <textarea id="ResenaHistorica" v-model="formData.ResenaHistorica" rows="9" placeholder="Documentación histórica del predio..."></textarea>
-                </div>
+                    <div v-if="formData.DescripcionUsoCatalog === 5" class="form-group sub-section">
+                        <label :style="{color: errors.DescripcionUsoOtroText ? 'red' : 'inherit'}">Especifique Uso Mixto *</label>
+                        <textarea id="DescripcionUsoOtroText" v-model="formData.DescripcionUsoOtroText" rows="3" placeholder="Detalle los múltiples usos de la parcela..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label :style="{color: errors.OrigenTierraCatalog ? 'red' : 'inherit', fontWeight: errors.OrigenTierraCatalog ? 'bold' : 'normal'}">Origen de la Tierra *</label>
+                        <div id="OrigenTierraCatalog" class="selector-display" @click="pedirOrigenTierraGlobal">
+                            <span v-if="origenTierraName" style="color: #1565C0; font-weight: 600;">{{ origenTierraName }}</span>
+                            <span v-else style="color: #757575;">Seleccione origen...</span>
+                            <span style="color: #1976D2; font-size: 1.2rem;">🔍</span>
+                        </div>
+                    </div>
+
+                    <!-- Especificar Origen si es "Otros" (ID 1) -->
+                    <div v-if="formData.OrigenTierraCatalog === 1" class="form-group sub-section">
+                        <label :style="{color: errors.OrigenTierraOtroText ? 'red' : 'inherit', fontWeight: errors.OrigenTierraOtroText ? 'bold' : 'normal'}">Especifique Origen *</label>
+                        <input id="OrigenTierraOtroText" type="text" v-model="formData.OrigenTierraOtroText" placeholder="Detalle el origen de la tierra...">
+                    </div>
+
+                    <div class="form-group">
+                        <label :style="{color: errors.ResenaHistorica ? 'red' : 'inherit', fontWeight: errors.ResenaHistorica ? 'bold' : 'normal'}">Reseña Histórica *</label>
+                        <textarea id="ResenaHistorica" v-model="formData.ResenaHistorica" rows="9" placeholder="Documentación histórica del predio..."></textarea>
+                    </div>
+                </template>
 
                 <div class="coords-grid">
                     <div class="form-group">
@@ -169,9 +189,9 @@ const FormFicha = {
             </div>
 
             <!-- SECCIÓN 3: SERVIDUMBRES -->
-            <div class="section">
+            <div class="section" v-if="formData.ConDatos">
                 <h3>🚧 Servidumbres (Opcional)</h3>
-                
+
                 <div class="form-group">
                     <label>Servidumbre de Agua</label>
                     <select v-model.number="formData.ServidumbreAguaCatalog">
@@ -213,7 +233,7 @@ const FormFicha = {
             </div>
 
             <!-- SECCIÓN 4: DATOS REGISTRALES -->
-            <div class="section">
+            <div class="section" v-if="formData.ConDatos">
                 <h3>📜 Datos Registrales</h3>
                 <div class="form-group checkbox-group">
                     <label class="checkbox-container">
@@ -305,7 +325,7 @@ const FormFicha = {
             </div>
 
             <!-- SECCIÓN 5: DOCUMENTOS -->
-            <div id="Documentos" class="section">
+            <div id="Documentos" class="section" v-if="formData.ConDatos">
                 <h3>📂 Documentos</h3>
                 
                 <div class="form-group checkbox-group">
@@ -337,16 +357,22 @@ const FormFicha = {
                             <input type="text" v-model="doc.AutorNotario" :style="{borderColor: (errors['Doc' + index + '_Autor']) ? '#d32f2f' : '#ccc'}">
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" v-if="!docSinFechaObligatoria(doc)">
                             <label :style="{color: (errors['Doc' + index + '_Fecha']) ? 'red' : 'inherit', fontWeight: (errors['Doc' + index + '_Fecha']) ? 'bold' : 'normal'}">Fecha de Documento *</label>
-                            <input 
-                                type="text" 
-                                inputmode="numeric" 
-                                placeholder="DD/MM/AAAA" 
+                            <input
+                                type="text"
+                                inputmode="numeric"
+                                placeholder="DD/MM/AAAA"
                                 v-model="doc._FechaDocumentoUI"
                                 @input="onDocFechaInput(doc)"
                                 :style="{borderColor: (errors['Doc' + index + '_Fecha']) ? '#d32f2f' : '#ccc'}"
                             >
+                        </div>
+                        <div class="form-group" v-else>
+                            <label>Fecha de Documento</label>
+                            <div style="padding: 10px 12px; background: #f5f5f5; border-radius: 4px; color: #757575; font-style: italic; font-size: 0.9rem;">
+                                No aplica para este tipo de documento
+                            </div>
                         </div>
                     </div>
                     
@@ -376,7 +402,7 @@ const FormFicha = {
             </div>
 
             <!-- SECCIÓN 6: CONFLICTOS -->
-            <div class="section">
+            <div class="section" v-if="formData.ConDatos">
                 <h3>⚠️ Conflictos</h3>
                 <div class="form-group checkbox-group">
                     <label class="checkbox-container">
@@ -422,8 +448,34 @@ const FormFicha = {
             <div class="section">
                 <h3>📝 Observaciones</h3>
                 <div class="form-group">
-                    <label>Observaciones Generales</label>
-                    <textarea v-model="formData.ObservacionesGenerales" rows="9" placeholder="Observaciones adicionales, notas o comentarios del encuestador acerca de la parcela..."></textarea>
+                    <label :style="{color: errors.ObservacionesGenerales ? 'red' : 'inherit', fontWeight: errors.ObservacionesGenerales ? 'bold' : 'normal'}">
+                        Observaciones Generales<span v-if="!formData.ConDatos"> *</span>
+                    </label>
+
+                    <!-- Sin datos: mismos botones rápidos de motivo que Predio No Encuestado -->
+                    <div v-if="!formData.ConDatos" class="quick-reasons" style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="button" :style="chipStyleObs" @click="selectReasonObservaciones('No atendió')">
+                            <span style="font-size:22px; line-height:1;">🚪</span>
+                            <span>No atendió</span>
+                        </button>
+                        <button type="button" :style="chipStyleObs" @click="selectReasonObservaciones('No había personas en el lugar')">
+                            <span style="font-size:22px; line-height:1;">👥</span>
+                            <span>No había personas</span>
+                        </button>
+                        <button type="button" :style="chipStyleObs" @click="selectReasonObservaciones('Propietario se negó a brindar información (Rechazo)')">
+                            <span style="font-size:22px; line-height:1;">🚫</span>
+                            <span>Rechazo de encuesta</span>
+                        </button>
+                        <button type="button" :style="chipStyleObs" @click="selectReasonObservaciones('Vivienda deshabitada / desocupada')">
+                            <span style="font-size:22px; line-height:1;">🏠</span>
+                            <span>Vivienda deshabitada</span>
+                        </button>
+                    </div>
+
+                    <textarea id="ObservacionesGenerales" v-model="formData.ObservacionesGenerales" rows="9"
+                        placeholder="Observaciones adicionales, notas o comentarios del encuestador acerca de la parcela..."
+                        :style="{borderColor: errors.ObservacionesGenerales ? '#d32f2f' : '#ccc'}"></textarea>
+                    <small v-if="errors.ObservacionesGenerales" style="color: #d32f2f;">Este campo es obligatorio cuando el predio no tiene datos.</small>
                 </div>
             </div>
 
@@ -486,6 +538,13 @@ const FormFicha = {
     setup(props, { emit }) {
         const formData = Vue.reactive(props.data);
         const errors = Vue.reactive({});
+
+        // Compatibilidad hacia atrás: las Fichas guardadas antes de introducir el checkbox
+        // "Con Datos" no traen este campo en su JSON -- deben tratarse como que sí tienen datos
+        // (todas las Fichas anteriores fueron capturadas con la sección completa visible).
+        if (formData.ConDatos === undefined || formData.ConDatos === null) {
+            formData.ConDatos = true;
+        }
 
         // --- Lógica de Generación de ID (NoEncuesta) ---
         const generarNoEncuesta = () => {
@@ -623,6 +682,34 @@ const FormFicha = {
             }
         });
 
+        // "Con Datos" desmarcado: emula Predio No Encuestado dentro de la Ficha. Se ocultan y
+        // limpian Datos del Inmueble y Uso (salvo Área Estimada/Unidad, que ya vienen calculadas
+        // del mapa), Servidumbres, Datos Registrales, Documentos y Conflictos.
+        Vue.watch(() => formData.ConDatos, (newVal) => {
+            if (newVal) return;
+
+            formData.TipoEncuestaCatalog = null;
+            formData.TipoUsoCatalog = null;
+            formData.DescripcionUsoCatalog = null;
+            formData.DescripcionUsoOtroText = '';
+            formData.OrigenTierraCatalog = null;
+            formData.OrigenTierraOtroText = '';
+            formData.ResenaHistorica = '';
+
+            formData.ServidumbreAguaCatalog = null; formData.ServidumbreAguaOtroText = '';
+            formData.ServidumbrePaseCatalog = null; formData.ServidumbrePaseOtroText = '';
+            formData.ServidumbreOtroCatalog = null; formData.ServidumbreOtroOtroText = '';
+
+            formData.TieneDatosRegistrales = false;
+            formData.PresentaDocumentos = false;
+            formData.TieneConflicto = false;
+
+            [
+                'TipoEncuestaCatalog', 'TipoUsoCatalog', 'DescripcionUsoCatalog', 'DescripcionUsoOtroText',
+                'OrigenTierraCatalog', 'OrigenTierraOtroText', 'ResenaHistorica'
+            ].forEach(k => delete errors[k]);
+        });
+
         // Limpieza de campos "Otro"
         Vue.watch(() => formData.DescripcionUsoCatalog, (val) => { if (val !== 5) formData.DescripcionUsoOtroText = ''; });
         Vue.watch(() => formData.OrigenTierraCatalog, (val) => { if (val !== 1) formData.OrigenTierraOtroText = ''; });
@@ -636,6 +723,25 @@ const FormFicha = {
         const conflictoName = Vue.ref(formData._ConflictoName || '');
         const origenTierraName = Vue.ref(formData._OrigenTierraName || '');
         const gestionConflictoName = Vue.ref(formData._GestionConflictoName || '');
+
+        // Botones rápidos de motivo para Observaciones cuando "Con Datos" está desmarcado
+        // (mismo patrón/estilo que FormNoEncuestado.js)
+        const chipStyleObs = {
+            background: '#f1f3f4', border: '1px solid #dadce0', borderRadius: '12px',
+            padding: '14px 8px', fontSize: '13px', color: '#3c4043', cursor: 'pointer',
+            fontWeight: '500', transition: 'all 0.2s ease', outline: 'none',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: '6px', width: '100%', minHeight: '72px'
+        };
+        const selectReasonObservaciones = (reason) => {
+            if (!formData.ObservacionesGenerales) {
+                formData.ObservacionesGenerales = reason;
+            } else {
+                const text = formData.ObservacionesGenerales;
+                formData.ObservacionesGenerales = (text.endsWith(' ') || text.endsWith('\n')) ? text + reason : text + ' ' + reason;
+            }
+        };
+        Vue.watch(() => formData.ObservacionesGenerales, (val) => { if (val?.trim()) delete errors.ObservacionesGenerales; });
 
         // Normalización de fechas para inputs y UI
         const fechaAdquisicionUI = Vue.ref('');
@@ -727,6 +833,10 @@ const FormFicha = {
             }
             doc.FechaDocumento = null;
         };
+
+        // Ver DOCUMENTOS_SIN_FECHA_OBLIGATORIA arriba -- NC01/NP01/SD35 nunca tienen una fecha
+        // real que dar.
+        const docSinFechaObligatoria = (doc) => DOCUMENTOS_SIN_FECHA_OBLIGATORIA.includes(doc.DocumentoCatalog);
 
         const setDocFechaToday = (doc) => {
             const today = new Date();
@@ -920,8 +1030,14 @@ const FormFicha = {
                 vueAppContext.openCatalog({
                     catalogName: 'Documento-Mod', label: 'Tipo de Documento...',
                     onSelect: (val) => {
-                        formData.Documentos[index].DocumentoCatalog = parseInt(val.id);
-                        formData.Documentos[index]._DocumentoName = val.name;
+                        const doc = formData.Documentos[index];
+                        doc.DocumentoCatalog = parseInt(val.id);
+                        doc._DocumentoName = val.name;
+                        // NC01/NP01/SD35: se rellena sola con hoy (nunca queda en null, ver
+                        // DOCUMENTOS_SIN_FECHA_OBLIGATORIA).
+                        if (docSinFechaObligatoria(doc)) {
+                            setDocFechaToday(doc);
+                        }
                     }
                 });
             }
@@ -991,43 +1107,49 @@ const FormFicha = {
 
             if (!formData.Direccion?.trim()) { errors.Direccion = true; isValid = false; }
             if (!formData.FotoFrente || formData.FotoFrente === 'null' || formData.FotoFrente === 'undefined' || !formData.FotoFrente.trim()) { errors.FotoFrente = true; isValid = false; }
-            if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
-            if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
-            if (!formData.DescripcionUsoCatalog) { errors.DescripcionUsoCatalog = true; isValid = false; }
-            if (formData.DescripcionUsoCatalog === 5 && !formData.DescripcionUsoOtroText?.trim()) { errors.DescripcionUsoOtroText = true; isValid = false; }
-            if (!formData.OrigenTierraCatalog) { errors.OrigenTierraCatalog = true; isValid = false; }
-            if (formData.OrigenTierraCatalog === 1 && !formData.OrigenTierraOtroText?.trim()) { errors.OrigenTierraOtroText = true; isValid = false; }
-            if (!formData.ResenaHistorica?.trim()) { errors.ResenaHistorica = true; isValid = false; }
             if (!formData.UnidadMedidaAreaEstimadaCatalog) { errors.UnidadMedidaAreaEstimadaCatalog = true; isValid = false; }
-            if (formData.PresentaDocumentos) {
-                if (!formData.Documentos?.length) { errors.Documentos = true; isValid = false; }
-                else {
-                    formData.Documentos.forEach((doc, idx) => {
-                        if (!doc.DocumentoCatalog) errors['Doc' + idx + '_Catalog'] = true;
-                        if (!doc.AutorNotario?.trim()) errors['Doc' + idx + '_Autor'] = true;
-                        if (!doc.FechaDocumento) errors['Doc' + idx + '_Fecha'] = true;
-                    });
-                    if (Object.keys(errors).some(k => k.startsWith('Doc'))) isValid = false;
+
+            if (formData.ConDatos) {
+                if (!formData.TipoEncuestaCatalog) { errors.TipoEncuestaCatalog = true; isValid = false; }
+                if (!formData.TipoUsoCatalog) { errors.TipoUsoCatalog = true; isValid = false; }
+                if (!formData.DescripcionUsoCatalog) { errors.DescripcionUsoCatalog = true; isValid = false; }
+                if (formData.DescripcionUsoCatalog === 5 && !formData.DescripcionUsoOtroText?.trim()) { errors.DescripcionUsoOtroText = true; isValid = false; }
+                if (!formData.OrigenTierraCatalog) { errors.OrigenTierraCatalog = true; isValid = false; }
+                if (formData.OrigenTierraCatalog === 1 && !formData.OrigenTierraOtroText?.trim()) { errors.OrigenTierraOtroText = true; isValid = false; }
+                if (!formData.ResenaHistorica?.trim()) { errors.ResenaHistorica = true; isValid = false; }
+
+                if (formData.PresentaDocumentos) {
+                    if (!formData.Documentos?.length) { errors.Documentos = true; isValid = false; }
+                    else {
+                        formData.Documentos.forEach((doc, idx) => {
+                            if (!doc.DocumentoCatalog) errors['Doc' + idx + '_Catalog'] = true;
+                            if (!doc.AutorNotario?.trim()) errors['Doc' + idx + '_Autor'] = true;
+                            if (!docSinFechaObligatoria(doc) && !doc.FechaDocumento) errors['Doc' + idx + '_Fecha'] = true;
+                        });
+                        if (Object.keys(errors).some(k => k.startsWith('Doc'))) isValid = false;
+                    }
+                    // El área titulada es opcional, pero si se pone debe tener unidad y ser >= 0
+                    const areaInput = formData.AreaTitulada;
+                    const hasAreaVal = areaInput !== null && areaInput !== undefined && areaInput !== '';
+                    if (hasAreaVal) {
+                        if (areaInput < 0) { errors.AreaTitulada = true; isValid = false; }
+                        if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; isValid = false; }
+                    }
                 }
-                // El área titulada es opcional, pero si se pone debe tener unidad y ser >= 0
-                const areaInput = formData.AreaTitulada;
-                const hasAreaVal = areaInput !== null && areaInput !== undefined && areaInput !== '';
-                if (hasAreaVal) {
-                    if (areaInput < 0) { errors.AreaTitulada = true; isValid = false; }
-                    if (!formData.UnidadMedidaAreaTituladaCatalog) { errors.UnidadMedidaAreaTituladaCatalog = true; isValid = false; }
+                if (formData.TieneDatosRegistrales) {
+                    if (!formData.NoFinca_NAP?.trim()) {
+                        errors.NoFinca_NAP = true;
+                        isValid = false;
+                    }
                 }
-            }
-            if (formData.TieneDatosRegistrales) {
-                if (!formData.NoFinca_NAP?.trim()) {
-                    errors.NoFinca_NAP = true;
-                    isValid = false;
+                if (formData.TieneConflicto) {
+                    if (!formData.ClaseConflictoCatalog) { errors.ClaseConflictoCatalog = true; isValid = false; }
+                    if (formData.ClaseConflictoCatalog === 13 && !formData.ClaseConflictoOtroText?.trim()) { errors.ClaseConflictoOtroText = true; isValid = false; }
+                    if (!formData.GestionConflictoCatalog) { errors.GestionConflictoCatalog = true; isValid = false; }
+                    if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) { errors.GestionConflictoOtroText = true; isValid = false; }
                 }
-            }
-            if (formData.TieneConflicto) {
-                if (!formData.ClaseConflictoCatalog) { errors.ClaseConflictoCatalog = true; isValid = false; }
-                if (formData.ClaseConflictoCatalog === 13 && !formData.ClaseConflictoOtroText?.trim()) { errors.ClaseConflictoOtroText = true; isValid = false; }
-                if (!formData.GestionConflictoCatalog) { errors.GestionConflictoCatalog = true; isValid = false; }
-                if (formData.GestionConflictoCatalog === 6 && !formData.GestionConflictoOtroText?.trim()) { errors.GestionConflictoOtroText = true; isValid = false; }
+            } else {
+                if (!formData.ObservacionesGenerales?.trim()) { errors.ObservacionesGenerales = true; isValid = false; }
             }
             return isValid;
         };
@@ -1131,11 +1253,11 @@ const FormFicha = {
                 
                 // Orden de campos para posicionar el scroll en el primer error visible
                 const errorOrder = [
-                    'MunicipioCatalog', 'Direccion', 'TipoEncuestaCatalog', 'TipoUsoCatalog', 
-                    'DescripcionUsoCatalog', 'DescripcionUsoOtroText', 'OrigenTierraCatalog', 
+                    'MunicipioCatalog', 'Direccion', 'TipoEncuestaCatalog', 'TipoUsoCatalog',
+                    'DescripcionUsoCatalog', 'DescripcionUsoOtroText', 'OrigenTierraCatalog',
                     'OrigenTierraOtroText', 'ResenaHistorica', 'UnidadMedidaAreaEstimadaCatalog',
-                    'Documentos', 'NoFinca_NAP', 'ClaseConflictoCatalog', 'ClaseConflictoOtroText', 
-                    'GestionConflictoCatalog', 'GestionConflictoOtroText', 'FotoFrente'
+                    'Documentos', 'NoFinca_NAP', 'ClaseConflictoCatalog', 'ClaseConflictoOtroText',
+                    'GestionConflictoCatalog', 'GestionConflictoOtroText', 'ObservacionesGenerales', 'FotoFrente'
                 ];
 
                 const firstErrorKey = errorOrder.find(key => {
@@ -1167,7 +1289,8 @@ const FormFicha = {
             pedirMunicipioGlobal, pedirDescripcionUsoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
             agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion, scanField,
             fotoFrenteBase64, fotosGenerales, capturarFotoFrente, eliminarFotoFrente,
-            fechaAdquisicionUI, fechaRegistroUI, formatAsDate, setFechaAdquisicionToday, setFechaRegistroToday, onDocFechaInput, setDocFechaToday
+            fechaAdquisicionUI, fechaRegistroUI, formatAsDate, setFechaAdquisicionToday, setFechaRegistroToday, onDocFechaInput, setDocFechaToday, docSinFechaObligatoria,
+            chipStyleObs, selectReasonObservaciones
         };
     }
 };
