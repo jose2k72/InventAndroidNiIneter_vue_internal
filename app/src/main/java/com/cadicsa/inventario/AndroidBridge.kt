@@ -165,18 +165,28 @@ class AndroidBridge(activity: FormActivity) {
             if (!jsonData.isNullOrEmpty()) {
                 try {
                     val jsonObject = JSONObject(jsonData)
+                    // FotoFrente vive en su propio campo, nunca dentro de Imagenes -- si no se
+                    // incluye aquí, su archivo queda huérfano en disco por cada Ficha eliminada.
+                    // Mismo criterio que ExportManager.photoNamesFromJson y DataCleaner.
+                    val fotos = LinkedHashSet<String>()
                     if (jsonObject.has("Imagenes")) {
-                        val imagenesStr = jsonObject.getString("Imagenes")
-                        if (imagenesStr.isNotEmpty()) {
-                            val fotos = imagenesStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                            var borradas = 0
-                            for (foto in fotos) {
-                                if (act.imageHelper.deletePhotoFile(foto)) {
-                                    borradas++
-                                }
+                        jsonObject.optString("Imagenes")
+                            .split(",")
+                            .map { it.trim() }
+                            .filter { it.isNotEmpty() }
+                            .forEach { fotos.add(it) }
+                    }
+                    if (jsonObject.has("FotoFrente")) {
+                        jsonObject.optString("FotoFrente").trim().takeIf { it.isNotEmpty() }?.let { fotos.add(it) }
+                    }
+                    if (fotos.isNotEmpty()) {
+                        var borradas = 0
+                        for (foto in fotos) {
+                            if (act.imageHelper.deletePhotoFile(foto)) {
+                                borradas++
                             }
-                            android.util.Log.d("AndroidBridge", "🗑️ Eliminadas $borradas fotos")
                         }
+                        android.util.Log.d("AndroidBridge", "🗑️ Eliminadas $borradas fotos")
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("AndroidBridge", "Error parseando JSON: ${e.message}")

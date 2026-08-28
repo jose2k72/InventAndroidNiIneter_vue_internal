@@ -4,6 +4,60 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-08-28] - Fotografías Adicionales en Unión con Predio y Correcciones en el Ciclo de Vida de Fotos
+
+### 📸 Sección de Fotografías Adicionales en `FormUnionConPredio` (`FormUnionConPredio.js`, `index.html`)
+- Nueva sección **"📸 Fotografías Adicionales"**, debajo de "📍 Predio Actual (Dependiente)", con
+  las mismas reglas de CRUD que ya usa `FormFicha`: capturar con cámara, importar, ver ampliada y
+  eliminar. Las fotos son **opcionales** (no hay validación que las exija) y el formulario no
+  tiene `FotoFrente`, así que todas las fotos del registro son "generales" — sin filtrado.
+- **Sin cambios de modelo ni de DTO**: `Imagenes` ya existía en `ModelsFactory.createUnionConPredio`
+  y el DTO C# `UnionConPredio` ya lo hereda de `RegistroBase`. Verificado antes de tocar nada.
+- El componente solo **lee** `props.fotos`; agregar/eliminar lo sigue manejando `PhotoService` vía
+  `app.js`, que es genérico por tipo de registro. `app.js` no necesitó cambios: `updateData()` ya
+  carga las fotos desde `Imagenes` para cualquier tipo, y `openCamera`/`importPhotos` ya resuelven
+  el prefijo del nombre de archivo cayendo al `NoEncuesta` de la Ficha del mismo predio cuando el
+  registro actual no tiene uno propio (que es justo el caso de `UnionConPredio`). Solo se agregó
+  el cableado de `:fotos`/`@camera`/`@import-photos` en `index.html`.
+
+### 🐛 Fotos huérfanas al eliminar un registro (`AndroidBridge.kt`)
+`deleteData()` borraba en cascada solo los archivos listados en `Imagenes` e **ignoraba
+`FotoFrente`**, que vive en un campo propio y nunca viaja dentro de `Imagenes` — cada Ficha
+eliminada dejaba su foto del frente huérfana en el almacenamiento. Ahora se juntan ambos orígenes
+en un `LinkedHashSet` (deduplicado) antes de borrar. Que era un olvido y no una decisión lo
+confirma el resto del sistema, que sí contempla `FotoFrente` en su limpieza:
+`ExportManager.photoNamesFromJson`, `DataCleaner` y el visor (`app.py`).
+
+### 🐛 Registro clonado compartía el archivo físico de la foto del frente (`app.js`)
+`startCopy()` limpiaba `Imagenes` pero no `FotoFrente`, así que el clon nacía apuntando **al mismo
+archivo** que el original — pese a que el propio diálogo promete "Se creará una copia... sin
+fotos". Consecuencia real: borrar (o sustituir y guardar) la foto en cualquiera de los dos
+registros dejaba al otro con una referencia rota. Se agregó `clonedData.FotoFrente = ''`.
+
+### 🐛 Fuga al sustituir la foto del frente dos veces en la misma sesión (`photoService.js`)
+Si se reemplazaba `FotoFrente` más de una vez antes de guardar, la foto intermedia quedaba en
+disco para siempre: `commit()` solo compara el snapshot original contra el valor final y limpia
+`fotosNuevas` sin borrar sus archivos. Ahora `handleAndroidPhoto()` (rama `tomandoFotoFrente`)
+borra la anterior en el acto **solo si esa anterior está en `fotosNuevas`** — es decir, si se
+subió en esta misma sesión y ningún registro guardado la referencia. La `FotoFrente` que venía de
+la base de datos se sigue sin tocar: eso lo decide `commit()`, al guardar.
+
+### 🔄 Portado al visor web
+Todo lo anterior se replicó en `SRC.VISOR.EDITOR` (sección de fotos en su `FormUnionConPredio.js`
+y, sobre todo, el mecanismo transaccional de borrado completo, que allí no existía). Documentado
+en `SRC.VISOR.EDITOR/DOCS/DECISIONES.md`.
+
+### 📌 Pendiente anotado: relación foto ↔ documento
+Hoy **no existe** ningún vínculo entre una foto y un documento concreto: los ítems de "Datos
+Registrales" (`Documentos[]`) solo guardan metadatos (`DocumentoCatalog`, `AutorNotario`,
+`FechaDocumento`), y el OCR fotografía el documento pero borra la imagen temporal y devuelve solo
+texto (`FormImageHelper`). Una foto de documento (fotografiado en campo o escaneado en gabinete)
+solo puede terminar hoy en el array general `Imagenes`, indistinguible de una foto del predio.
+Modelarlo requeriría un campo nuevo por documento y tocaría los DTOs C# y ambas apps — queda para
+una sesión aparte.
+
+---
+
 ## [2026-08-27] - Limpieza de Menú y Fecha No Obligatoria para Documentos sin Fecha Real
 
 ### 🧹 Limpieza de Menú (`main_menu.xml`, `MainActivity.kt`, `MainDialogHelper.kt`, `DatabaseHelper.kt`)

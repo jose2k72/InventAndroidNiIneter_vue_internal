@@ -4,7 +4,7 @@
  */
 
 const FormUnionConPredio = {
-    props: ['data'],
+    props: ['data', 'fotos'],
     template: `
         <div class="form-container">
             <h2 style="color: #6200EE;">🔗 Unión con Predio Master</h2>
@@ -65,6 +65,28 @@ const FormUnionConPredio = {
                 </div>
             </div>
 
+            <!-- Fotografías Adicionales (opcionales) -->
+            <div class="section">
+                <h3>📸 Fotografías Adicionales ({{ fotosGenerales.length }})</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button type="button" class="btn btn-camera" style="flex: 1;" @click="capturarFoto">
+                        📷 CAPTURAR FOTO ADICIONAL
+                    </button>
+                    <button type="button" class="btn btn-camera" style="flex: 1; background-color: #607d8b;" @click="$emit('import-photos')">
+                        📁 IMPORTAR FOTOS
+                    </button>
+                </div>
+                <div v-if="fotosGenerales.length > 0" class="photos-grid">
+                    <div v-for="(foto, index) in fotosGenerales" :key="index" class="photo-item">
+                        <img :src="foto.data" class="photo-thumbnail" @click="verFoto(foto)">
+                        <div class="photo-info">
+                            <span class="photo-name">{{ foto.name }}</span>
+                            <button type="button" class="btn-delete" @click="eliminarFoto(foto.name)">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="btn-group">
                 <button type="button" class="btn btn-success" @click="save">
                     💾 GUARDAR UNIFICACIÓN
@@ -101,6 +123,16 @@ const FormUnionConPredio = {
             delete errors.LocalizacionMaster;
         };
 
+        // Fotografias adicionales (opcionales): este formulario no tiene FotoFrente, asi que no
+        // hay nada que filtrar -- todas las fotos del registro son "generales". El componente
+        // solo LEE props.fotos; agregar/eliminar lo maneja PhotoService via app.js, que es quien
+        // decide si un borrado se aplica ya o se difiere hasta guardar.
+        const fotosGenerales = Vue.computed(() => props.fotos || []);
+
+        const capturarFoto = () => emit('camera');
+        const verFoto = (foto) => { if (typeof Android !== 'undefined' && Android.showPhoto) Android.showPhoto(foto.name); };
+        const eliminarFoto = (filename) => { if (window.deletePhoto) window.deletePhoto(filename); };
+
         const save = () => {
             // Limpiar errores
             Object.keys(errors).forEach(key => delete errors[key]);
@@ -130,7 +162,11 @@ const FormUnionConPredio = {
             candidatos,
             getDirName,
             selectMaster,
-            save
+            save,
+            fotosGenerales,
+            capturarFoto,
+            verFoto,
+            eliminarFoto
         };
     }
 };

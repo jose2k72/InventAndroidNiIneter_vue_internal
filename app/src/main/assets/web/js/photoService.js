@@ -59,6 +59,17 @@ window.PhotoService = {
             if (ctx.tomandoFotoFrente && ctx.tomandoFotoFrente.value) {
                 // Asignar al campo FotoFrente
                 if (ctx.formData.value) {
+                    // Si la FotoFrente que se está reemplazando también se tomó en ESTA sesión
+                    // (aún no guardada), su archivo se borra ya: ningún registro persistido la
+                    // referencia, y commit() solo compara contra fotoFrenteOriginal, así que de
+                    // lo contrario quedaría huérfana para siempre al guardar. La FotoFrente que
+                    // venía de la BD nunca se toca aquí: eso lo decide commit().
+                    const anterior = ctx.formData.value.FotoFrente;
+                    if (anterior && anterior !== filename && ctx.fotosNuevas.value.some(f => f.name === anterior)) {
+                        this.deletePhotosFromDisk([{ name: anterior }]);
+                        const idxAnterior = ctx.fotosNuevas.value.findIndex(f => f.name === anterior);
+                        if (idxAnterior > -1) ctx.fotosNuevas.value.splice(idxAnterior, 1);
+                    }
                     ctx.formData.value.FotoFrente = filename;
                 }
                 ctx.tomandoFotoFrente.value = false;

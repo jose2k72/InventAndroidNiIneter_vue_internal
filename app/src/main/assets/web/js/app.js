@@ -655,8 +655,12 @@ const app = createApp({
                 onConfirm: () => {
                     // Clonar datos
                     const clonedData = JSON.parse(JSON.stringify(item.Data));
-                    // Limpiar campos únicos y fotos
+                    // Limpiar campos únicos y fotos. FotoFrente va aparte de Imagenes (campo
+                    // propio): sin limpiarla, el clon nacería apuntando al MISMO archivo físico
+                    // que el original, y borrar/reemplazar la foto en cualquiera de los dos
+                    // dejaría al otro con una referencia rota.
                     clonedData.Imagenes = '';
+                    clonedData.FotoFrente = '';
                     clonedData.Fecha = null;
                     clonedData.Encuestador = null;
                     clonedData.NumBoleta = 'GEN-' + Date.now();
