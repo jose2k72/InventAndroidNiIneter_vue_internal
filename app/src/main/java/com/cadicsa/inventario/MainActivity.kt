@@ -594,7 +594,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             R.id.menu_export_db -> { exportExternalDb(); true }
             R.id.menu_statistics_by_group -> { dialogHelper.showStatisticsByGroupDialog(); true }
             R.id.menu_search_predio -> { showSearchPredioDialog(); true }
-            R.id.menu_locate_and_open -> { showLocateAndOpenDialog(); true }
             R.id.menu_about -> { dialogHelper.showAboutDialog(30); true }
             R.id.menu_exit -> { exitApp(); true }
             else -> super.onOptionsItemSelected(item)
@@ -1448,111 +1447,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         } catch (e: Exception) {
             val pole = GeometryUtil.getPoleOfInaccessibility(geom)
             mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(pole, 20f))
-        }
-    }
-
-    private fun showLocateAndOpenDialog() {
-        val input = android.widget.EditText(this)
-        input.hint = "Ej: 01-01-01-01-001"
-        
-        val lp = android.widget.LinearLayout.LayoutParams(
-            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-            android.widget.LinearLayout.LayoutParams.MATCH_PARENT
-        )
-        input.layoutParams = lp
-        val container = android.widget.LinearLayout(this)
-        container.setPadding(50, 20, 50, 0)
-        container.addView(input)
-
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Localizar Predio y Abrir Ficha")
-            .setMessage("Ingrese la localización del predio:")
-            .setView(container)
-            .setPositiveButton("Localizar") { _, _ ->
-                val localizacion = input.text.toString().trim()
-                if (localizacion.isNotEmpty()) {
-                    locateAndOpenFicha(localizacion)
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    private fun locateAndOpenFicha(localizacion: String) {
-        val dbHelper = DatabaseHelper.getInstance(this)
-        
-        kotlin.concurrent.thread {
-            // 1. Obtener geometría en segundo plano (BD / WKB)
-            val geom = com.cadicsa.inventario.utils.SpatialHelper.getGeometryByLocalizacion(dbHelper.readableDatabase, localizacion)
-            if (geom == null) {
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "No se encontró el predio con localización: $localizacion", Toast.LENGTH_LONG).show()
-                }
-                return@thread
-            }
-
-            val jtsGeom = geom.jtsGeom
-            if (jtsGeom == null) {
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "El predio encontrado no tiene geometría válida", Toast.LENGTH_LONG).show()
-                }
-                return@thread
-            }
-            
-            // 2. Calcular polo de inaccesibilidad (Operación pesada JTS)
-            val pole = GeometryUtil.getPoleOfInaccessibility(jtsGeom)
-
-            // 2b. Resolver a qué grupo pertenece este punto (snapping a grupo existente si cae a <=3m del polo)
-            val gruposExistentes = dbHelper.getGruposForObject(geom.id)
-            val grupoResuelto = if (gruposExistentes.isEmpty()) {
-                GrupoAnchor(1, pole.latitude, pole.longitude)
-            } else {
-                dbHelper.resolveGrupoForNewPoint(geom.id, pole.latitude, pole.longitude)
-            }
-
-            // 3. Obtener metadatos espaciales en segundo plano (BD / JTS)
-            val mun = dbHelper.getMunicipiosAt(pole.longitude, pole.latitude)
-            val mza = dbHelper.getManzanaForPredio(jtsGeom)
-            val sec = dbHelper.getSectorForPredio(jtsGeom)
-            val lote = com.cadicsa.inventario.utils.SpatialHelper.getLoteClosestToPoint(dbHelper.readableDatabase, pole.longitude, pole.latitude)
-            val area = GeometryUtil.calculateAreaLocalProj(jtsGeom)
-            
-            // 4. Operación visual e inicio de actividad en el Hilo Principal
-            runOnUiThread {
-                mMap.animateCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(pole, 21f))
-                
-                if (mun.isNullOrEmpty()) {
-                    Toast.makeText(this@MainActivity, "⚠️ Error: No se pudo identificar el municipio en el polo matemático", Toast.LENGTH_LONG).show()
-                    return@runOnUiThread
-                }
-                if (mza.isNullOrEmpty()) {
-                    Toast.makeText(this@MainActivity, "⚠️ Error: No se pudo identificar la manzana intersectando el predio", Toast.LENGTH_LONG).show()
-                    return@runOnUiThread
-                }
-                if (lote.isNullOrEmpty()) {
-                    Toast.makeText(this@MainActivity, "⚠️ Error: No se encontró ningún texto de Lote cercano al polo matemático", Toast.LENGTH_LONG).show()
-                    return@runOnUiThread
-                }
-                
-                val intent = Intent(this@MainActivity, FormActivity::class.java).apply {
-                    putExtra(FormActivity.EXTRA_LATITUDE, grupoResuelto.lat)
-                    putExtra(FormActivity.EXTRA_LONGITUDE, grupoResuelto.lng)
-                    putExtra(FormActivity.EXTRA_GPS_LATITUDE, currentLatitude)
-                    putExtra(FormActivity.EXTRA_GPS_LONGITUDE, currentLongitude)
-                    putExtra(FormActivity.EXTRA_ID_OBJECT, geom.id)
-                    putExtra(FormActivity.EXTRA_ID_LAYER, geom.idLayer)
-                    putExtra(FormActivity.EXTRA_ID_PREDIO, geom.idPredio)
-                    putExtra(FormActivity.EXTRA_LOCALIZACION, geom.localizacion)
-                    putExtra(FormActivity.EXTRA_LAYER_NAME, geom.layer)
-                    putExtra(FormActivity.EXTRA_MUNICIPIO_CATALOG, mun)
-                    putExtra(FormActivity.EXTRA_SECTOR_CATALOG, sec)
-                    putExtra(FormActivity.EXTRA_MANZANA_CATALOG, mza)
-                    putExtra(FormActivity.EXTRA_LOTE_CATALOG, lote)
-                    putExtra(FormActivity.EXTRA_AREA_CALCULADA, area)
-                    putExtra(FormActivity.EXTRA_GRUPO_ID, grupoResuelto.grupoId)
-                }
-                startActivity(intent)
-            }
         }
     }
 

@@ -4,6 +4,39 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-08-29] - Se quita "Localizar Predio y Abrir Ficha"
+
+### 🗑️ Ítem de menú eliminado (`main_menu.xml`, `MainActivity.kt`, `SpatialHelper.kt`)
+Al diagnosticar por qué un clic directo en el mapa a veces mostraba "No hay datos dentro del
+predio" en un predio que sí tenía datos capturados, se confirmó que es el snapping de subgrupo por
+distancia funcionando como está documentado (`resolveGrupoForNewPoint`, tolerancia 3 metros — el
+sistema de subgrupos **no se toca**, sigue igual). "Localizar Predio y Abrir Ficha" hereda ese
+mismo problema por construcción: calcula el polo de inaccesibilidad del polígono (un punto
+matemático) en vez de usar el punto donde realmente se capturaron los datos, y ese punto pasa por
+la misma resolución de grupo — puede aterrizar en un subgrupo vacío aunque el predio tenga
+información. Pedido explícito del usuario: se elimina el ítem, ya que "Buscar Predio y Marcar
+Polígono" cubre la necesidad de ubicarse en el predio sin la confusión que genera este segundo
+camino.
+
+Se verificó con `grep -rn` exhaustivo sobre todo `app/src` (no solo un vistazo) que
+`showLocateAndOpenDialog()`/`locateAndOpenFicha()` (`MainActivity.kt`, ambas `private fun`) no
+tenían ninguna otra llamadora fuera de sí mismas y del ítem de menú — se eliminaron completas junto
+con `menu_locate_and_open` (`main_menu.xml`). La misma verificación encontró una **cascada de
+código muerto**: `SpatialHelper.getGeometryByLocalizacion()` y `SpatialHelper.getLoteClosestToPoint()`
+eran usadas **únicamente** por `locateAndOpenFicha()` — el flujo normal de clic en el mapa
+(`handleMapPosition()`) usa funciones distintas para lo mismo (`dbHelper.getGeometry()`,
+`dbHelper.getLoteForPredio()`) — se eliminaron también. Todo lo demás que tocaba esta función
+(`GrupoAnchor`, `getGruposForObject`, `resolveGrupoForNewPoint`, `getPoleOfInaccessibility`,
+`getMunicipiosAt`, `getManzanaForPredio`, `getSectorForPredio`, `calculateAreaLocalProj`) se
+confirmó compartido con el flujo normal de clic — no se toca.
+
+Portado igual al visor (documentado en su propio `SRC.VISOR.EDITOR/DOCS/DECISIONES.md`).
+
+Verificado con `./gradlew assembleDebug` (limpio, sin warnings nuevos) e instalado en un
+dispositivo real conectado (`installDebug`) para confirmación manual del usuario.
+
+---
+
 ## [2026-08-28] - Fotografías Adicionales en Unión con Predio y Correcciones en el Ciclo de Vida de Fotos
 
 ### 📸 Sección de Fotografías Adicionales en `FormUnionConPredio` (`FormUnionConPredio.js`, `index.html`)
