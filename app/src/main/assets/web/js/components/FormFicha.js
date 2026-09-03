@@ -519,6 +519,7 @@ const FormFicha = {
                         <img :src="foto.data" class="photo-thumbnail" @click="verFoto(foto)">
                         <div class="photo-info">
                             <span class="photo-name">{{ foto.name }}</span>
+                            <button type="button" class="btn-delete" style="background: #1565C0;" title="Usar como Foto de Frente" @click="usarComoFotoFrente(foto.name)">🖼️</button>
                             <button type="button" class="btn-delete" @click="eliminarFoto(foto.name)">🗑️</button>
                         </div>
                     </div>
@@ -1062,10 +1063,11 @@ const FormFicha = {
 
         Vue.watch(() => formData.FotoFrente, cargarFotoFrente, { immediate: true });
 
-        const fotosGenerales = Vue.computed(() => {
-            if (!props.fotos) return [];
-            return props.fotos.filter(f => f.name !== formData.FotoFrente);
-        });
+        // Sin filtrar por FotoFrente a proposito: usarComoFotoFrente() promueve una foto de aqui
+        // sin quitarla de Imagenes (decision explicita del usuario -- queda visible en ambos
+        // lados, eliminarla de uno de los dos es manual). En el flujo normal (capturar/importar
+        // Foto de Frente) nunca se agrega a props.fotos, asi que esto no cambia nada mas.
+        const fotosGenerales = Vue.computed(() => props.fotos || []);
 
         const capturarFotoFrente = () => emit('camera-frente');
 
@@ -1099,6 +1101,7 @@ const FormFicha = {
         const capturarFoto = () => emit('camera');
         const verFoto = (foto) => { if (typeof Android !== 'undefined' && Android.showPhoto) Android.showPhoto(foto.name); };
         const eliminarFoto = (filename) => { if (window.deletePhoto) window.deletePhoto(filename); };
+        const usarComoFotoFrente = (filename) => { if (window.usarComoFotoFrente) window.usarComoFotoFrente(filename); };
 
         const validate = () => {
             Object.keys(errors).forEach(k => delete errors[k]);
@@ -1287,7 +1290,7 @@ const FormFicha = {
         return {
             formData, errors, catalogos, muniDisplay, deptoDisplay, areaDisplay, origenTierraName, conflictoName, gestionConflictoName, descripcionUsoName,
             pedirMunicipioGlobal, pedirDescripcionUsoGlobal, pedirClaseConflictoGlobal, pedirOrigenTierraGlobal, pedirGestionConflictoGlobal, pedirDocumentoGlobal,
-            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, save, detectarDireccion, scanField,
+            agregarDocumento, quitarDocumento, capturarFoto, verFoto, eliminarFoto, usarComoFotoFrente, save, detectarDireccion, scanField,
             fotoFrenteBase64, fotosGenerales, capturarFotoFrente, eliminarFotoFrente,
             fechaAdquisicionUI, fechaRegistroUI, formatAsDate, setFechaAdquisicionToday, setFechaRegistroToday, onDocFechaInput, setDocFechaToday, docSinFechaObligatoria,
             chipStyleObs, selectReasonObservaciones

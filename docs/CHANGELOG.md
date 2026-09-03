@@ -4,6 +4,35 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-09-03] - Botón "Usar como Foto de Frente" en Fotografías Adicionales (FormFicha)
+
+### 🖼️ Nuevo botón por foto (`FormFicha.js`, `photoService.js`, `app.js`)
+Pedido del usuario: en cada tarjeta de "Fotografías Adicionales" de la Ficha, un botón que
+promueve esa foto a Foto del Frente del Predio con un clic (antes había que capturar/importar una
+nueva). Reglas confirmadas explícitamente con el usuario:
+- La Foto de Frente anterior (si había una) se descarta — misma regla de borrado diferido que ya
+  existe hoy al reemplazar la Foto de Frente por captura/importación (se borra recién al guardar,
+  vía `PhotoService.commit`, comparando contra `fotoFrenteOriginal`).
+- La foto promovida **no se quita** de Fotografías Adicionales — queda referenciada en los dos
+  lados a la vez (`Imagenes` y `FotoFrente`); quitarla de uno de los dos es manual, con los
+  botones normales de cada sección. Esto obligó a quitar el filtro que tenía `fotosGenerales`
+  (`f.name !== formData.FotoFrente`) — en el flujo normal nunca hacía nada (una FotoFrente
+  capturada/importada nunca entraba a `Imagenes`), así que quitarlo no cambia ningún otro
+  comportamiento.
+
+Nuevo método `PhotoService.usarComoFotoFrente(filename, ctx)`: misma limpieza que ya hace la rama
+`tomandoFotoFrente` de `handleAndroidPhoto` — si la FotoFrente que se reemplaza se tomó/importó en
+ESTA sesión (aún no guardada), se borra ya del disco (de lo contrario quedaría huérfana para
+siempre, ya que dejaría de estar referenciada en `FotoFrente` y nunca estuvo en `Imagenes`). Se
+expone como `window.usarComoFotoFrente` (mismo patrón que `window.deletePhoto`), invocado desde
+`FormFicha.js` sin modificar su firma de llamada.
+
+Verificado en vivo (visor, mismo comportamiento — ver DOCS/DECISIONES.md del visor): promover una
+foto deja la Foto de Frente actualizada y las 8 tarjetas de Fotografías Adicionales intactas, sin
+guardar nada hasta pulsar Guardar.
+
+---
+
 ## [2026-08-29] - Se quita "Localizar Predio y Abrir Ficha"
 
 ### 🗑️ Ítem de menú eliminado (`main_menu.xml`, `MainActivity.kt`, `SpatialHelper.kt`)

@@ -831,6 +831,9 @@ window.addPhoto = (filename, base64Data) => PhotoService.handleAndroidPhoto(file
 // Función global para eliminar foto
 window.deletePhoto = (filename) => PhotoService.handleAndroidDelete(filename, vueAppContext);
 
+// Función global para promover una foto de "Fotografías Adicionales" a Foto de Frente
+window.usarComoFotoFrente = (filename) => PhotoService.usarComoFotoFrente(filename, vueAppContext);
+
 // Función global para cargar datos existentes (modo edición desde marcador)
 window.loadExistingData = (id, jsonData) => SyncService.handleLoadData(id, jsonData, vueAppContext);
 

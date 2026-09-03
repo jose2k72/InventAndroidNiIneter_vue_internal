@@ -96,6 +96,28 @@ window.PhotoService = {
     },
 
     /**
+     * Promueve una foto ya existente en "Fotografías Adicionales" a Foto de Frente. La foto
+     * sigue referenciada en Imagenes (queda visible en ambos lados, decisión explícita del
+     * usuario -- eliminarla de uno de los dos lados es manual, con los botones normales). Misma
+     * lógica de limpieza que la rama `tomandoFotoFrente` de handleAndroidPhoto: si la FotoFrente
+     * que se reemplaza se tomó/importó en ESTA sesión (aún no guardada), se borra ya del disco
+     * -- de lo contrario quedaría huérfana para siempre (nada la referenciaría ni en Imagenes ni
+     * en FotoFrente). La FotoFrente que venía de la BD nunca se toca aquí: eso lo decide commit().
+     * @param {String} filename - Nombre del archivo ya existente en Imagenes
+     * @param {Object} ctx - Contexto reactivo de la app
+     */
+    usarComoFotoFrente: function (filename, ctx) {
+        if (!ctx || !ctx.formData.value) return;
+        const anterior = ctx.formData.value.FotoFrente;
+        if (anterior && anterior !== filename && ctx.fotosNuevas.value.some(f => f.name === anterior)) {
+            this.deletePhotosFromDisk([{ name: anterior }]);
+            const idx = ctx.fotosNuevas.value.findIndex(f => f.name === anterior);
+            if (idx > -1) ctx.fotosNuevas.value.splice(idx, 1);
+        }
+        ctx.formData.value.FotoFrente = filename;
+    },
+
+    /**
      * Manejador global para eliminar fotos (Lógica transaccional)
      * @param {String} filename - Nombre del archivo a eliminar
      * @param {Object} ctx - Contexto reactivo de la app

@@ -574,7 +574,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         infoItem?.title = "👤 " + (user?.fullName ?: "Desconocido")
         val isAdmin = user?.isAdmin == true || user?.userName == "ADMIN" || user?.userName == "MASTER"
         importItem?.isVisible = isAdmin
-        searchPredioItem?.isVisible = isAdmin
+        // Pedido explicito del usuario: "Buscar Predio y Marcar Poligono" no es una accion
+        // administrativa/destructiva (a diferencia del resto de este bloque) -- es busqueda/
+        // navegacion, misma accesibilidad que "Acerca de". Se saca del gate de isAdmin, visible
+        // siempre para cualquier usuario.
+        searchPredioItem?.isVisible = true
         adminPassItem?.isVisible = isAdmin
         clearDataItem?.isVisible = isAdmin
         importDbItem?.isVisible = isAdmin
