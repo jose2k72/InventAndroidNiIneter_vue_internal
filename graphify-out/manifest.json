@@ -1,0 +1,566 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1787740669.8671472,
+    "seen": 1791430006.6822686,
+    "ast_hash": "576fda7b85e73df0598c9011906b3650",
+    "semantic_hash": "576fda7b85e73df0598c9011906b3650"
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1787780814.6596155,
+    "seen": 1791430006.6822755,
+    "ast_hash": "686381671b7e3defedf456893b40304f",
+    "semantic_hash": "686381671b7e3defedf456893b40304f"
+  },
+  "app/build.gradle.kts": {
+    "mtime": 1780950316.8062117,
+    "seen": 1791430006.6822786,
+    "ast_hash": "a6867c1404bf7bb20281a9220e9c2794",
+    "semantic_hash": "a6867c1404bf7bb20281a9220e9c2794"
+  },
+  "app/src/main/assets/web/data/ClaseConflicto.json": {
+    "mtime": 1784040000.70017,
+    "seen": 1791430006.6822808,
+    "ast_hash": "e23d0fc59037f3a7aed39cf096e5acf5",
+    "semantic_hash": "e23d0fc59037f3a7aed39cf096e5acf5"
+  },
+  "app/src/main/assets/web/data/DepartamentosMunicipios.json": {
+    "mtime": 1772059804.4208336,
+    "seen": 1791430006.6822824,
+    "ast_hash": "fafc8ba4c77e8b6781cb00c85467f75a",
+    "semantic_hash": "fafc8ba4c77e8b6781cb00c85467f75a"
+  },
+  "app/src/main/assets/web/data/Documento-Mod.json": {
+    "mtime": 1774813091.1625328,
+    "seen": 1791430006.6822844,
+    "ast_hash": "373675a9dad93e4681d00364eccf5ed5",
+    "semantic_hash": "373675a9dad93e4681d00364eccf5ed5"
+  },
+  "app/src/main/assets/web/data/Documento.json": {
+    "mtime": 1784040000.692166,
+    "seen": 1791430006.682286,
+    "ast_hash": "b4d6096ba61543c925ab3918dd78dbc0",
+    "semantic_hash": "b4d6096ba61543c925ab3918dd78dbc0"
+  },
+  "app/src/main/assets/web/data/EstadoCivil.json": {
+    "mtime": 1784040000.5406034,
+    "seen": 1791430006.6822877,
+    "ast_hash": "ac431c1c90c7470f7190d96187cd8f8b",
+    "semantic_hash": "ac431c1c90c7470f7190d96187cd8f8b"
+  },
+  "app/src/main/assets/web/data/EstadoEncuesta.json": {
+    "mtime": 1784040000.7321692,
+    "seen": 1791430006.682289,
+    "ast_hash": "a70d7ad335729df624a3e95ab6ebc02e",
+    "semantic_hash": "a70d7ad335729df624a3e95ab6ebc02e"
+  },
+  "app/src/main/assets/web/data/Genero.json": {
+    "mtime": 1772063574.1546087,
+    "seen": 1791430006.6822903,
+    "ast_hash": "76bd4db19a1d23e68dbdcfaa2efc6a65",
+    "semantic_hash": "76bd4db19a1d23e68dbdcfaa2efc6a65"
+  },
+  "app/src/main/assets/web/data/GestionConflicto.json": {
+    "mtime": 1784040000.7043324,
+    "seen": 1791430006.6822917,
+    "ast_hash": "7d1b42b6be3715acc79ea96aa4a5f9c2",
+    "semantic_hash": "7d1b42b6be3715acc79ea96aa4a5f9c2"
+  },
+  "app/src/main/assets/web/data/OrigenTierra.json": {
+    "mtime": 1784040000.6636016,
+    "seen": 1791430006.6822937,
+    "ast_hash": "3e6d0d108935340a0e95c508ddd5ddc4",
+    "semantic_hash": "3e6d0d108935340a0e95c508ddd5ddc4"
+  },
+  "app/src/main/assets/web/data/Parentesco.json": {
+    "mtime": 1784040000.7281644,
+    "seen": 1791430006.6822953,
+    "ast_hash": "923681e4e472589de551ab532ded6741",
+    "semantic_hash": "923681e4e472589de551ab532ded6741"
+  },
+  "app/src/main/assets/web/data/PerfilPropietario.json": {
+    "mtime": 1772063574.160135,
+    "seen": 1791430006.6822965,
+    "ast_hash": "cc2eee655c5ee2be399cf5d86ed50a45",
+    "semantic_hash": "cc2eee655c5ee2be399cf5d86ed50a45"
+  },
+  "app/src/main/assets/web/data/Profesion.json": {
+    "mtime": 1784040000.6556008,
+    "seen": 1791430006.682298,
+    "ast_hash": "fdea2f3931d3bbe1256bb4b619344fec",
+    "semantic_hash": "fdea2f3931d3bbe1256bb4b619344fec"
+  },
+  "app/src/main/assets/web/data/PuntoCardinal.json": {
+    "mtime": 1784040000.6676016,
+    "seen": 1791430006.6822994,
+    "ast_hash": "081bb87b851fe5251d9479834f48ae73",
+    "semantic_hash": "081bb87b851fe5251d9479834f48ae73"
+  },
+  "app/src/main/assets/web/data/RelacionInformanteParcela.json": {
+    "mtime": 1784040000.7071662,
+    "seen": 1791430006.6823006,
+    "ast_hash": "92f56cf7107e94c8a0c7976a204dc9dd",
+    "semantic_hash": "92f56cf7107e94c8a0c7976a204dc9dd"
+  },
+  "app/src/main/assets/web/data/RelacionInformantePropietario.json": {
+    "mtime": 1784040000.7181652,
+    "seen": 1791430006.682302,
+    "ast_hash": "98d4d51c912433d80537cdb64c8b3905",
+    "semantic_hash": "98d4d51c912433d80537cdb64c8b3905"
+  },
+  "app/src/main/assets/web/data/Servidumbre.json": {
+    "mtime": 1784040000.6696012,
+    "seen": 1791430006.6823032,
+    "ast_hash": "2e26e99c64d5a29f1ea7ce5f5ff3af86",
+    "semantic_hash": "2e26e99c64d5a29f1ea7ce5f5ff3af86"
+  },
+  "app/src/main/assets/web/data/TipoDerecho.json": {
+    "mtime": 1772063574.1582024,
+    "seen": 1791430006.6823046,
+    "ast_hash": "db25f877b247c9c58d97d710ddac08e6",
+    "semantic_hash": "db25f877b247c9c58d97d710ddac08e6"
+  },
+  "app/src/main/assets/web/data/TipoEncuesta.json": {
+    "mtime": 1772063574.1469204,
+    "seen": 1791430006.682306,
+    "ast_hash": "1fb254a9a13de081894f0e3ee60e945a",
+    "semantic_hash": "1fb254a9a13de081894f0e3ee60e945a"
+  },
+  "app/src/main/assets/web/data/TipoIdentificacion.json": {
+    "mtime": 1784040000.7351656,
+    "seen": 1791430006.6823072,
+    "ast_hash": "ce3ab35c3e8d9776905e6802d23bf028",
+    "semantic_hash": "ce3ab35c3e8d9776905e6802d23bf028"
+  },
+  "app/src/main/assets/web/data/TipoPersona.json": {
+    "mtime": 1772063574.152603,
+    "seen": 1791430006.6823094,
+    "ast_hash": "97d739820847bb460a56c0a5cafce8e6",
+    "semantic_hash": "97d739820847bb460a56c0a5cafce8e6"
+  },
+  "app/src/main/assets/web/data/TipoPersonaJuridica.json": {
+    "mtime": 1784040000.6586027,
+    "seen": 1791430006.6823106,
+    "ast_hash": "1c13f172b56dcdd4f341f0bb252bc549",
+    "semantic_hash": "1c13f172b56dcdd4f341f0bb252bc549"
+  },
+  "app/src/main/assets/web/data/TipoRolEncuesta.json": {
+    "mtime": 1772063574.1621344,
+    "seen": 1791430006.682312,
+    "ast_hash": "2c086950b836e88cd9eb2ba1627021e7",
+    "semantic_hash": "2c086950b836e88cd9eb2ba1627021e7"
+  },
+  "app/src/main/assets/web/data/TipoSector.json": {
+    "mtime": 1772063574.1566055,
+    "seen": 1791430006.6823132,
+    "ast_hash": "c883352bafc46f1d47704b12b9cbc0f6",
+    "semantic_hash": "c883352bafc46f1d47704b12b9cbc0f6"
+  },
+  "app/src/main/assets/web/data/TipoUso.json": {
+    "mtime": 1784040000.6606047,
+    "seen": 1791430006.6823144,
+    "ast_hash": "06527239c91a69c6de6ed537bd9ab0f9",
+    "semantic_hash": "06527239c91a69c6de6ed537bd9ab0f9"
+  },
+  "app/src/main/assets/web/data/UnidadMedida.json": {
+    "mtime": 1784040000.5376039,
+    "seen": 1791430006.6823158,
+    "ast_hash": "ad557a86a3872164c85a545256939b06",
+    "semantic_hash": "ad557a86a3872164c85a545256939b06"
+  },
+  "app/src/main/assets/web/data/UsoParcela.json": {
+    "mtime": 1784040000.7411654,
+    "seen": 1791430006.6823173,
+    "ast_hash": "5b39021eb65b9b67dc32352787fa63bc",
+    "semantic_hash": "5b39021eb65b9b67dc32352787fa63bc"
+  },
+  "app/src/main/assets/web/data/sistema/ProyeccionesLocales.json": {
+    "mtime": 1785348198.2533238,
+    "seen": 1791430006.682319,
+    "ast_hash": "4bcccf8594d5b93f95dc3f2f6adc07c6",
+    "semantic_hash": "4bcccf8594d5b93f95dc3f2f6adc07c6"
+  },
+  "app/src/main/assets/web/js/app.js": {
+    "mtime": 1788468691.8299303,
+    "seen": 1791430006.6823199,
+    "ast_hash": "053660eca53b16e8b8606d7f19f59b4f",
+    "semantic_hash": "053660eca53b16e8b8606d7f19f59b4f"
+  },
+  "app/src/main/assets/web/js/clonadorService.js": {
+    "mtime": 1773080542.3074806,
+    "seen": 1791430006.6823213,
+    "ast_hash": "6b5f766a886a1a1670d7c63fbc18e44b",
+    "semantic_hash": "6b5f766a886a1a1670d7c63fbc18e44b"
+  },
+  "app/src/main/assets/web/js/components/CatalogoSelector.js": {
+    "mtime": 1771222582.6516595,
+    "seen": 1791430006.6823227,
+    "ast_hash": "5df0771926341048c0cc1e073b85ac6e",
+    "semantic_hash": "5df0771926341048c0cc1e073b85ac6e"
+  },
+  "app/src/main/assets/web/js/components/CatalogoSelectorGrande.js": {
+    "mtime": 1780627036.51713,
+    "seen": 1791430006.6823242,
+    "ast_hash": "cf7313d751c79ad5f31e9b1b92c4c444",
+    "semantic_hash": "cf7313d751c79ad5f31e9b1b92c4c444"
+  },
+  "app/src/main/assets/web/js/components/CatalogoSelectorGrandeOld.js": {
+    "mtime": 1780626748.25806,
+    "seen": 1791430006.6823258,
+    "ast_hash": "4f27b16cc7e6a1b4ef6d30308d9f5652",
+    "semantic_hash": "4f27b16cc7e6a1b4ef6d30308d9f5652"
+  },
+  "app/src/main/assets/web/js/components/CatalogoSelectorTwoLevels.js": {
+    "mtime": 1772142043.1088917,
+    "seen": 1791430006.6823273,
+    "ast_hash": "e0bab8ff4c6c400dd623e70eeef9b1b3",
+    "semantic_hash": "e0bab8ff4c6c400dd623e70eeef9b1b3"
+  },
+  "app/src/main/assets/web/js/components/FileBrowser.js": {
+    "mtime": 1783804367.6062799,
+    "seen": 1791430006.6823282,
+    "ast_hash": "f60534ace936c97b73ad54a703b7c8cb",
+    "semantic_hash": "f60534ace936c97b73ad54a703b7c8cb"
+  },
+  "app/src/main/assets/web/js/components/FormEntrevistado.js": {
+    "mtime": 1785290705.6217248,
+    "seen": 1791430006.68233,
+    "ast_hash": "7a685020a60e182675d07aca395b7bb0",
+    "semantic_hash": "7a685020a60e182675d07aca395b7bb0"
+  },
+  "app/src/main/assets/web/js/components/FormFamiliares.js": {
+    "mtime": 1780959197.8082435,
+    "seen": 1791430006.6823313,
+    "ast_hash": "ecf376292e9856db7f59a161d06c2ef9",
+    "semantic_hash": "ecf376292e9856db7f59a161d06c2ef9"
+  },
+  "app/src/main/assets/web/js/components/FormFicha.js": {
+    "mtime": 1788468753.9288106,
+    "seen": 1791430006.6823328,
+    "ast_hash": "1b85d70298564cbc561c883fd7cd33fd",
+    "semantic_hash": "1b85d70298564cbc561c883fd7cd33fd"
+  },
+  "app/src/main/assets/web/js/components/FormNoEncuestado.js": {
+    "mtime": 1784074462.534073,
+    "seen": 1791430006.6823342,
+    "ast_hash": "7418e29f7addda949bd8abc6d37d6cc2",
+    "semantic_hash": "7418e29f7addda949bd8abc6d37d6cc2"
+  },
+  "app/src/main/assets/web/js/components/FormSujetoJuridico.js": {
+    "mtime": 1785346368.460207,
+    "seen": 1791430006.6823354,
+    "ast_hash": "36945c5f23805cf4d464e14056aae0cf",
+    "semantic_hash": "36945c5f23805cf4d464e14056aae0cf"
+  },
+  "app/src/main/assets/web/js/components/FormSujetoNatural.js": {
+    "mtime": 1785290671.2471912,
+    "seen": 1791430006.682337,
+    "ast_hash": "8b12a86ad3e06b6b341e765f5af1fdfc",
+    "semantic_hash": "8b12a86ad3e06b6b341e765f5af1fdfc"
+  },
+  "app/src/main/assets/web/js/components/FormUnionConPredio.js": {
+    "mtime": 1787957805.796358,
+    "seen": 1791430006.6823394,
+    "ast_hash": "9a08a8c63ce9d023191882066c8eaa42",
+    "semantic_hash": "9a08a8c63ce9d023191882066c8eaa42"
+  },
+  "app/src/main/assets/web/js/conversionService.js": {
+    "mtime": 1780720727.9095457,
+    "seen": 1791430006.6823406,
+    "ast_hash": "07c7987574f9671a07fb814797d7fcac",
+    "semantic_hash": "07c7987574f9671a07fb814797d7fcac"
+  },
+  "app/src/main/assets/web/js/displayService.js": {
+    "mtime": 1781116814.265445,
+    "seen": 1791430006.6823418,
+    "ast_hash": "50aab73461d9ac2047f4ebff9d5c0b27",
+    "semantic_hash": "50aab73461d9ac2047f4ebff9d5c0b27"
+  },
+  "app/src/main/assets/web/js/legacy_code.js": {
+    "mtime": 1773089121.3340611,
+    "seen": 1791430006.6823435,
+    "ast_hash": "4f499896760ef7b36a747ee70fb86c47",
+    "semantic_hash": "4f499896760ef7b36a747ee70fb86c47"
+  },
+  "app/src/main/assets/web/js/modelsFactory.js": {
+    "mtime": 1787612306.897398,
+    "seen": 1791430006.6823444,
+    "ast_hash": "b82a11d0821b6fddea84f79d28e6eb93",
+    "semantic_hash": "b82a11d0821b6fddea84f79d28e6eb93"
+  },
+  "app/src/main/assets/web/js/photoService.js": {
+    "mtime": 1788468681.739318,
+    "seen": 1791430006.6823459,
+    "ast_hash": "f2b434491332e011f7c7a602ea883ac6",
+    "semantic_hash": "f2b434491332e011f7c7a602ea883ac6"
+  },
+  "app/src/main/assets/web/js/syncService.js": {
+    "mtime": 1773090162.159121,
+    "seen": 1791430006.682347,
+    "ast_hash": "e632d01d7fd2c95d76ac6112df7a5853",
+    "semantic_hash": "e632d01d7fd2c95d76ac6112df7a5853"
+  },
+  "app/src/main/assets/web/js/utils.js": {
+    "mtime": 1773014343.123329,
+    "seen": 1791430006.6823485,
+    "ast_hash": "684078aca02cadcc04fc4eb938f2bbee",
+    "semantic_hash": "684078aca02cadcc04fc4eb938f2bbee"
+  },
+  "app/src/main/assets/web/js/workflowService.js": {
+    "mtime": 1787611313.3735042,
+    "seen": 1791430006.68235,
+    "ast_hash": "40702980de92a86b14d4aaa6eda12d6c",
+    "semantic_hash": "40702980de92a86b14d4aaa6eda12d6c"
+  },
+  "app/src/main/java/com/cadicsa/inventario/AndroidBridge.kt": {
+    "mtime": 1787957866.8463132,
+    "seen": 1791430006.682351,
+    "ast_hash": "d6d78e8b2c849d9ad4af27d3549ae042",
+    "semantic_hash": "d6d78e8b2c849d9ad4af27d3549ae042"
+  },
+  "app/src/main/java/com/cadicsa/inventario/AppConfig.kt": {
+    "mtime": 1785271965.6513674,
+    "seen": 1791430006.6823523,
+    "ast_hash": "29b49bbf13384ecd99b8a722a7447408",
+    "semantic_hash": "29b49bbf13384ecd99b8a722a7447408"
+  },
+  "app/src/main/java/com/cadicsa/inventario/CustomCameraActivity.kt": {
+    "mtime": 1783804747.1797664,
+    "seen": 1791430006.682354,
+    "ast_hash": "08608c27db052f0fdce81be7e6d9516e",
+    "semantic_hash": "08608c27db052f0fdce81be7e6d9516e"
+  },
+  "app/src/main/java/com/cadicsa/inventario/DatabaseHelper.kt": {
+    "mtime": 1787867597.5143602,
+    "seen": 1791430006.6823552,
+    "ast_hash": "6aaa5a56f10b7e8e2cba4423fb0c79be",
+    "semantic_hash": "6aaa5a56f10b7e8e2cba4423fb0c79be"
+  },
+  "app/src/main/java/com/cadicsa/inventario/FormActivity.kt": {
+    "mtime": 1785289432.9197216,
+    "seen": 1791430006.6823568,
+    "ast_hash": "7a2117b4f87a86da47ccc72c030f2b85",
+    "semantic_hash": "7a2117b4f87a86da47ccc72c030f2b85"
+  },
+  "app/src/main/java/com/cadicsa/inventario/Geometry.kt": {
+    "mtime": 1779050335.573005,
+    "seen": 1791430006.6823583,
+    "ast_hash": "eaa5acbbd3b10c366c761b455160c64f",
+    "semantic_hash": "eaa5acbbd3b10c366c761b455160c64f"
+  },
+  "app/src/main/java/com/cadicsa/inventario/GeometryUtil.kt": {
+    "mtime": 1785348239.986339,
+    "seen": 1791430006.6823595,
+    "ast_hash": "3bd9826918c564d8efc22db7742cc581",
+    "semantic_hash": "3bd9826918c564d8efc22db7742cc581"
+  },
+  "app/src/main/java/com/cadicsa/inventario/MainActivity.kt": {
+    "mtime": 1788470038.8620033,
+    "seen": 1791430006.682361,
+    "ast_hash": "6c5e6d14d68ef5e4dd976d2294be22eb",
+    "semantic_hash": "6c5e6d14d68ef5e4dd976d2294be22eb"
+  },
+  "app/src/main/java/com/cadicsa/inventario/ManageUsersActivity.kt": {
+    "mtime": 1778992035.7839298,
+    "seen": 1791430006.6823623,
+    "ast_hash": "58524ca70edee3afa9a495799410ee4a",
+    "semantic_hash": "58524ca70edee3afa9a495799410ee4a"
+  },
+  "app/src/main/java/com/cadicsa/inventario/OfflineTileProvider.kt": {
+    "mtime": 1778989546.4189956,
+    "seen": 1791430006.6823635,
+    "ast_hash": "7930c20c3e9813b1424ea097e89ddabe",
+    "semantic_hash": "7930c20c3e9813b1424ea097e89ddabe"
+  },
+  "app/src/main/java/com/cadicsa/inventario/UserAdapter.kt": {
+    "mtime": 1778992012.9687912,
+    "seen": 1791430006.6823647,
+    "ast_hash": "823bfbcf0bd0440ed43790456e10ea71",
+    "semantic_hash": "823bfbcf0bd0440ed43790456e10ea71"
+  },
+  "app/src/main/java/com/cadicsa/inventario/security/DeviceUser.kt": {
+    "mtime": 1778991996.1818976,
+    "seen": 1791430006.682366,
+    "ast_hash": "39e3735def761b4f0a9c4075d3a8dd37",
+    "semantic_hash": "39e3735def761b4f0a9c4075d3a8dd37"
+  },
+  "app/src/main/java/com/cadicsa/inventario/security/SecurityManager.kt": {
+    "mtime": 1778993928.0092905,
+    "seen": 1791430006.6823673,
+    "ast_hash": "3fa72dcf089aa3397f2c85a716462e79",
+    "semantic_hash": "3fa72dcf089aa3397f2c85a716462e79"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/DataCleaner.kt": {
+    "mtime": 1781050029.6432765,
+    "seen": 1791430006.6823688,
+    "ast_hash": "d50bd4bdc06153d54de13020880d971e",
+    "semantic_hash": "d50bd4bdc06153d54de13020880d971e"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/DebugDbServer.kt": {
+    "mtime": 1780597490.8517554,
+    "seen": 1791430006.68237,
+    "ast_hash": "6e75927668c4d4d040a945cd52b33f5b",
+    "semantic_hash": "6e75927668c4d4d040a945cd52b33f5b"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/ExportManager.kt": {
+    "mtime": 1785289101.5152073,
+    "seen": 1791430006.6823714,
+    "ast_hash": "a15b72de5e6d2ea843d87b8ed921c8e7",
+    "semantic_hash": "a15b72de5e6d2ea843d87b8ed921c8e7"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/FileBrowserDialog.kt": {
+    "mtime": 1781043852.5428627,
+    "seen": 1791430006.6823726,
+    "ast_hash": "3b732ad33df18dab9544e5db513cc4b0",
+    "semantic_hash": "3b732ad33df18dab9544e5db513cc4b0"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/FolderBrowserDialog.kt": {
+    "mtime": 1781107534.7100098,
+    "seen": 1791430006.682374,
+    "ast_hash": "94aae0df5fbb71483470c5a556682b4d",
+    "semantic_hash": "94aae0df5fbb71483470c5a556682b4d"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/FormImageHelper.kt": {
+    "mtime": 1783804289.7885761,
+    "seen": 1791430006.682375,
+    "ast_hash": "219f9336fd58560560f58ef43a5347a4",
+    "semantic_hash": "219f9336fd58560560f58ef43a5347a4"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/FormWebViewHelper.kt": {
+    "mtime": 1772925743.4002233,
+    "seen": 1791430006.6823761,
+    "ast_hash": "2cd563583aba4718b37dbf510b297bc6",
+    "semantic_hash": "2cd563583aba4718b37dbf510b297bc6"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/ImportManager.kt": {
+    "mtime": 1785289084.9772394,
+    "seen": 1791430006.6823776,
+    "ast_hash": "6efd2114fe9e58ac999e98a462ea9a0b",
+    "semantic_hash": "6efd2114fe9e58ac999e98a462ea9a0b"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/MainDialogHelper.kt": {
+    "mtime": 1787867567.642856,
+    "seen": 1791430006.6823788,
+    "ast_hash": "a2b789920ad65f0992ae26d77dfeb503",
+    "semantic_hash": "a2b789920ad65f0992ae26d77dfeb503"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/MapHelper.kt": {
+    "mtime": 1785290243.2368925,
+    "seen": 1791430006.68238,
+    "ast_hash": "398132ea5a7241e7932ded7a330ecda8",
+    "semantic_hash": "398132ea5a7241e7932ded7a330ecda8"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/PermissionHelper.kt": {
+    "mtime": 1772918324.1808171,
+    "seen": 1791430006.6823814,
+    "ast_hash": "fc5542ff2e7bcb439d7bc1fc065512fc",
+    "semantic_hash": "fc5542ff2e7bcb439d7bc1fc065512fc"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/ProjectionHelper.kt": {
+    "mtime": 1786404342.551601,
+    "seen": 1791430006.6823826,
+    "ast_hash": "e447062a2f9f9f68f6a8bcb356547736",
+    "semantic_hash": "e447062a2f9f9f68f6a8bcb356547736"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/RoutingHelper.kt": {
+    "mtime": 1772918246.1274061,
+    "seen": 1791430006.6823838,
+    "ast_hash": "706b315232220a880edf763c9c573db0",
+    "semantic_hash": "706b315232220a880edf763c9c573db0"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/SpatialHelper.kt": {
+    "mtime": 1787967644.8923874,
+    "seen": 1791430006.6823854,
+    "ast_hash": "d1325080894ab12a238334555eeac2b6",
+    "semantic_hash": "d1325080894ab12a238334555eeac2b6"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/SpatialNormalizer.kt": {
+    "mtime": 1772916384.6536584,
+    "seen": 1791430006.6823866,
+    "ast_hash": "ad247f381ceeac78ad0f58a1ba594aa1",
+    "semantic_hash": "ad247f381ceeac78ad0f58a1ba594aa1"
+  },
+  "app/src/main/java/com/cadicsa/inventario/utils/TileManager.kt": {
+    "mtime": 1778989612.6598485,
+    "seen": 1791430006.6823883,
+    "ast_hash": "1079dffe9de0da95c837b28ca748f6c0",
+    "semantic_hash": "1079dffe9de0da95c837b28ca748f6c0"
+  },
+  "build.gradle.kts": {
+    "mtime": 1765585382.382107,
+    "seen": 1791430006.6823895,
+    "ast_hash": "7013547e06a6ddf1531ec0de83c620ca",
+    "semantic_hash": "7013547e06a6ddf1531ec0de83c620ca"
+  },
+  "gradlew": {
+    "mtime": 1766018350.0531247,
+    "seen": 1791430006.6823907,
+    "ast_hash": "1db6d150e9a9442ca929c1fa8b2fd25e",
+    "semantic_hash": "1db6d150e9a9442ca929c1fa8b2fd25e"
+  },
+  "py-utils/compare_repos.py": {
+    "mtime": 1780711781.6411755,
+    "seen": 1791430006.6823924,
+    "ast_hash": "ca0dd936f8d946aac02a16aa4505dbf0",
+    "semantic_hash": "ca0dd936f8d946aac02a16aa4505dbf0"
+  },
+  "py-utils/crop_image.py": {
+    "mtime": 1770308744.3009415,
+    "seen": 1791430006.6823938,
+    "ast_hash": "8d46178fb7332b94229e1741cdbb6ed4",
+    "semantic_hash": "8d46178fb7332b94229e1741cdbb6ed4"
+  },
+  "py-utils/inspect_db.py": {
+    "mtime": 1770511545.014312,
+    "seen": 1791430006.6823955,
+    "ast_hash": "1c2fd54a189555d13e077f572a1cc2ab",
+    "semantic_hash": "1c2fd54a189555d13e077f572a1cc2ab"
+  },
+  "py-utils/inspect_layers.py": {
+    "mtime": 1770512392.7933645,
+    "seen": 1791430006.6823978,
+    "ast_hash": "b92c8b8b1650166933ccec8ce19a2ea4",
+    "semantic_hash": "b92c8b8b1650166933ccec8ce19a2ea4"
+  },
+  "py-utils/inspect_wkt.py": {
+    "mtime": 1770514718.1348317,
+    "seen": 1791430006.6823995,
+    "ast_hash": "d1ea03dba5d43da1e281249f313d1aa5",
+    "semantic_hash": "d1ea03dba5d43da1e281249f313d1aa5"
+  },
+  "py-utils/query_device.py": {
+    "mtime": 1780597831.8233776,
+    "seen": 1791430006.6824007,
+    "ast_hash": "7836097374899b3d8a6daeae92fd0ebe",
+    "semantic_hash": "7836097374899b3d8a6daeae92fd0ebe"
+  },
+  "py-utils/query_owners_by_predio.py": {
+    "mtime": 1780604755.415764,
+    "seen": 1791430006.6824024,
+    "ast_hash": "34563af7f673d462fb456bb910b75f03",
+    "semantic_hash": "34563af7f673d462fb456bb910b75f03"
+  },
+  "py-utils/scratch_inspect.py": {
+    "mtime": 1780709436.1151576,
+    "seen": 1791430006.6824036,
+    "ast_hash": "9aaf908837c4feb8d26f33d7160980b2",
+    "semantic_hash": "9aaf908837c4feb8d26f33d7160980b2"
+  },
+  "settings.gradle.kts": {
+    "mtime": 1765585378.4180064,
+    "seen": 1791430006.6824052,
+    "ast_hash": "81e81309cf2dbdd9cc19335fe05841ac",
+    "semantic_hash": "81e81309cf2dbdd9cc19335fe05841ac"
+  },
+  "test_poly.py": {
+    "mtime": 1782860296.4917655,
+    "seen": 1791430006.6824064,
+    "ast_hash": "4acd3a2bf4634b055388727522a0caff",
+    "semantic_hash": "4acd3a2bf4634b055388727522a0caff"
+  },
+  "test_spatial.py": {
+    "mtime": 1782860267.92605,
+    "seen": 1791430006.6824079,
+    "ast_hash": "9fb51f3c68511233f0b5854813c8d038",
+    "semantic_hash": "9fb51f3c68511233f0b5854813c8d038"
+  }
+}

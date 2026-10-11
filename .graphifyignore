@@ -1,0 +1,27 @@
+# Excluye imagenes (iconos/drawables vectoriales, sin valor semantico para el grafo) y
+# librerias de terceros vendored (no son codigo nuestro, inflan el corpus sin aportar nada
+# al grafo de conocimiento del proyecto).
+
+# Imagenes
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.ico
+*.svg
+app/src/main/res/drawable*/
+
+# Librerias JS de terceros, vendored dentro de assets/web
+app/src/main/assets/web/js/vue.global*.js
+app/src/main/assets/web/js/proj4.min.js
+
+# Docs: prueba inicial solo con 3 claves (REGLAS_NEGOCIO, DATABASE_MAP_DB, CHANGELOG),
+# el resto se excluye por ahora para medir el costo/valor real antes de meter los demas.
+# (patron amplio -- cualquier .md/.txt/.html en el repo queda afuera salvo los 3 permitidos)
+*.md
+*.txt
+*.html
+!docs/REGLAS_NEGOCIO.md
+!docs/DATABASE_MAP_DB.md
+!docs/CHANGELOG.md
