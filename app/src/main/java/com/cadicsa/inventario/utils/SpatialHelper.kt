@@ -127,17 +127,27 @@ object SpatialHelper {
         """.trimIndent()
 
         val cursor = db.rawQuery(query, null)
+        // El predio pertenece al poligono donde MAS area suya cae (no al primero que lo toque):
+        // un predio de borde toca a las vecinas. Mismo criterio que el visor web.
+        var mejorLocalizacion: String? = null
+        var mejorArea = -1.0
         try {
             if (cursor.moveToFirst()) {
                 do {
                     val wkbBytes = cursor.getBlob(1) ?: continue
                     val geomManzana = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
                     if (geomManzana.intersects(geomPredio)) {
-                        val result = cursor.getString(0)
-                        android.util.Log.d("SpatialHelper", "Manzana encontrada por intersección de predio: $result")
-                        return result
+                        val area = try { geomManzana.intersection(geomPredio).area } catch (e: Exception) { 0.0 }
+                        if (area > mejorArea) {
+                            mejorArea = area
+                            mejorLocalizacion = cursor.getString(0)
+                        }
                     }
                 } while (cursor.moveToNext())
+                mejorLocalizacion?.let {
+                    android.util.Log.d("SpatialHelper", "Manzana encontrado por mayor intersección de predio: $it (área=$mejorArea)")
+                    return it
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("SpatialHelper", "Error en getManzanaForPredio: ${e.message}")
@@ -163,17 +173,27 @@ object SpatialHelper {
         """.trimIndent()
 
         val cursor = db.rawQuery(query, null)
+        // El predio pertenece al poligono donde MAS area suya cae (no al primero que lo toque):
+        // un predio de borde toca a las vecinas. Mismo criterio que el visor web.
+        var mejorLocalizacion: String? = null
+        var mejorArea = -1.0
         try {
             if (cursor.moveToFirst()) {
                 do {
                     val wkbBytes = cursor.getBlob(1) ?: continue
                     val geomSector = GeometryUtil.wkbToGeometry(wkbBytes) ?: continue
                     if (geomSector.intersects(geomPredio)) {
-                        val result = cursor.getString(0)
-                        android.util.Log.d("SpatialHelper", "Sector encontrado por intersección de predio: $result")
-                        return result
+                        val area = try { geomSector.intersection(geomPredio).area } catch (e: Exception) { 0.0 }
+                        if (area > mejorArea) {
+                            mejorArea = area
+                            mejorLocalizacion = cursor.getString(0)
+                        }
                     }
                 } while (cursor.moveToNext())
+                mejorLocalizacion?.let {
+                    android.util.Log.d("SpatialHelper", "Sector encontrado por mayor intersección de predio: $it (área=$mejorArea)")
+                    return it
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("SpatialHelper", "Error en getSectorForPredio: ${e.message}")

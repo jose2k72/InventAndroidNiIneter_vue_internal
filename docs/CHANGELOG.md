@@ -4,6 +4,45 @@ Este es el registro central de cambios. Para consultar cambios históricos, vea 
 
 ---
 
+## [2026-10-13] - Manzana y sector del predio: el de MAYOR intersección, no el primero que lo toque
+
+### 🧭 `SpatialHelper.getManzanaForPredio()` y `getSectorForPredio()`
+**Problema (visto en campo, Nindiri_N):** el predio 53837272910134 queda en el límite entre dos manzanas
+(008 y 016). Ambas funciones devolvían la **primera fila** de la capa que intersectaba al predio, en el
+orden (por id) en que SQLite las entrega; como el predio solo *tocaba* el borde de la 008 y esta tiene id
+menor que la 016, la ficha salía "manzana 008, lote 24" aunque el lote 24 pertenece a la 016.
+
+**Regla nueva (decidida por el usuario):** el predio pertenece a la manzana —y al sector— donde cae **más
+área suya** (intersección predio∩polígono de mayor área, calculada con JTS). Si la intersección falla por
+geometría inválida cuenta como área 0; si ninguno tiene solape real queda el primero, como antes. El
+resultado sigue siendo `LOCALIZACION` (el código impreso, p. ej. `"016"`).
+
+**Impacto medido sobre los datos de Nindiri_N (2082 predios):** cambian de manzana/sector 9 predios: el
+563 (008→016), el 1166 (058→059), el 52 (002→006) y seis de la 001 a la 007 (1453, 1457, 1460, 1464,
+1467, 1469) — todos estaban asignados a una vecina por tocarles el borde. Las fichas ya levantadas
+conservan los valores que tenían.
+
+- **Archivo:** `app/src/main/java/com/cadicsa/inventario/utils/SpatialHelper.kt`.
+- **Paridad:** el visor web aplica la misma regla (`spatial._de_mayor_solape`), ver
+  `SRC.VISOR.EDITOR/DOCS/DECISIONES.md`.
+- **Pendiente conocido:** `getLoteForPredio()` sigue devolviendo el primer punto de lote que toca al
+  predio; con dos puntos apilados (predios 109 y 1166 en Nindiri_N) puede devolver el sobrante.
+
+### 🗺️ Parche de datos del predio 53837272910134 (Nindiri_N)
+Ese predio quedaba fuera de todo polígono de manzana y sin punto de lote (única excepción de los 2082).
+Parche aplicado directamente al `map.db` (Android y web, copias idénticas): manzana y sector `016`
+(ids 2204 y 2122) agrandados para incluir el predio, y punto `PredNumber` lote `24` (`idLayer` 2084)
+dentro de él. Script reaplicable e idempotente: `SRC.VISOR.EDITOR/parche_nindiri_n_predio563.sql`
+(copia de seguridad previa en cada dispositivo: `map.db.bak_antes_predio563`). Es un parche de campo:
+la carto buena lo reemplazará al regenerar el `Map.db`.
+
+### 📱 Nota operativa
+Si el formulario (WebView) sale en blanco con `ActivityManager: Unable to launch app ... SandboxedProcessService
+... process is bad` en logcat, es un estado del sistema que bloquea el renderizador del WebView, no un
+problema de la app ni de la base de datos; en la Active 8 Pro se resolvió **reiniciando la tableta**.
+
+---
+
 ## [2026-09-03] - Botón "Usar como Foto de Frente" en Fotografías Adicionales (FormFicha)
 
 ### 🖼️ Nuevo botón por foto (`FormFicha.js`, `photoService.js`, `app.js`)
